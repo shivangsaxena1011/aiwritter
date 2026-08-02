@@ -5,7 +5,6 @@ __pycache__/
 .env
 .idea/
 .vscode/
-projects/*/exports/*
-projects/*/images/*
-projects/*/tables/*
+projects/
+output/
 .DS_Store

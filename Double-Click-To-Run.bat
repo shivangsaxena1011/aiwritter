@@ -1,12 +1,12 @@
 @echo off
-title AI Book Writer Launcher
+title AI Book Writer
 echo ============================================================
-echo Starting AI Book Writer server...
+echo   AI Book Writer — Starting...
 echo ============================================================
 cd /d "%~dp0"
 
 if not exist "venv\Scripts\activate.bat" (
-    echo Creating Python virtual environment...
+    echo Creating virtual environment...
     python -m venv venv
     call .\venv\Scripts\activate.bat
     pip install -r requirements.txt
@@ -14,8 +14,7 @@ if not exist "venv\Scripts\activate.bat" (
     call .\venv\Scripts\activate.bat
 )
 
-echo Opening web browser to http://127.0.0.1:8000...
+echo Opening browser...
 start "" "http://127.0.0.1:8000"
-
 python run.py
 pause

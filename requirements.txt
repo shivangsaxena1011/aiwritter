@@ -1,7 +1,5 @@
 fastapi
 uvicorn
-openai
 google-genai
 python-docx
-pillow
-docx2pdf
+Pillow

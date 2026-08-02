@@ -1,1 +1,1 @@
-# Backend agents package
+"""AI Book Writer - Agent Pipeline"""
