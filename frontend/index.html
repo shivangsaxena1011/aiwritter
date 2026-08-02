@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Academic Publishing Orchestrator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Outfit:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+    <div class="glow-orb orb-3"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-book-open-reader brand-icon"></i>
+                <div class="brand-text">
+                    <h1>Antigravity</h1>
+                    <span>Publishing Engine</span>
+                </div>
+            </div>
+            <nav class="nav-steps">
+                <div class="step-item active" id="nav-dashboard">
+                    <span class="step-num"><i class="fa-solid fa-table-columns"></i></span>
+                    <span class="step-label">Projects Dashboard</span>
+                </div>
+                <div class="step-item" id="nav-step1">
+                    <span class="step-num">1</span>
+                    <span class="step-label">Syllabus & API Keys</span>
+                </div>
+                <div class="step-item" id="nav-step2">
+                    <span class="step-num">2</span>
+                    <span class="step-label">Review Outline</span>
+                </div>
+                <div class="step-item" id="nav-step3">
+                    <span class="step-num">3</span>
+                    <span class="step-label">Orchestrator Logs</span>
+                </div>
+                <div class="step-item" id="nav-step4">
+                    <span class="step-num">4</span>
+                    <span class="step-label">Export Center</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <p>AI Academic Press Ltd.</p>
+                <span>v1.3.0 (Vercel Ready)</span>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-title">
+                    <h2>Academic Textbook Orchestrator</h2>
+                    <p>Generate university-grade engineering and academic reference books automatically.</p>
+                </div>
+                <div class="status-badge" id="system-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Pipeline Idle</span>
+                </div>
+            </header>
+
+            <!-- SECTION 0: PROJECTS DASHBOARD -->
+            <section class="content-section active" id="section-dashboard">
+                <div class="glass-card">
+                    <div class="projects-dashboard-header">
+                        <div class="header-left">
+                            <i class="fa-solid fa-book-open-reader card-icon" style="font-size: 1.5rem;"></i>
+                            <h3>Textbook Projects</h3>
+                        </div>
+                        <button class="btn btn-primary" id="btn-create-new-project">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Create New Book</span>
+                        </button>
+                    </div>
+                    <p class="section-description">
+                        Manage your textbook projects, resume writing drafts, view version history, and download generated artifacts.
+                    </p>
+                    <div class="projects-grid" id="projects-grid">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 1: CREDENTIALS & SYLLABUS -->
+            <section class="content-section" id="section-credentials">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-gears card-icon"></i>
+                        <h3>1. Orchestrator Settings</h3>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="syllabus-input"><i class="fa-solid fa-file-invoice"></i> Textbook Syllabus / Topics</label>
+                            <textarea id="syllabus-input" placeholder="Paste your syllabus, chapter breakdown, or topic notes here. E.g.,&#10;Unit 1: Introduction to Computer Architecture, CPU components, ALU, Control Unit, Registers.&#10;Unit 2: Memory Hierarchy, Cache memory, Virtual memory mapping..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="openai-key"><i class="fa-solid fa-key"></i> OpenAI API Key</label>
+                            <input type="password" id="openai-key" placeholder="sk-proj-...">
+                        </div>
+                        <div class="form-group">
+                            <label for="gemini-key"><i class="fa-solid fa-key"></i> Gemini API Key (Imagen / Flash)</label>
+                            <input type="password" id="gemini-key" placeholder="AIzaSy...">
+                        </div>
+                        <div class="form-group">
+                            <label for="chapter-count"><i class="fa-solid fa-list-ol"></i> Target Chapters</label>
+                            <select id="chapter-count">
+                                <option value="3">3 Chapters (Fast Prototype)</option>
+                                <option value="5" selected>5 Chapters (Standard Textbook)</option>
+                                <option value="8">8 Chapters (Comprehensive)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" id="btn-generate-toc">
+                            <span>Plan Table of Contents</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: TOC REVIEW -->
+            <section class="content-section" id="section-toc-review">
+                <div class="glass-card">
+                    <div class="card-header justify-between">
+                        <div class="header-left">
+                            <i class="fa-solid fa-sitemap card-icon"></i>
+                            <h3>2. Review Table of Contents</h3>
+                        </div>
+                        <span class="info-badge">Agent 1: TOC Planner Complete</span>
+                    </div>
+                    <p class="section-description">
+                        Review the structured Table of Contents generated by the AI planning agent. You can edit the book title and details below, then authorize content generation.
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="book-title-input">Proposed Book Title</label>
+                        <input type="text" id="book-title-input" class="large-input">
+                    </div>
+
+                    <div class="toc-editor-container" id="toc-tree">
+                        <!-- Table of contents tree -->
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn btn-secondary" id="btn-back-to-step1">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                        <button class="btn btn-primary" id="btn-start-writing">
+                            <span>Authorize Textbook Writing</span>
+                            <i class="fa-solid fa-signature"></i>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: GENERATION ENGINE & LIVE PREVIEW -->
+            <section class="content-section" id="section-orchestrator">
+                <div class="orchestrator-layout">
+                    <div class="orchestrator-logs-panel">
+                        <div class="glass-card full-height">
+                            <div class="card-header justify-between">
+                                <div class="header-left">
+                                    <i class="fa-solid fa-terminal card-icon"></i>
+                                    <h3>3. Publishing Logs</h3>
+                                </div>
+                                <div class="progress-indicator">
+                                    <span id="progress-text">0%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" id="progress-bar"></div>
+                            </div>
+
+                            <div class="agent-flow">
+                                <div class="agent-node active" id="agent-node-writer">
+                                    <i class="fa-solid fa-pen-nib"></i>
+                                    <span>Writer</span>
+                                </div>
+                                <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                                <div class="agent-node" id="agent-node-reviewer">
+                                    <i class="fa-solid fa-square-check"></i>
+                                    <span>Reviewer</span>
+                                </div>
+                                <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                                <div class="agent-node" id="agent-node-diagram">
+                                    <i class="fa-solid fa-palette"></i>
+                                    <span>Diagrams</span>
+                                </div>
+                                <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                                <div class="agent-node" id="agent-node-formatter">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>Formatter</span>
+                                </div>
+                                <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                                <div class="agent-node" id="agent-node-exporter">
+                                    <i class="fa-solid fa-file-word"></i>
+                                    <span>Exporter</span>
+                                </div>
+                            </div>
+
+                            <div class="console-box" id="console-logs">
+                                <div class="console-line system-line">[System] Initializing orchestrator queue...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="orchestrator-preview-panel">
+                        <div class="glass-card full-height">
+                            <div class="card-header justify-between">
+                                <div class="header-left">
+                                    <i class="fa-solid fa-book-open card-icon"></i>
+                                    <h3>Live Textbook Preview</h3>
+                                </div>
+                                <span class="badge badge-success">Live Stream</span>
+                            </div>
+                            <div class="preview-area" id="live-preview">
+                                <div class="preview-placeholder">
+                                    <i class="fa-solid fa-scroll"></i>
+                                    <p>Textbook chapters will stream here as the Content Writer Agent writes them...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: EXPORT CENTER -->
+            <section class="content-section" id="section-export">
+                <div class="glass-card text-center pad-lg">
+                    <div class="export-success-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <h2>Compilation Complete!</h2>
+                    <p class="export-subtitle">
+                        Your university-grade academic textbook has been synthesized, styled, and compiled successfully.
+                    </p>
+
+                    <div class="download-grid">
+                        <div class="download-card">
+                            <div class="download-icon docx-theme">
+                                <i class="fa-solid fa-file-word"></i>
+                            </div>
+                            <h4>Microsoft Word (.docx)</h4>
+                            <p>Editable textbook with cover page, copyright page, structured margins, Times New Roman 12pt, 1.5 line spacing, and centered diagrams.</p>
+                            <a href="#" id="link-download-docx" class="btn btn-primary btn-block download-btn">
+                                <i class="fa-solid fa-download"></i> Download Word Export
+                            </a>
+                        </div>
+
+                        <div class="download-card" id="pdf-download-card">
+                            <div class="download-icon pdf-theme">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <h4>Adobe PDF (.pdf)</h4>
+                            <p>Publication-ready PDF version compiled using server Word rendering engines.</p>
+                            <a href="#" id="link-download-pdf" class="btn btn-secondary btn-block download-btn disabled">
+                                <i class="fa-solid fa-circle-info"></i> PDF Not Available
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="card-actions justify-center">
+                        <button class="btn btn-outline" id="btn-restart">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Return to Dashboard</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal-overlay" id="loading-modal">
+        <div class="modal-card">
+            <div class="spinner"></div>
+            <h4 id="loading-title">Planning Table of Contents</h4>
+            <p id="loading-msg">Synthesizing syllabus structure using AI. Please wait...</p>
+        </div>
+    </div>
+
+    <!-- Version History Modal -->
+    <div class="modal-overlay" id="version-history-modal">
+        <div class="modal-card" style="max-width: 600px;">
+            <div class="card-header justify-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                <div class="header-left">
+                    <i class="fa-solid fa-history card-icon"></i>
+                    <h3 id="version-modal-title">Export Version History</h3>
+                </div>
+                <button class="btn btn-secondary" id="btn-close-version-modal" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <p style="text-align: left; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Below are all compiled editions and exports of this textbook project.
+            </p>
+            <div class="version-list" id="version-list-container"></div>
+            <div class="card-actions justify-center" style="margin-top: 1.5rem;">
+                <button class="btn btn-secondary" id="btn-close-version-modal-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
