@@ -360,6 +360,20 @@ async function aiParseSyllabus() {
             body: JSON.stringify({ text, api_key: apiKey })
         });
 
+        if (!response.ok) {
+            let errorText = `HTTP ${response.status}`;
+            try {
+                const raw = await response.text();
+                try {
+                    const parsedErr = JSON.parse(raw);
+                    errorText = parsedErr.detail || parsedErr.error || errorText;
+                } catch {
+                    errorText = raw.length > 150 ? raw.substring(0, 150) + '...' : raw;
+                }
+            } catch {}
+            throw new Error(errorText);
+        }
+
         const data = await response.json();
         if (data.error) {
             showError(data.error);
@@ -458,8 +472,17 @@ async function startGeneration() {
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Server error');
+            let errorText = `HTTP ${response.status} ${response.statusText}`;
+            try {
+                const text = await response.text();
+                try {
+                    const json = JSON.parse(text);
+                    errorText = json.detail || json.error || errorText;
+                } catch {
+                    errorText = text.length > 150 ? text.substring(0, 150) + '...' : text;
+                }
+            } catch {}
+            throw new Error(errorText);
         }
 
         const data = await response.json();
