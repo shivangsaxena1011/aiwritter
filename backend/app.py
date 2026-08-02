@@ -42,6 +42,51 @@ class GenerateRequest(BaseModel):
     toc: dict
     generate_images: bool = False
 
+class ParseSyllabusRequest(BaseModel):
+    text: str
+    api_key: str
+
+@app.post("/api/parse-syllabus")
+async def parse_syllabus_ai(req: ParseSyllabusRequest):
+    try:
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=req.api_key)
+        prompt = f"""Analyze this textbook outline/syllabus and extract a structured Table of Contents in JSON format.
+INPUT TEXT:
+{req.text}
+
+RETURN ONLY A VALID JSON OBJECT matching this EXACT structure (no markdown, no code fences):
+{{
+  "title": "Extracted or inferred book title",
+  "units": [
+    {{
+      "name": "Unit/Chapter 1 Title",
+      "topics": [
+        {{
+          "name": "Topic 1.1 Title",
+          "subtopics": ["Subtopic 1.1.1 Title", "Subtopic 1.1.2 Title"]
+        }}
+      ]
+    }}
+  ]
+}}
+"""
+        response = await asyncio.to_thread(
+            client.models.generate_content,
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.2,
+                response_mime_type="application/json"
+            )
+        )
+        data = json.loads(response.text)
+        return data
+    except Exception as e:
+        return {"error": f"AI Parsing failed: {str(e)}"}
+
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
     index_path = os.path.join(frontend_dir, "index.html")

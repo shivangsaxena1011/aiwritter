@@ -94,13 +94,29 @@
 
                 <div class="glass-card">
                     <div class="card-header">
+                        <i class="fa-solid fa-file-lines card-icon"></i>
+                        <h3>Syllabus / Book Outline Input</h3>
+                        <button class="btn btn-sm btn-accent" id="btn-ai-parse" title="Use Gemini AI to parse unstructured syllabus into chapters">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Auto-Structure
+                        </button>
+                    </div>
+                    <p class="section-description">
+                        Paste your syllabus, chapter breakdown, markdown outline (e.g. <code>#</code>, <code>##</code>, <code>###</code>), or numbered topics below. The title and structure will automatically auto-parse!
+                    </p>
+                    <div class="form-group full-width">
+                        <textarea id="raw-syllabus-input" rows="8" placeholder='Paste your syllabus or outline here. E.g.,&#10;&#10;"Fuel Cell Technology: Powering the Future"&#10;&#10;1. *Chapter 1: Introduction to Fuel Cells*&#10;    - Overview, History, and Types&#10;2. *Chapter 2: Fuel Cell Fundamentals*&#10;    - Thermodynamics, Kinetics, and Electrochemistry'></textarea>
+                    </div>
+                </div>
+
+                <div class="glass-card">
+                    <div class="card-header">
                         <i class="fa-solid fa-sitemap card-icon"></i>
-                        <h3>Syllabus Structure</h3>
-                        <button class="btn btn-sm btn-accent" id="btn-add-unit">
+                        <h3>Parsed Table of Contents</h3>
+                        <button class="btn btn-sm btn-outline" id="btn-add-unit">
                             <i class="fa-solid fa-plus"></i> Add Unit
                         </button>
                     </div>
-                    <p class="section-description">Build your textbook's table of contents. Each unit contains topics, and each topic contains subtopics.</p>
+                    <p class="section-description">Live preview of your extracted textbook structure. You can edit any title, add/remove units, or click Generate Book when ready.</p>
                     <div id="syllabus-tree"></div>
                 </div>
 

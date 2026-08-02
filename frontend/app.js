@@ -236,6 +236,151 @@ function getTreeData() {
 }
 
 // ========================================================
+// SMART SYLLABUS PARSER (Local Regex + AI Fallback)
+// ========================================================
+function parseSyllabusText(text) {
+    if (!text || !text.trim()) return null;
+
+    // 1. Extract Book Title if present
+    let title = "";
+    const titleMatch = text.match(/\*\*([^*]+)\*\*/) || text.match(/"([^"]+)"/) || text.match(/Title:\s*(.+)/i);
+    if (titleMatch) {
+        title = titleMatch[1].trim();
+    }
+
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const units = [];
+    let currUnit = null;
+    let currTopic = null;
+
+    for (let line of lines) {
+        if (line === '---' || line === '***' || line.toLowerCase().includes('book title')) continue;
+
+        const clean = line.replace(/\*/g, '').replace(/^#+\s*/, '').trim();
+
+        // Level 1: Chapter / Unit header (# Chapter or 1. Chapter or 1. Unit)
+        const isLevel1 = line.startsWith('# ') || 
+                         /^\d+\.\s*\*?(?:Chapter|Unit)/i.test(line);
+
+        // Level 2: Topic (## 1.1 Topic or 1.1 Topic)
+        const isLevel2 = line.startsWith('## ') || 
+                         /^\d+\.\d+\s+/.test(clean);
+
+        // Level 3: Subtopic (### 1.1.1 Subtopic or - Subtopic)
+        const isLevel3 = line.startsWith('### ') || 
+                         /^\d+\.\d+\.\d+\s+/.test(clean) || 
+                         line.startsWith('-');
+
+        if (isLevel1) {
+            const unitName = clean.replace(/^\d+\.\s*/, '').trim();
+            currUnit = { name: unitName, topics: [] };
+            units.push(currUnit);
+            currTopic = null;
+        } else if (isLevel2) {
+            if (!currUnit) {
+                currUnit = { name: "Unit 1", topics: [] };
+                units.push(currUnit);
+            }
+            currTopic = { name: clean, subtopics: [] };
+            currUnit.topics.push(currTopic);
+        } else if (isLevel3) {
+            if (!currUnit) {
+                currUnit = { name: "Unit 1", topics: [] };
+                units.push(currUnit);
+            }
+            if (!currTopic) {
+                currTopic = { name: currUnit.name, subtopics: [] };
+                currUnit.topics.push(currTopic);
+            }
+
+            let subText = clean.replace(/^[-\*\•]\s*/, '').trim();
+            if (subText.includes(',') && !subText.includes('.') && !line.startsWith('###')) {
+                const parts = subText.split(/,|\band\b/).map(p => p.trim()).filter(p => p.length > 0);
+                currTopic.subtopics.push(...parts);
+            } else {
+                currTopic.subtopics.push(subText);
+            }
+        }
+    }
+
+    // Ensure valid structure
+    units.forEach(u => {
+        if (!u.topics || u.topics.length === 0) {
+            u.topics = [{ name: u.name, subtopics: ['Overview'] }];
+        }
+        u.topics.forEach(t => {
+            if (!t.subtopics || t.subtopics.length === 0) {
+                t.subtopics = ['Overview'];
+            }
+        });
+    });
+
+    if (units.length === 0) return null;
+
+    return { title, units };
+}
+
+function handleSyllabusInput() {
+    const text = document.getElementById('raw-syllabus-input').value;
+    const parsed = parseSyllabusText(text);
+    if (parsed) {
+        if (parsed.title && !document.getElementById('book-title').value.trim()) {
+            document.getElementById('book-title').value = parsed.title;
+        }
+        if (parsed.units && parsed.units.length > 0) {
+            state.treeData.units = parsed.units;
+            renderTree();
+        }
+    }
+}
+
+async function aiParseSyllabus() {
+    const text = document.getElementById('raw-syllabus-input').value.trim();
+    const apiKey = document.getElementById('api-key').value.trim();
+    const btn = document.getElementById('btn-ai-parse');
+
+    if (!text) {
+        showError('Please paste your syllabus text first.');
+        return;
+    }
+    if (!apiKey) {
+        showError('Please enter your Gemini API key above to use AI Auto-Structuring.');
+        return;
+    }
+
+    hideError();
+    const origHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Structuring...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/parse-syllabus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, api_key: apiKey })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            showError(data.error);
+        } else {
+            if (data.title) {
+                document.getElementById('book-title').value = data.title;
+            }
+            if (data.units && data.units.length > 0) {
+                state.treeData.units = data.units;
+                renderTree();
+            }
+        }
+    } catch (err) {
+        showError('AI parsing failed: ' + err.message);
+    } finally {
+        btn.innerHTML = origHtml;
+        btn.disabled = false;
+    }
+}
+
+// ========================================================
 // GENERATION
 // ========================================================
 async function startGeneration() {
@@ -594,8 +739,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('nav-step2').addEventListener('click', () => navigateTo(2));
     document.getElementById('nav-step3').addEventListener('click', () => navigateTo(3));
 
-    // Setup tree editor
+    // Setup tree editor & raw syllabus parser
     document.getElementById('btn-add-unit').addEventListener('click', addUnit);
+    
+    const syllabusInput = document.getElementById('raw-syllabus-input');
+    if (syllabusInput) {
+        syllabusInput.addEventListener('input', handleSyllabusInput);
+    }
+    
+    const aiParseBtn = document.getElementById('btn-ai-parse');
+    if (aiParseBtn) {
+        aiParseBtn.addEventListener('click', aiParseSyllabus);
+    }
+    
     renderTree();
 
     // Setup generate button
