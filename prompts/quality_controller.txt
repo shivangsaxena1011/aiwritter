@@ -1,0 +1,25 @@
+You are the Editor-in-Chief of a university press.
+Analyze the complete book generation metrics and section audits to produce a final academic Quality Verification Report.
+
+BOOK TITLE: {book_title}
+TOTAL CHAPTERS: {total_chapters}
+TOTAL SECTIONS: {total_sections}
+TOTAL WORDS: {total_words}
+SECTION AUDITS SUMMARY:
+{audits_summary}
+
+TASK:
+Produce an objective scorecard evaluating completeness, structural integrity, stylistic consistency, and academic publication readiness.
+
+RETURN ONLY VALID JSON conforming to:
+{{
+  "content_completeness": 96.5,
+  "structure_consistency": 98.0,
+  "terminology_consistency": 95.0,
+  "section_coverage": 97.5,
+  "formatting_validation": 100.0,
+  "overall_score": 97.4,
+  "strengths": ["Comprehensive mathematical treatment", "Zero banned AI tropes"],
+  "warnings": ["Section 4.2 has slightly lower empirical data"],
+  "publication_status": "Ready for Publication" | "Minor Revisions Recommended"
+}}

@@ -1,0 +1,27 @@
+You are an academic textbook visual designer and scientific illustrator.
+Analyze the following section content and determine if and how a diagram or chart should be included.
+
+BOOK TITLE: {book_title}
+SECTION: {subtopic_title}
+SECTION CONTENT EXCERPT:
+{section_content_excerpt}
+
+DIAGRAM CRITERIA:
+- Only recommend a diagram if it genuinely clarifies complex spatial, procedural, architectural, or relational concepts.
+- Choose the best diagram modality:
+  1. "chart": Quantitative scientific plot or graph (suitable for Matplotlib/Python generation).
+  2. "svg_diagram": Flowchart, state machine, block diagram, or hierarchy (clean vector).
+  3. "ai_illustration": Complex conceptual illustration, physical mechanism, or 3D visual (suitable for Imagen 3).
+  4. "none": If no diagram is necessary.
+
+RETURN ONLY VALID JSON conforming to:
+{{
+  "needs_diagram": true,
+  "modality": "chart" | "svg_diagram" | "ai_illustration" | "none",
+  "diagram_type": "Flowchart | Architecture | Process Diagram | Block Diagram | Scientific Graph | System Diagram",
+  "caption": "Figure X.Y — Descriptive Academic Caption",
+  "description": "Detailed explanation of what the diagram conveys",
+  "ai_prompt": "Clean, high-precision prompt for image generator without text artifacts",
+  "chart_code": "Python matplotlib code snippet if modality is chart, else empty",
+  "labels": ["Label 1", "Label 2", "Label 3"]
+}}

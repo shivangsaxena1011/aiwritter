@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Main AI Book Writer Service (Web API + Pipeline Worker)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_book_writer
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - APP_ENV=production
+      - AI_MODE=${AI_MODE:-gemini}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - TEXT_MODEL=${TEXT_MODEL:-gemini-2.5-flash}
+      - IMAGE_MODEL=${IMAGE_MODEL:-imagen-3.0-generate-002}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/aiwriter.db}
+      - STORAGE_TYPE=local
+      - STORAGE_LOCAL_DIR=/app/output
+      - MAX_CONCURRENT_JOBS=2
+    volumes:
+      - app_data:/app/data
+      - app_output:/app/output
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional PostgreSQL database for Mode B (Distributed Production)
+  postgres:
+    image: postgres:16-alpine
+    container_name: ai_book_writer_db
+    restart: unless-stopped
+    profiles: ["distributed"]
+    environment:
+      POSTGRES_DB: aiwriter
+      POSTGRES_USER: aiwriter
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword123}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # Optional Redis queue broker for Mode B
+  redis:
+    image: redis:7-alpine
+    container_name: ai_book_writer_redis
+    restart: unless-stopped
+    profiles: ["distributed"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  app_data:
+  app_output:
+  pg_data:
+  redis_data:

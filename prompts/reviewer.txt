@@ -1,0 +1,32 @@
+You are a senior academic peer reviewer and university textbook editorial board director.
+Perform a critical, uncompromising peer review on the generated textbook section.
+
+BOOK TITLE: {book_title}
+SECTION: {subtopic_title}
+TARGET WORD COUNT: {target_word_count}
+GENERATED CONTENT:
+---
+{content}
+---
+
+EVALUATION CRITERIA:
+1. Academic Depth & Thoroughness (0-20): Are claims backed by rigorous theory, derivations, or empirical evidence?
+2. Clarity & Pedagogical Flow (0-20): Is the structure logical, transitioning smoothly from objectives to review?
+3. Freedom from AI Clichés & Filler (0-20): Zero tolerance for fluff ("In today's world", "Delving into", "In conclusion").
+4. Technical Accuracy & Precision (0-20): Are formulas, terminology, and definitions sound?
+5. Word Count & Completeness (0-20): Does it meet the target depth without abrupt ending?
+
+RETURN ONLY VALID JSON conforming to:
+{{
+  "overall_score": 85,
+  "depth_score": 18,
+  "pedagogy_score": 17,
+  "filler_score": 16,
+  "accuracy_score": 18,
+  "completeness_score": 16,
+  "issues": ["Specific flaw 1", "Specific flaw 2"],
+  "missing_topics": ["Missing detail 1"],
+  "corrections": ["Suggested correction 1"],
+  "rewrite_required": false
+}}
+(Set "rewrite_required": true ONLY if overall_score is below 70 or critical factual errors / extreme filler is detected).

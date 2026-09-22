@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Book Writer — Publishing Engine</title>
-    <meta name="description" content="Generate university-grade academic reference textbooks using AI. Input your syllabus, generate 300+ page books with diagrams, and download as Word documents.">
+    <title>AI Book Writer v3.0 — Agentic Academic Publishing Platform</title>
+    <meta name="description" content="Generate university-grade academic reference textbooks using agentic AI. Full syllabus structuring, Imagen & Matplotlib diagrams, peer-review scoring, and native Word export.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
                 <i class="fa-solid fa-book-open-reader brand-icon"></i>
                 <div class="brand-text">
                     <h1>AI Book Writer</h1>
-                    <span>Publishing Engine</span>
+                    <span>Publishing Engine v3.0</span>
                 </div>
             </div>
             <nav class="nav-steps">
@@ -38,12 +38,12 @@
                 </div>
                 <div class="step-item" id="nav-step3">
                     <span class="step-num">3</span>
-                    <span class="step-label">Download</span>
+                    <span class="step-label">Review & Export</span>
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <p>AI Book Writer</p>
-                <span>v2.0.0</span>
+                <p>AI Book Writer v3.0</p>
+                <span>Production Grade</span>
             </div>
         </aside>
 
@@ -52,8 +52,8 @@
             <!-- Header -->
             <header class="top-header">
                 <div class="header-title">
-                    <h2>AI Book Writer</h2>
-                    <p>Generate university-grade academic textbooks automatically.</p>
+                    <h2>AI Book Writer <span class="badge-tag">v3.0 Production</span></h2>
+                    <p>Agentic platform for autonomous academic textbook creation with native DOCX formatting.</p>
                 </div>
                 <div class="status-badge" id="system-status">
                     <span class="status-dot"></span>
@@ -63,68 +63,145 @@
 
             <!-- STEP 1: Book Setup -->
             <section class="content-section active" id="section-step1">
+                <!-- Book Metadata Card -->
                 <div class="glass-card">
                     <div class="card-header">
-                        <i class="fa-solid fa-pen-to-square card-icon"></i>
-                        <h3>Book Setup</h3>
+                        <i class="fa-solid fa-sliders card-icon"></i>
+                        <h3>Textbook Metadata & Parameters</h3>
                     </div>
-                    <p class="section-description">Configure your textbook details, provide your Gemini API key, and build your syllabus structure below.</p>
+                    <p class="section-description">Define textbook parameters, target audience, depth tier, and Gemini API credentials.</p>
                     
                     <div class="form-grid">
                         <div class="form-group full-width">
                             <label for="book-title"><i class="fa-solid fa-heading"></i> Book Title</label>
-                            <input type="text" id="book-title" placeholder="e.g., Computer Architecture: A Modern Approach" class="large-input">
+                            <input type="text" id="book-title" placeholder="e.g., Quantum Computing: Foundations and Algorithms" class="large-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-subtitle"><i class="fa-solid fa-subscript"></i> Subtitle (Optional)</label>
+                            <input type="text" id="book-subtitle" placeholder="e.g., A Comprehensive Graduate Textbook">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-author"><i class="fa-solid fa-user-pen"></i> Author / Affiliation</label>
+                            <input type="text" id="book-author" placeholder="AI Academic Press" value="AI Academic Press">
+                        </div>
+                        <div class="form-group">
+                            <label for="academic-level"><i class="fa-solid fa-graduation-cap"></i> Academic Level</label>
+                            <select id="academic-level" class="custom-select">
+                                <option value="Undergraduate">Undergraduate (Introductory & Foundational)</option>
+                                <option value="Graduate" selected>Graduate (Advanced Coursework & Rigor)</option>
+                                <option value="Doctoral / Monograph">Doctoral / Research Monograph (Deep Theory)</option>
+                                <option value="Professional Reference">Professional Reference (Industry & Applied)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="writing-depth"><i class="fa-solid fa-layer-group"></i> Depth Tier</label>
+                            <select id="writing-depth" class="custom-select">
+                                <option value="Concise">Concise (~1,200 words / topic)</option>
+                                <option value="Standard">Standard (~2,500 words / topic)</option>
+                                <option value="Detailed" selected>Detailed (~4,000 words / topic — Recommended)</option>
+                                <option value="Deep Academic">Deep Academic (~6,000 words / topic)</option>
+                                <option value="Reference">Comprehensive Reference (~8,500 words / topic)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="citation-style"><i class="fa-solid fa-quote-right"></i> Citation Style</label>
+                            <select id="citation-style" class="custom-select">
+                                <option value="IEEE" selected>IEEE [1] (Numbered Engineering)</option>
+                                <option value="APA">APA 7th (Author-Date Social Sciences)</option>
+                                <option value="Chicago">Chicago Manual of Style</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="api-key"><i class="fa-solid fa-key"></i> Gemini API Key</label>
-                            <input type="password" id="api-key" placeholder="AIzaSy...">
+                            <input type="password" id="api-key" placeholder="AIzaSy... (kept in local memory only)">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-image"></i> Generate Diagrams (Imagen)</label>
+                            <label><i class="fa-solid fa-image"></i> Scientific Diagrams (Imagen & Matplotlib)</label>
                             <div class="toggle-container">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" id="toggle-images">
+                                    <input type="checkbox" id="toggle-images" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
-                                <span class="toggle-label" id="toggle-label">Disabled</span>
+                                <span class="toggle-label" id="toggle-label">Enabled</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Pre-Generation Estimation Card -->
+                <div class="glass-card estimation-card" id="estimation-card">
+                    <div class="card-header">
+                        <i class="fa-solid fa-calculator card-icon"></i>
+                        <h3>Pre-Generation Publishing Estimate</h3>
+                        <span class="badge-live"><i class="fa-solid fa-circle-dot"></i> Live Calculated</span>
+                    </div>
+                    <div class="estimation-grid">
+                        <div class="estimate-item">
+                            <span class="estimate-value" id="est-pages">-</span>
+                            <span class="estimate-label"><i class="fa-solid fa-file"></i> Est. Pages</span>
+                        </div>
+                        <div class="estimate-item">
+                            <span class="estimate-value" id="est-words">-</span>
+                            <span class="estimate-label"><i class="fa-solid fa-font"></i> Est. Word Count</span>
+                        </div>
+                        <div class="estimate-item">
+                            <span class="estimate-value" id="est-time">-</span>
+                            <span class="estimate-label"><i class="fa-solid fa-stopwatch"></i> Est. Duration</span>
+                        </div>
+                        <div class="estimate-item">
+                            <span class="estimate-value" id="est-chapters">-</span>
+                            <span class="estimate-label"><i class="fa-solid fa-book-bookmark"></i> Units / Chapters</span>
+                        </div>
+                        <div class="estimate-item">
+                            <span class="estimate-value" id="est-sections">-</span>
+                            <span class="estimate-label"><i class="fa-solid fa-list-check"></i> Subsections</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Syllabus / Outline Input -->
                 <div class="glass-card">
                     <div class="card-header">
                         <i class="fa-solid fa-file-lines card-icon"></i>
                         <h3>Syllabus / Book Outline Input</h3>
-                        <button class="btn btn-sm btn-accent" id="btn-ai-parse" title="Use Gemini AI to parse unstructured syllabus into chapters">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Auto-Structure
-                        </button>
+                        <div class="header-actions">
+                            <span id="autosave-status" class="autosave-status"><i class="fa-solid fa-cloud-arrow-up"></i> Draft saved</span>
+                            <button class="btn btn-sm btn-accent" id="btn-ai-parse" title="Use Gemini AI to parse unstructured syllabus into chapters">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Auto-Structure
+                            </button>
+                        </div>
                     </div>
                     <p class="section-description">
-                        Paste your syllabus, chapter breakdown, markdown outline (e.g. <code>#</code>, <code>##</code>, <code>###</code>), or numbered topics below. The title and structure will automatically auto-parse!
+                        Paste your syllabus, markdown outline (e.g. <code>#</code>, <code>##</code>, <code>###</code>), or numbered topics. The parser extracts units, topics, and subtopics in real time.
                     </p>
                     <div class="form-group full-width">
-                        <textarea id="raw-syllabus-input" rows="8" placeholder='Paste your syllabus or outline here. E.g.,&#10;&#10;"Fuel Cell Technology: Powering the Future"&#10;&#10;1. *Chapter 1: Introduction to Fuel Cells*&#10;    - Overview, History, and Types&#10;2. *Chapter 2: Fuel Cell Fundamentals*&#10;    - Thermodynamics, Kinetics, and Electrochemistry'></textarea>
+                        <textarea id="raw-syllabus-input" rows="7" placeholder='Paste your syllabus or outline here. E.g.,&#10;&#10;"Fuel Cell Technology: Powering the Future"&#10;&#10;1. *Chapter 1: Introduction to Fuel Cells*&#10;    - Overview, History, and Types&#10;2. *Chapter 2: Fuel Cell Fundamentals*&#10;    - Thermodynamics, Kinetics, and Electrochemistry'></textarea>
                     </div>
                 </div>
 
+                <!-- Interactive Table of Contents Tree -->
                 <div class="glass-card">
                     <div class="card-header">
                         <i class="fa-solid fa-sitemap card-icon"></i>
                         <h3>Parsed Table of Contents</h3>
-                        <button class="btn btn-sm btn-outline" id="btn-add-unit">
-                            <i class="fa-solid fa-plus"></i> Add Unit
-                        </button>
+                        <div class="header-actions">
+                            <button class="btn btn-sm btn-outline" id="btn-clear-tree" title="Clear and reset Table of Contents">
+                                <i class="fa-solid fa-trash-can"></i> Reset
+                            </button>
+                            <button class="btn btn-sm btn-primary" id="btn-add-unit">
+                                <i class="fa-solid fa-plus"></i> Add Unit
+                            </button>
+                        </div>
                     </div>
-                    <p class="section-description">Live preview of your extracted textbook structure. You can edit any title, add/remove units, or click Generate Book when ready.</p>
+                    <p class="section-description">Interactive textbook hierarchy. You can rename, add, or delete any unit, topic, or subtopic before publishing.</p>
                     <div id="syllabus-tree"></div>
                 </div>
 
                 <div class="action-bar">
                     <div id="error-message" class="error-text" style="display:none;"></div>
-                    <button class="btn btn-primary btn-lg" id="btn-generate">
+                    <button class="btn btn-primary btn-lg pulse" id="btn-generate">
                         <i class="fa-solid fa-rocket"></i>
-                        <span>Generate Book</span>
+                        <span>Start Agentic Generation</span>
                     </button>
                 </div>
             </section>
@@ -133,8 +210,8 @@
             <section class="content-section" id="section-step2">
                 <div class="glass-card">
                     <div class="card-header">
-                        <i class="fa-solid fa-terminal card-icon"></i>
-                        <h3>Generation Progress</h3>
+                        <i class="fa-solid fa-network-wired card-icon"></i>
+                        <h3>Agentic Pipeline Execution</h3>
                         <div class="progress-indicator">
                             <span id="progress-text">0%</span>
                         </div>
@@ -144,71 +221,150 @@
                         <div class="progress-bar-fill" id="progress-bar"></div>
                     </div>
 
-                    <!-- Agent Flow -->
-                    <div class="agent-flow">
-                        <div class="agent-node active" id="agent-writer">
+                    <!-- 6-Stage Multi-Agent Flow -->
+                    <div class="agent-flow agent-flow-v3">
+                        <div class="agent-node active" id="agent-planning">
+                            <i class="fa-solid fa-diagram-project"></i>
+                            <span>1. Planner</span>
+                        </div>
+                        <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                        <div class="agent-node" id="agent-context">
+                            <i class="fa-solid fa-brain"></i>
+                            <span>2. Context</span>
+                        </div>
+                        <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                        <div class="agent-node" id="agent-writer">
                             <i class="fa-solid fa-pen-nib"></i>
-                            <span>Writer</span>
+                            <span>3. Writer</span>
                         </div>
                         <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
                         <div class="agent-node" id="agent-diagrams">
-                            <i class="fa-solid fa-palette"></i>
-                            <span>Diagrams</span>
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>4. Diagrams</span>
+                        </div>
+                        <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+                        <div class="agent-node" id="agent-reviewer">
+                            <i class="fa-solid fa-microscope"></i>
+                            <span>5. Reviewer</span>
                         </div>
                         <div class="agent-arrow"><i class="fa-solid fa-chevron-right"></i></div>
                         <div class="agent-node" id="agent-exporter">
                             <i class="fa-solid fa-file-word"></i>
-                            <span>Exporter</span>
+                            <span>6. Exporter</span>
                         </div>
                     </div>
 
-                    <div class="current-task" id="current-task">Initializing pipeline...</div>
+                    <div class="current-task-box">
+                        <div class="task-spinner" id="task-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+                        <div>
+                            <div class="current-task-title" id="current-task">Initializing agentic pipeline...</div>
+                            <div class="current-task-subtitle" id="current-item">Preparing context manager and models...</div>
+                        </div>
+                    </div>
 
-                    <!-- Console Log -->
-                    <div class="console-box" id="console-log">
-                        <div class="console-line system-line">[System] Waiting for pipeline to start...</div>
+                    <!-- Pipeline Controls -->
+                    <div class="pipeline-controls">
+                        <button class="btn btn-sm btn-outline-danger" id="btn-cancel-job">
+                            <i class="fa-solid fa-ban"></i> Cancel Job
+                        </button>
+                        <button class="btn btn-sm btn-warning" id="btn-retry-job" style="display:none;">
+                            <i class="fa-solid fa-rotate-right"></i> Resume / Retry
+                        </button>
+                    </div>
+
+                    <!-- Real-Time Console Log -->
+                    <div class="console-wrapper">
+                        <div class="console-header">
+                            <span><i class="fa-solid fa-terminal"></i> Agent Execution Log</span>
+                            <button class="btn-text-sm" id="btn-clear-console"><i class="fa-solid fa-eraser"></i> Clear</button>
+                        </div>
+                        <div class="console-box" id="console-log">
+                            <div class="console-line system-line">[System] Waiting for pipeline dispatch...</div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- STEP 3: Download -->
+            <!-- STEP 3: Review & Export -->
             <section class="content-section" id="section-step3">
                 <div class="glass-card text-center pad-lg">
                     <div class="success-icon">
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
-                    <h2 class="success-title">Your Book is Ready!</h2>
-                    <p class="success-subtitle">Your academic textbook has been generated and compiled successfully.</p>
+                    <h2 class="success-title">Textbook Publishing Complete</h2>
+                    <p class="success-subtitle">The agentic pipeline has written, diagrammed, reviewed, and formatted your book into production Word format.</p>
 
+                    <!-- Academic Review Scorecard -->
+                    <div class="scorecard-container" id="review-scorecard">
+                        <div class="scorecard-header">
+                            <div class="score-circle">
+                                <span class="score-num" id="score-overall">94</span>
+                                <span class="score-max">/100</span>
+                            </div>
+                            <div class="score-meta">
+                                <h3>Peer Review Quality Scorecard</h3>
+                                <p id="score-summary">Evaluated by ReviewAgent and ConsistencyAuditor against university standards.</p>
+                            </div>
+                        </div>
+                        <div class="score-metrics-grid">
+                            <div class="metric-card">
+                                <span class="metric-name">Academic Rigor</span>
+                                <div class="metric-bar-bg"><div class="metric-bar-val" id="bar-rigor" style="width: 95%;"></div></div>
+                                <span class="metric-val" id="val-rigor">95%</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-name">Completeness</span>
+                                <div class="metric-bar-bg"><div class="metric-bar-val" id="bar-completeness" style="width: 98%;"></div></div>
+                                <span class="metric-val" id="val-completeness">98%</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-name">Consistency & Symbols</span>
+                                <div class="metric-bar-bg"><div class="metric-bar-val" id="bar-consistency" style="width: 92%;"></div></div>
+                                <span class="metric-val" id="val-consistency">92%</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-name">Pedagogy & Worked Problems</span>
+                                <div class="metric-bar-bg"><div class="metric-bar-val" id="bar-pedagogy" style="width: 94%;"></div></div>
+                                <span class="metric-val" id="val-pedagogy">94%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stats Row -->
                     <div class="stats-row" id="stats-row">
                         <div class="stat-card">
                             <i class="fa-solid fa-book"></i>
                             <span class="stat-value" id="stat-chapters">-</span>
-                            <span class="stat-label">Chapters</span>
+                            <span class="stat-label">Units / Chapters</span>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span class="stat-value" id="stat-sections">-</span>
+                            <span class="stat-label">Sections Written</span>
                         </div>
                         <div class="stat-card">
                             <i class="fa-solid fa-font"></i>
-                            <span class="stat-value" id="stat-sections">-</span>
-                            <span class="stat-label">Sections</span>
+                            <span class="stat-value" id="stat-words">-</span>
+                            <span class="stat-label">Total Words</span>
                         </div>
                         <div class="stat-card">
                             <i class="fa-solid fa-image"></i>
                             <span class="stat-value" id="stat-images">-</span>
-                            <span class="stat-label">Images</span>
+                            <span class="stat-label">Diagrams & Figures</span>
                         </div>
                     </div>
 
                     <div class="download-actions">
                         <button class="btn btn-primary btn-lg pulse" id="btn-download">
-                            <i class="fa-solid fa-download"></i>
-                            <span>Download .docx</span>
+                            <i class="fa-solid fa-file-word"></i>
+                            <span>Download Native .docx</span>
                         </button>
                     </div>
                     
                     <div class="restart-area">
                         <button class="btn btn-outline" id="btn-restart">
                             <i class="fa-solid fa-rotate-left"></i>
-                            <span>Generate Another Book</span>
+                            <span>Configure Another Textbook</span>
                         </button>
                     </div>
                 </div>
@@ -216,6 +372,8 @@
         </main>
     </div>
 
+    <!-- Scripts: centralized API Client first, then Application logic -->
+    <script src="api.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

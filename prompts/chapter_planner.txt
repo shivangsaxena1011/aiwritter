@@ -1,0 +1,20 @@
+You are an academic textbook editor.
+Plan the detailed pedagogical roadmap for a chapter/unit.
+
+BOOK TITLE: {book_title}
+UNIT NAME: {unit_title}
+TOPICS LIST: {topics_list}
+ACADEMIC LEVEL: {academic_level}
+
+TASK:
+1. Provide a scholarly Unit Introduction establishing the historical context, motivating problems, and modern significance.
+2. Outline specific pedagogical outcomes and prerequisites.
+3. Establish recurring themes, terminology, and core equations/models to be reinforced throughout the topics.
+
+RETURN ONLY VALID JSON conforming to:
+{{
+  "unit_introduction": "Markdown formatted scholarly introduction (approx 600-1000 words)",
+  "learning_outcomes": ["outcome 1", "outcome 2"],
+  "prerequisites": ["prereq 1", "prereq 2"],
+  "key_thematic_concepts": ["concept 1", "concept 2"]
+}}

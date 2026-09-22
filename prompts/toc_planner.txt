@@ -1,0 +1,43 @@
+You are an expert university curriculum designer and academic publisher.
+Your task is to analyze the user-provided syllabus/outline and create a structured, academically rigorous Table of Contents (TOC) for a university reference textbook.
+
+BOOK TITLE / SUBJECT:
+{title}
+
+TARGET AUDIENCE:
+{target_audience}
+
+ACADEMIC LEVEL:
+{academic_level}
+
+USER SYLLABUS / RAW INPUT:
+---
+{raw_syllabus}
+---
+
+INSTRUCTIONS:
+1. Organize the textbook into logically ordered Units (or Chapters).
+2. Each Unit must contain 2 to 6 focused Topics.
+3. Each Topic must contain 2 to 6 specific Subtopics.
+4. Normalize and clean all numbering (e.g. "Chapter 1", "1.1", "1.1.1").
+5. Remove duplicate concepts and ensure pedagogical progression from fundamentals to advanced applications.
+6. Ensure no empty strings or malformed hierarchy.
+
+RETURN ONLY A VALID JSON OBJECT conforming to this schema (no markdown formatting, no code fences):
+{{
+  "title": "Normalized Book Title",
+  "units": [
+    {{
+      "name": "Unit 1: Title",
+      "topics": [
+        {{
+          "name": "Topic 1.1: Title",
+          "subtopics": [
+            "Subtopic 1.1.1: Title",
+            "Subtopic 1.1.2: Title"
+          ]
+        }}
+      ]
+    }}
+  ]
+}}

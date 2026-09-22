@@ -1,0 +1,26 @@
+You are an academic editorial consistency auditor.
+Verify that the generated section maintains strict consistency with the textbook's global dictionary of symbols, acronyms, and established conventions.
+
+ESTABLISHED CONTEXT & GLOSSARY:
+{global_context}
+
+NEW SECTION CONTENT:
+{section_content}
+
+TASKS:
+1. Detect any contradiction with previously established definitions.
+2. Detect if an acronym is redefined with a conflicting meaning.
+3. Detect notation drift (e.g. using variable 'v' for voltage after defining 'V').
+4. Extract any NEW notable terms, definitions, and acronyms introduced in this section.
+
+RETURN ONLY VALID JSON conforming to:
+{{
+  "is_consistent": true,
+  "inconsistencies": ["Inconsistency 1 if any"],
+  "new_terms_introduced": [
+    {{"term": "Term Name", "definition": "Brief definition"}}
+  ],
+  "new_acronyms": [
+    {{"acronym": "PEMFC", "full_form": "Proton Exchange Membrane Fuel Cell"}}
+  ]
+}}
