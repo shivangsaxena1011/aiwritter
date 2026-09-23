@@ -21,10 +21,20 @@ def download_file(filename: str, db: Session = Depends(get_db)):
     local_path = storage.get_file_path(safe_filename)
 
     if not os.path.exists(local_path):
-        # Look in database asset storage keys
+        # Look in database asset storage keys and book asset subdirectories
         asset = db.query(GeneratedAsset).filter(GeneratedAsset.storage_key == safe_filename).first()
         if asset:
-            local_path = storage.get_file_path(asset.storage_key)
+            book_asset_path = os.path.join(storage.local_dir, "assets", asset.book_id, safe_filename)
+            if os.path.exists(book_asset_path):
+                local_path = book_asset_path
+            else:
+                local_path = storage.get_file_path(asset.storage_key)
+
+    # Fallback to project artifacts directory
+    if not os.path.exists(local_path):
+        artifact_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "artifacts", safe_filename))
+        if os.path.exists(artifact_path):
+            local_path = artifact_path
 
     if not os.path.exists(local_path):
         raise HTTPException(status_code=404, detail="File not found")

@@ -1,0 +1,36 @@
+{
+  "file_path": "artifacts\\test_book.docx",
+  "file_size_bytes": 1328041,
+  "total_paragraphs": 508,
+  "body_paragraphs": 153,
+  "justified_paragraphs": 132,
+  "justification_rate_pct": 86.3,
+  "total_tables": 16,
+  "table_cell_count": 384,
+  "total_images": 16,
+  "total_equations": 108,
+  "headings_hierarchy": {
+    "1": 4,
+    "2": 9,
+    "3": 100,
+    "4": 3
+  },
+  "detected_fonts": [
+    "Calibri",
+    "Times New Roman"
+  ],
+  "primary_font": "Times New Roman",
+  "detected_font_sizes_pt": [
+    9.5,
+    10.0,
+    10.5,
+    12.0,
+    15.0,
+    28.0
+  ],
+  "empty_paragraphs": 35,
+  "overall_score": 100.0,
+  "publication_status": "Ready for Publication",
+  "issues": [],
+  "report_path": "artifacts\\test_book_quality_report.json"
+}

@@ -86,7 +86,6 @@ class DOCXExporter(DocumentExporter):
             assets=assets or [],
             output_path=output_path
         )
-        return output_path
 
     def _configure_document_styles(self, doc: Document):
         """Standardizes typography and heading hierarchies: Times New Roman, 12pt, 1.5 spacing, Justified."""
@@ -178,6 +177,17 @@ class DOCXExporter(DocumentExporter):
         toc_h = doc.add_heading("Table of Contents", level=1)
         toc_h.paragraph_format.space_before = Pt(18)
         toc_h.paragraph_format.space_after = Pt(12)
+
+        # Inject native Word dynamic TOC field XML
+        try:
+            toc_fld_p = doc.add_paragraph()
+            fld_run = toc_fld_p.add_run()
+            fld_xml = parse_xml(
+                r'<w:fldSimple %s w:instr="TOC \o &quot;1-3&quot; \h \z \u"/>' % nsdecls('w')
+            )
+            fld_run._r.append(fld_xml)
+        except Exception:
+            pass
 
         for u in toc_data.get("units", []):
             u_p = doc.add_paragraph()
@@ -366,19 +376,37 @@ class DOCXExporter(DocumentExporter):
                 np.paragraph_format.space_after = Pt(2)
                 self._parse_inline_formatting(np, num_text)
 
-            # 7. Math Equation Blocks ($$ ... $$) — Rendered via OMML Engine
-            elif line_str.startswith("$$") and line_str.endswith("$$"):
-                math_p = doc.add_paragraph()
-                math_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                math_p.paragraph_format.space_before = Pt(8)
-                math_p.paragraph_format.space_after = Pt(8)
-                raw_eq = line_str[2:-2].strip()
-                success = OMMLEngine.insert_equation_into_paragraph(math_p, raw_eq, is_display=True)
-                if not success:
-                    math_run = math_p.add_run(OMMLEngine.sanitize_math_text(raw_eq))
-                    math_run.font.name = "Cambria Math"
-                    math_run.font.size = Pt(12)
-                    math_run.font.italic = True
+            # 7. Math Equation Blocks ($$ ... $$) — Rendered via OMML Engine (Single & Multi-line)
+            elif line_str.startswith("$$"):
+                if line_str.endswith("$$") and len(line_str) > 4:
+                    raw_eq = line_str[2:-2].strip()
+                else:
+                    eq_lines = []
+                    if len(line_str) > 2:
+                        eq_lines.append(line_str[2:].strip())
+                    idx += 1
+                    while idx < total_lines:
+                        curr = lines[idx].strip()
+                        if "$$" in curr:
+                            parts = curr.split("$$")
+                            if parts[0].strip():
+                                eq_lines.append(parts[0].strip())
+                            break
+                        eq_lines.append(curr)
+                        idx += 1
+                    raw_eq = " ".join(eq_lines).strip()
+
+                if raw_eq:
+                    math_p = doc.add_paragraph()
+                    math_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    math_p.paragraph_format.space_before = Pt(8)
+                    math_p.paragraph_format.space_after = Pt(8)
+                    success = OMMLEngine.insert_equation_into_paragraph(math_p, raw_eq, is_display=True)
+                    if not success:
+                        math_run = math_p.add_run(OMMLEngine.sanitize_math_text(raw_eq))
+                        math_run.font.name = "Cambria Math"
+                        math_run.font.size = Pt(12)
+                        math_run.font.italic = True
 
             # 8. Standard Paragraph — Times New Roman, 12pt, 1.5 line spacing, Justified
             elif line_str:
@@ -407,6 +435,22 @@ class DOCXExporter(DocumentExporter):
         table = doc.add_table(rows=len(parsed_rows), cols=num_cols)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.autofit = True
+
+        # Apply clean academic table borders
+        try:
+            tblBorders = parse_xml(
+                r'''<w:tblBorders %s>
+                    <w:top w:val="single" w:sz="6" w:space="0" w:color="CBD5E1"/>
+                    <w:left w:val="none"/>
+                    <w:bottom w:val="single" w:sz="8" w:space="0" w:color="475569"/>
+                    <w:right w:val="none"/>
+                    <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E2E8F0"/>
+                    <w:insideV w:val="none"/>
+                </w:tblBorders>''' % nsdecls('w')
+            )
+            table._tbl.tblPr.append(tblBorders)
+        except Exception:
+            pass
 
         for r_idx, row_data in enumerate(parsed_rows):
             for c_idx, cell_text in enumerate(row_data):

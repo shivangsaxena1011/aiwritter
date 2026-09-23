@@ -85,9 +85,19 @@ class DocumentValidationAgent:
                     pass
                 continue
 
+            # Exclude list items from justification expectation as academic lists are left-aligned
+            if p.style.name.startswith("List"):
+                continue
+
             # Track body paragraph formatting
             body_paragraphs += 1
-            if p.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY:
+            normal_aligned = False
+            try:
+                normal_aligned = (doc.styles["Normal"].paragraph_format.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY)
+            except Exception:
+                pass
+
+            if p.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY or (p.alignment is None and normal_aligned):
                 justified_paragraphs += 1
 
             if p.paragraph_format.line_spacing is not None:

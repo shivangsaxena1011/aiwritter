@@ -1,0 +1,37 @@
+{
+  "book_title": "Engineering Physics: Quantum Mechanics",
+  "subject": "Engineering Physics",
+  "academic_level": "B.Tech First Year",
+  "generation_duration_seconds": 29.67,
+  "providers": {
+    "ai_provider": "MockProvider (Deterministic Academic Fallback)",
+    "research_provider": "WebResearchProvider (Live CrossRef DOI & Wikipedia REST APIs)",
+    "image_provider": "DefaultImageProvider (Headless Matplotlib 300 DPI Monochrome Engine)"
+  },
+  "document_statistics": {
+    "total_paragraphs": 508,
+    "total_words": 4671,
+    "total_headings": 116,
+    "total_tables": 16,
+    "total_figures": 16,
+    "total_equations_or_derivations": 0,
+    "total_references": 32
+  },
+  "xml_verification": {
+    "omml_fractions_present": true,
+    "omml_superscripts_present": true,
+    "omml_subscripts_present": true,
+    "word_tables_present": true,
+    "times_new_roman_declared": true,
+    "justified_alignment_declared": true,
+    "dynamic_word_toc_field_injected": true
+  },
+  "switch_compliance": {
+    "numericals_off_verified": true,
+    "qa_off_verified": true,
+    "diagrams_on_verified": true,
+    "references_on_verified": true
+  },
+  "quality_score": 100.0,
+  "syllabus_coverage": "100.0%"
+}

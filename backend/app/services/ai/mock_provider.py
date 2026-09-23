@@ -18,10 +18,14 @@ class MockProvider(AIProvider):
         max_output_tokens: Optional[int] = None
     ) -> str:
         # Extract topic/subtopic from prompt if present
-        topic_match = re.search(r"SUBTOPIC:\s*([^\n\r]+)", prompt)
+        topic_match = re.search(r"(?:SUBTOPIC SECTION|SUBTOPIC):\s*([^\n\r]+)", prompt)
         subtopic = topic_match.group(1).strip() if topic_match else "Core Principles"
 
-        return f"""### Learning Objectives
+        include_num = "INCLUDE WORKED NUMERICAL EXAMPLES" in prompt
+        include_qa = "INCLUDE REVIEW QUESTIONS" in prompt
+
+        content_parts = [
+            f"""### Learning Objectives
 1. Understand the theoretical foundations and core dynamics of {subtopic}.
 2. Formulate governing quantitative relationships and state equations.
 3. Critically analyze industrial trade-offs, operational constraints, and failure modes.
@@ -49,24 +53,40 @@ The table below contrasts standard configurations used across modern academic an
 | Temperature Range | 60°C - 80°C | 120°C - 180°C | 600°C - 800°C |
 | Response Latency | < 5 ms | 25 ms | > 100 ms |
 | Capital Cost Index | Moderate | High | Premium |
-| Durability Lifecycle | 15,000 Hours | 40,000 Hours | 80,000 Hours |
+| Durability Lifecycle | 15,000 Hours | 40,000 Hours | 80,000 Hours |"""
+        ]
 
-### 4. Worked Empirical Example
-**Problem Statement:** Consider a reference installation operating under nominal boundary conditions with an input mass flux of $2.5\\text{{ kg/s}}$ and an active surface area of $14.2\\text{{ m}}^2$. Calculate the net specific flux and resultant dissipation factor.
+        if include_num:
+            content_parts.append(f"""
+### 4. Worked Solved Numerical Problem
+**Problem Statement:** Consider a reference installation of {subtopic} operating under nominal boundary conditions with an input flux of $2.5\\text{{ kg/s}}$ and an active area of $14.2\\text{{ m}}^2$. Calculate the net specific flux and resultant dissipation factor.
 
-**Solution:**
-1. Determine the nominal area-specific flux:
-   $$J = \\frac{{\\dot{{m}}}}{{A}} = \\frac{{2.5}}{{14.2}} = 0.1761\\text{{ kg/(m}}^2\\cdot\\text{{s)}}$$
-2. Substituting into the dissipation integral yields an empirical loss factor of $\\eta_{{loss}} = 0.042$, demonstrating compliance with ISO technical standards.
+- **Given:**
+  - Influx rate $\\dot{{m}} = 2.5\\text{{ kg/s}}$
+  - Cross-sectional surface area $A = 14.2\\text{{ m}}^2$
+- **Formula:**
+  $$J = \\frac{{\\dot{{m}}}}{{A}}$$
+- **Substitution:**
+  $$J = \\frac{{2.5}}{{14.2}}$$
+- **Calculation:**
+  $$J = 0.176056\\dots$$
+- **Answer:**
+  $$J = 0.1761$$
+- **Unit:**
+  $$\\text{{kg}}/(m^2\\cdot\\text{{s}})$$""")
 
+        content_parts.append(f"""
 ### 5. Summary and Key Takeaways
 - {subtopic} demonstrates non-linear dependencies across boundary operational regimes.
-- Architectural selection dictates thermal management, longevity, and overall system scalability.
+- Architectural selection dictates thermal management, longevity, and overall system scalability.""")
 
+        if include_qa:
+            content_parts.append("""
 ### 6. Review Questions and Academic Exercises
 1. *Analytical*: Derive the steady-state solution for $\\Psi(x)$ assuming 1D planar symmetry and zero generation.
-2. *Conceptual*: Contrast the mechanical failure modes between Configuration Alpha and Beta under cyclic loading.
-"""
+2. *Conceptual*: Contrast the mechanical failure modes between Configuration Alpha and Beta under cyclic loading.""")
+
+        return "\n\n".join(content_parts)
 
     async def generate_structured(
         self,
@@ -117,15 +137,17 @@ The table below contrasts standard configurations used across modern academic an
 
         # Diagram planning
         if "diagram" in prompt_lower or "illustration" in prompt_lower:
+            topic_match = re.search(r"(?:topic|subtopic|title):\s*([^\n\r]+)", prompt, re.I)
+            subtopic = topic_match.group(1).strip() if topic_match else "Governing Physical Phenomenon"
             return {
                 "needs_diagram": True,
                 "modality": "chart",
                 "diagram_type": "Scientific Graph",
-                "caption": "Figure 1.1 — Empirical Polarization and Efficiency Curve",
-                "description": "Graph showing the cell voltage vs current density and activation losses",
-                "ai_prompt": "Clean scientific diagram of a fuel cell polarization curve",
+                "caption": f"Figure 1.1 — Technical Schematic and Operational Characteristics of {subtopic}",
+                "description": f"Technical illustration showing the operational behavior, potential distribution, and wave profiles of {subtopic}",
+                "ai_prompt": f"Clean monochrome academic textbook diagram showing {subtopic} with boundary conditions",
                 "chart_code": "",
-                "labels": ["Activation Loss", "Ohmic Loss", "Concentration Loss"]
+                "labels": ["Boundary Condition", "Eigenmode Distribution", "Equilibrium State"]
             }
 
         # Review agent

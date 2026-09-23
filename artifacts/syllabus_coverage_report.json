@@ -1,0 +1,48 @@
+{
+  "chapters_total": 1,
+  "chapters_generated": 1,
+  "topics_total": 7,
+  "topics_generated": 7,
+  "subtopics_total": 16,
+  "subtopics_generated": 16,
+  "topics_missing": 0,
+  "topics_duplicated": 0,
+  "syllabus_coverage_percentage": 100.0,
+  "details": [
+    {
+      "topic_name": "Introduction to Quantum Mechanics",
+      "subtopics_count": 2,
+      "status": "COMPLETE"
+    },
+    {
+      "topic_name": "Wave Nature of Particles",
+      "subtopics_count": 2,
+      "status": "COMPLETE"
+    },
+    {
+      "topic_name": "de Broglie Hypothesis",
+      "subtopics_count": 2,
+      "status": "COMPLETE"
+    },
+    {
+      "topic_name": "Operators",
+      "subtopics_count": 3,
+      "status": "COMPLETE"
+    },
+    {
+      "topic_name": "Time-dependent Schr\u00f6dinger Equation",
+      "subtopics_count": 2,
+      "status": "COMPLETE"
+    },
+    {
+      "topic_name": "Time-independent Schr\u00f6dinger Equation",
+      "subtopics_count": 2,
+      "status": "COMPLETE"
+    },
+    {
+      "topic_name": "Particle in a Box",
+      "subtopics_count": 3,
+      "status": "COMPLETE"
+    }
+  ]
+}

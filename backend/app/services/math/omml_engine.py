@@ -137,19 +137,20 @@ class OMMLEngine:
                     continue
 
             # 3. Superscript and Subscript combined: x_i^2 or x^2_i
-            subsup_match = re.match(r"^([A-Za-z0-9α-ωΑ-Ωħ∂∇])(?:_([A-Za-z0-9\+\-]+|\{[^{}]+\}))?\^(?:([A-Za-z0-9\+\-]+|\{[^{}]+\}))", text[i:])
-            if subsup_match:
-                base = subsup_match.group(1)
-                sub_val = (subsup_match.group(2) or "").strip("{}")
-                sup_val = (subsup_match.group(3) or "").strip("{}")
-                if sub_val and sup_val:
-                    xml_parts.append(
-                        f'<m:sSubSup><m:e><m:r><m:t>{html.escape(base)}</m:t></m:r></m:e>'
-                        f'<m:sub><m:r><m:t>{html.escape(sub_val)}</m:t></m:r></m:sub>'
-                        f'<m:sup><m:r><m:t>{html.escape(sup_val)}</m:t></m:r></m:sup></m:sSubSup>'
-                    )
-                    i += subsup_match.end()
-                    continue
+            subsup1 = re.match(r"^([A-Za-z0-9α-ωΑ-Ωħ∂∇\)])_([A-Za-z0-9\+\-]+|\{[^{}]+\})\^([A-Za-z0-9\+\-]+|\{[^{}]+\})", text[i:])
+            subsup2 = re.match(r"^([A-Za-z0-9α-ωΑ-Ωħ∂∇\)])\^([A-Za-z0-9\+\-]+|\{[^{}]+\})_([A-Za-z0-9\+\-]+|\{[^{}]+\})", text[i:])
+            if subsup1 or subsup2:
+                m = subsup1 if subsup1 else subsup2
+                base = m.group(1)
+                sub_val = (m.group(2) if m is subsup1 else m.group(3)).strip("{}")
+                sup_val = (m.group(3) if m is subsup1 else m.group(2)).strip("{}")
+                xml_parts.append(
+                    f'<m:sSubSup><m:e><m:r><m:t>{html.escape(base)}</m:t></m:r></m:e>'
+                    f'<m:sub><m:r><m:t>{html.escape(sub_val)}</m:t></m:r></m:sub>'
+                    f'<m:sup><m:r><m:t>{html.escape(sup_val)}</m:t></m:r></m:sup></m:sSubSup>'
+                )
+                i += m.end()
+                continue
 
             # 4. Standalone Superscript: base^exp or {base}^exp
             sup_match = re.match(r"^([A-Za-z0-9α-ωΑ-Ωħ∂∇\)])\^([A-Za-z0-9\+\-]+|\{[^{}]+\})", text[i:])

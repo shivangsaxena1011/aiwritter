@@ -38,7 +38,13 @@ class ApiClient {
 
             // If empty response or 204
             if (response.status === 204) return null;
-            return await response.json();
+            const text = await response.text();
+            if (!text || !text.trim()) return null;
+            try {
+                return JSON.parse(text);
+            } catch {
+                return text;
+            }
         } catch (err) {
             console.error(`API request failed [${options.method || 'GET'} ${endpoint}]:`, err);
             throw err;

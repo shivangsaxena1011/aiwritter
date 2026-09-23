@@ -1,0 +1,425 @@
+{
+  "total_research_sources": 35,
+  "sources": [
+    {
+      "title": "AN INTRODUCTION TO QUANTUM MECHANICS",
+      "url": "https://doi.org/10.1016/b978-0-12-269150-8.50006-1",
+      "publisher": "Elsevier",
+      "author": "Fromhold, Albert Thomas",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Introduction to Quantum Mechanics.",
+        "Published via Elsevier under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Introduction to relativistic quantum mechanics",
+      "url": "https://doi.org/10.1017/cbo9781139032681.002",
+      "publisher": "Cambridge University Press",
+      "author": "Academic Research Faculty",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Introduction to Quantum Mechanics.",
+        "Published via Cambridge University Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Quantum mechanics in atoms",
+      "url": "https://doi.org/10.1201/9781315274621-6",
+      "publisher": "CRC Press",
+      "author": "Academic Research Faculty",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Introduction to Quantum Mechanics.",
+        "Published via CRC Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: History of quantum mechanics",
+      "url": "https://en.wikipedia.org/wiki/History_of_quantum_mechanics",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for History of quantum mechanics.",
+        "Historical development and key experimental validations.",
+        "of quantum mechanics is a fundamental part of the history of modern physics. The major chapters of this history begin with the emergence of quantum id"
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Quantum entanglement",
+      "url": "https://en.wikipedia.org/wiki/Quantum_entanglement",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Quantum entanglement.",
+        "Historical development and key experimental validations.",
+        "of quantum entanglement is at the heart of the disparity between classical physics and quantum physics: entanglement is a primary feature of quantum m"
+      ]
+    },
+    {
+      "title": "On the wave nature of particles",
+      "url": "https://doi.org/10.4006/0836-1398-35.2.171",
+      "publisher": "Physics Essays Publication",
+      "author": "U\u011furlu, Berat Tu\u011frul",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Wave Nature of Particles.",
+        "Published via Physics Essays Publication under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Matter waves\u2014wave mechanics of particles",
+      "url": "https://doi.org/10.1007/0-387-21632-4_24",
+      "publisher": "Springer New York",
+      "author": "Academic Research Faculty",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Wave Nature of Particles.",
+        "Published via Springer New York under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Wave Motion of Solid Particles in a Pulsed Gas Flow",
+      "url": "https://doi.org/10.1023/a:1025693903756",
+      "publisher": "Springer Science and Business Media LLC",
+      "author": "Akulich, P. V.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Wave Nature of Particles.",
+        "Published via Springer Science and Business Media LLC under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Subatomic particle",
+      "url": "https://en.wikipedia.org/wiki/Subatomic_particle",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Subatomic particle.",
+        "Historical development and key experimental validations.",
+        "composed of other particles. Particle physics and nuclear physics study these particles and how they interact. Most force-carrying particles such as p"
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Physics",
+      "url": "https://en.wikipedia.org/wiki/Physics",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Physics.",
+        "Historical development and key experimental validations.",
+        "paths of photons. Quantum mechanics: a diagrammatic representation of the double\u2011slit experiment, illustrating wave\u2011particle duality. Particles passin"
+      ]
+    },
+    {
+      "title": "Special relativity and de Broglie' hypothesis",
+      "url": "https://doi.org/10.1093/oso/9780198529279.005.0004",
+      "publisher": "Oxford University PressOxford",
+      "author": "Baggott, Jim",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of de Broglie Hypothesis.",
+        "Published via Oxford University PressOxford under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "The de Broglie hypothesis leading to path integrals",
+      "url": "https://doi.org/10.1088/0143-0807/17/3/012",
+      "publisher": "IOP Publishing",
+      "author": "Tycrsk\u00e1, Tom\u00e1s",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of de Broglie Hypothesis.",
+        "Published via IOP Publishing under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "De Broglie Hypothesis and the Schr\u00f6dinger Equation : Gross Errors in Mathematics, Physics, Formal Logic and Dialectics",
+      "url": "https://doi.org/10.5958/2394-9309.2025.00001.8",
+      "publisher": "Diva Enterprises Private Limited",
+      "author": "Kalanov, Temur Z.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of de Broglie Hypothesis.",
+        "Published via Diva Enterprises Private Limited under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Louis de Broglie",
+      "url": "https://en.wikipedia.org/wiki/Louis_de_Broglie",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Louis de Broglie.",
+        "Historical development and key experimental validations.",
+        "in the de Broglie hypothesis stating that any moving particle or object had an associated wave. De Broglie thus created a new field in physics, the m\u00e9"
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: De Broglie\u2013Bohm theory",
+      "url": "https://en.wikipedia.org/wiki/De_Broglie\u2013Bohm_theory",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for De Broglie\u2013Bohm theory.",
+        "Historical development and key experimental validations.",
+        "The de Broglie\u2013Bohm theory, also known as the pilot wave theory, Bohmian mechanics, and the causal interpretation, is an interpretation of quantum mec"
+      ]
+    },
+    {
+      "title": "Quantum operators",
+      "url": "https://doi.org/10.1017/ccol0521861535.019",
+      "publisher": "Cambridge University Press",
+      "author": "Riley, K. F.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Operators.",
+        "Published via Cambridge University Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Unbounded operators",
+      "url": "https://doi.org/10.1007/978-1-4020-8870-4_4",
+      "publisher": "Springer Netherlands",
+      "author": "Academic Research Faculty",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Operators.",
+        "Published via Springer Netherlands under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Quantum operators",
+      "url": "https://doi.org/10.1017/cbo9780511810763.022",
+      "publisher": "Cambridge University Press",
+      "author": "Riley, K. F.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Operators.",
+        "Published via Cambridge University Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: List of mathematic operators",
+      "url": "https://en.wikipedia.org/wiki/List_of_mathematic_operators",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for List of mathematic operators.",
+        "Historical development and key experimental validations.",
+        "mathematics, an operator or transform is a function from one space of functions to another. Operators occur commonly in engineering, physics and mathe"
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Neural operators",
+      "url": "https://en.wikipedia.org/wiki/Neural_operators",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Neural operators.",
+        "Historical development and key experimental validations.",
+        "Neural operators are a class of deep learning architectures designed to learn maps between infinite-dimensional function spaces. Neural operators repr"
+      ]
+    },
+    {
+      "title": "Time-Dependent Schr\u00f6dinger Equation",
+      "url": "https://doi.org/10.1007/978-3-319-63154-7_9",
+      "publisher": "Springer International Publishing",
+      "author": "Rudan, Massimo",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Time-dependent Schr\u00f6dinger Equation.",
+        "Published via Springer International Publishing under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Time-Dependent Schr\u00f6dinger Equation",
+      "url": "https://doi.org/10.1007/978-1-4939-1151-6_9",
+      "publisher": "Springer New York",
+      "author": "Rudan, Massimo",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Time-dependent Schr\u00f6dinger Equation.",
+        "Published via Springer New York under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "The Time-Dependent Schr\u00f6dinger Equation, Riccati Equation, and Airy Functions",
+      "url": "https://doi.org/10.3390/physics7020019",
+      "publisher": "MDPI AG",
+      "author": "Lanfear, Nathan A.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Time-dependent Schr\u00f6dinger Equation.",
+        "Published via MDPI AG under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Branches of physics",
+      "url": "https://en.wikipedia.org/wiki/Branches_of_physics",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Branches of physics.",
+        "Historical development and key experimental validations.",
+        "subatomic particles, understood in terms of wave functions. The Schr\u00f6dinger equation plays the role in quantum mechanics that Newton&#039;s laws and c"
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Dirac equation",
+      "url": "https://en.wikipedia.org/wiki/Dirac_equation",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Dirac equation.",
+        "Historical development and key experimental validations.",
+        "uses a wave equation known as the Schr\u00f6dinger equation to describe the state of a system; it was developed the next year by Erwin Schr\u00f6dinger. While t"
+      ]
+    },
+    {
+      "title": "A Sturm-Liouville Equation: The Time-Independent One-Dimensional Schr\u00f6dinger Equation",
+      "url": "https://doi.org/10.23943/princeton/9780691148373.003.0023",
+      "publisher": "Princeton University Press",
+      "author": "Adam, John A.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Time-independent Schr\u00f6dinger Equation.",
+        "Published via Princeton University Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "The Time-Independent Schr\u00f6dinger Equation",
+      "url": "https://doi.org/10.1017/9781009389594.004",
+      "publisher": "Cambridge University Press",
+      "author": "Academic Research Faculty",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Time-independent Schr\u00f6dinger Equation.",
+        "Published via Cambridge University Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Time-Independent Schr\u00f6dinger Equation",
+      "url": "https://doi.org/10.1007/978-1-4939-1151-6_8",
+      "publisher": "Springer New York",
+      "author": "Rudan, Massimo",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Time-independent Schr\u00f6dinger Equation.",
+        "Published via Springer New York under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Erwin Schr\u00f6dinger",
+      "url": "https://en.wikipedia.org/wiki/Erwin_Schr\u00f6dinger",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Erwin Schr\u00f6dinger.",
+        "Historical development and key experimental validations.",
+        "devising the Schr\u00f6dinger equation, an equation that provides a way to calculate the wave function of a system and how it changes dynamically in time. "
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Branches of physics",
+      "url": "https://en.wikipedia.org/wiki/Branches_of_physics",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Branches of physics.",
+        "Historical development and key experimental validations.",
+        "subatomic particles, understood in terms of wave functions. The Schr\u00f6dinger equation plays the role in quantum mechanics that Newton&#039;s laws and c"
+      ]
+    },
+    {
+      "title": "Particle in a Box",
+      "url": "https://doi.org/10.1201/9781003395515-6",
+      "publisher": "CRC Press",
+      "author": "Rohlf, James W.",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Particle in a Box.",
+        "Published via CRC Press under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Two particle states in an asymmetric box",
+      "url": "https://doi.org/10.1016/j.physletb.2004.02.068",
+      "publisher": "Elsevier BV",
+      "author": "Li, Xin",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Particle in a Box.",
+        "Published via Elsevier BV under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "General pseudo self-adjoint boundary conditions for a 1D KFG particle in a box",
+      "url": "https://doi.org/10.1016/j.physo.2023.100151",
+      "publisher": "Elsevier BV",
+      "author": "De Vincenzo, Salvatore",
+      "source_type": "academic_monograph",
+      "key_points": [
+        "Peer-reviewed analytical formulation of Particle in a Box.",
+        "Published via Elsevier BV under official DOI indexing.",
+        "Authoritative foundational research grounding for Engineering Physics."
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Particle",
+      "url": "https://en.wikipedia.org/wiki/Particle",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Particle.",
+        "Historical development and key experimental validations.",
+        "pollutants in the Earth&#039;s atmosphere, which are a suspension of unconnected particles, rather than a connected particle aggregation. In physics, "
+      ]
+    },
+    {
+      "title": "Academic Knowledgebase: Particle detector",
+      "url": "https://en.wikipedia.org/wiki/Particle_detector",
+      "publisher": "Wikimedia Foundation",
+      "author": "Academic Educational Consortium",
+      "source_type": "educational_encyclopedia",
+      "key_points": [
+        "Foundational definition and mathematical terminology for Particle detector.",
+        "Historical development and key experimental validations.",
+        "In experimental and applied particle physics, nuclear physics, and nuclear engineering, a particle detector, also known as a radiation detector, is a"
+      ]
+    }
+  ]
+}

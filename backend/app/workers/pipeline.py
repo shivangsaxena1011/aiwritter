@@ -154,8 +154,35 @@ class BookGenerationOrchestrator:
                 citation_style=meta.get("citation_style", "IEEE")
             )
 
-            # Count total units and subtopics
+            # Stage 1: Load or Analyze Units & Topics
             units = self.db.query(BookUnit).filter(BookUnit.book_id == book.id).order_by(BookUnit.position).all()
+            if not units and meta.get("raw_syllabus"):
+                self._log_event("stage", "🔍 SyllabusAnalysisAgent: Parsing and decomposing syllabus hierarchy...", 6.0)
+                try:
+                    analysis = await self.syllabus_agent.analyze_syllabus(
+                        syllabus_text=meta["raw_syllabus"],
+                        subject=subject,
+                        academic_level=book.academic_level,
+                        include_numericals=include_numericals,
+                        include_diagrams=include_diagrams
+                    )
+                    for ch_data in analysis.get("chapters", []):
+                        ch_unit = BookUnit(book_id=book.id, position=ch_data.get("number", 1), title=ch_data.get("title", "Chapter"))
+                        self.db.add(ch_unit)
+                        self.db.flush()
+                        for top_idx, top_data in enumerate(ch_data.get("topics", []), start=1):
+                            b_top = BookTopic(unit_id=ch_unit.id, position=top_idx, title=top_data.get("title", "Topic"))
+                            self.db.add(b_top)
+                            self.db.flush()
+                            for sub_idx, sub_name in enumerate(top_data.get("subtopics", []), start=1):
+                                b_sub = BookSubtopic(topic_id=b_top.id, position=sub_idx, title=sub_name)
+                                self.db.add(b_sub)
+                    self.db.commit()
+                    units = self.db.query(BookUnit).filter(BookUnit.book_id == book.id).order_by(BookUnit.position).all()
+                except Exception as s_err:
+                    logger.warning(f"Syllabus analysis fallback: {s_err}")
+
+            # Count total units and subtopics
             total_subtopics = 0
             for u in units:
                 topics = self.db.query(BookTopic).filter(BookTopic.unit_id == u.id).all()
@@ -206,7 +233,30 @@ class BookGenerationOrchestrator:
                 figure_counter = 1
 
                 for t_idx, topic in enumerate(topics, start=1):
+                    # Check topic derivation & numerical flags
+                    requires_derivation = any(w in topic.title.lower() for w in ["schrodinger", "wave", "equation", "derivation", "formula", "hamiltonian", "box", "well", "maxwell", "operator", "quantum"])
+                    requires_numericals = include_numericals and any(w in topic.title.lower() for w in ["problem", "calculation", "energy", "wavelength", "probability", "numerical", "box", "well"])
+
                     subtopics = self.db.query(BookSubtopic).filter(BookSubtopic.topic_id == topic.id).order_by(BookSubtopic.position).all()
+                    if not subtopics:
+                        self._log_event("log", f"🧩 TopicDecompositionAgent: Blueprinting sections for {topic.title}...")
+                        try:
+                            decomp = await self.decomposition_agent.decompose_topic(
+                                topic_title=topic.title,
+                                subject=subject,
+                                academic_level=book.academic_level,
+                                requires_derivation=requires_derivation,
+                                requires_numericals=requires_numericals
+                            )
+                            for s_pos, s_item in enumerate(decomp.get("sections", []), start=1):
+                                s_title = s_item.get("title", f"Section {s_pos}") if isinstance(s_item, dict) else str(s_item)
+                                st_row = BookSubtopic(topic_id=topic.id, position=s_pos, title=s_title)
+                                self.db.add(st_row)
+                            self.db.commit()
+                            subtopics = self.db.query(BookSubtopic).filter(BookSubtopic.topic_id == topic.id).order_by(BookSubtopic.position).all()
+                        except Exception as dec_err:
+                            logger.warning(f"Topic decomposition fallback: {dec_err}")
+
                     is_first_in_topic = True
 
                     # Stage 3: Educational Web Research per Topic
@@ -235,10 +285,6 @@ class BookGenerationOrchestrator:
                         )
                         self.db.add(rs_row)
                     self.db.commit()
-
-                    # Check topic derivation & numerical flags
-                    requires_derivation = any(w in topic.title.lower() for w in ["schrodinger", "wave", "equation", "derivation", "formula", "hamiltonian", "box", "well", "maxwell"])
-                    requires_numericals = include_numericals and any(w in topic.title.lower() for w in ["problem", "calculation", "energy", "wavelength", "probability", "numerical", "box", "well"])
 
                     for s_idx, subtopic in enumerate(subtopics, start=1):
                         if self._check_cancellation():
@@ -283,6 +329,22 @@ class BookGenerationOrchestrator:
                                 logger.error(f"Error drafting {subtopic.title}: {write_err}")
                                 failed_subtopics += 1
                                 content = f"### {subtopic.title}\n\nThis section covers foundational principles and analytical dynamics."
+
+                            # Stage 7: Derivation Engine Integration
+                            if requires_derivation and any(kw in subtopic.title.lower() for kw in ["equation", "derivation", "proof", "formulation", "model", "box", "well", "wave", "hypothesis", "relativity"]):
+                                try:
+                                    self._log_event("log", f"📐 DerivationAgent: Formulating analytical proof for {subtopic.title}...")
+                                    deriv_res = await self.derivation_agent.generate_derivation(
+                                        topic=topic.title,
+                                        equation_name=subtopic.title,
+                                        subject=subject,
+                                        academic_level=book.academic_level
+                                    )
+                                    deriv_md = deriv_res.get("markdown_content")
+                                    if deriv_md and deriv_md not in content:
+                                        content += f"\n\n#### Formal Analytical Derivation of {subtopic.title}\n\n{deriv_md}"
+                                except Exception as d_err:
+                                    logger.warning(f"Derivation generation fallback: {d_err}")
 
                             profile = ChapterDepthController.get_profile(writing_depth)
                             word_count = len(content.split())
@@ -431,6 +493,15 @@ class BookGenerationOrchestrator:
             job.status = "EXPORTING"
             job.current_stage = "Stage 13: Master DOCX Compilation & Formatting"
             self._log_event("stage", "📚 Compiling master academic DOCX...", 88.0)
+
+            # Structure document layout via DocumentStructureAgent
+            doc_structure = DocumentStructureAgent.plan_document_structure(
+                book_title=book.title,
+                subject=subject,
+                academic_level=book.academic_level,
+                chapters=[{"number": u.position, "title": u.title, "topics": [t.title for t in u.topics]} for u in units],
+                include_references=include_references
+            )
 
             # Bibliography generation if references enabled
             if include_references and all_sources:
