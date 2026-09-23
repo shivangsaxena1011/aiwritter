@@ -11,6 +11,8 @@ from typing import Dict, Any, List, Optional
 import httpx
 
 from backend.app.services.research.base import ResearchProvider, ResearchResult, ResearchSourceData
+from backend.app.services.research.research_models import ResearchSynthesis, ClaimEvidenceRecord
+from backend.app.agents.subject_knowledge_model import SubjectKnowledgeModel
 from backend.app.services.ai.base import AIProvider
 
 logger = logging.getLogger(__name__)
@@ -101,6 +103,7 @@ Return JSON:
                 except Exception as ai_err:
                     logger.warning(f"AI research synthesis failed ({ai_err}), using direct external extraction")
 
+            live_result.synthesis = self._build_research_synthesis(topic, subject, live_result.sources, live_result.research_notes)
             return live_result
 
         # 2. If live search returned no results, attempt AI generation with prompt fencing
@@ -162,13 +165,15 @@ Return JSON:
                         key_points=s.get("key_points", [])
                     ))
 
-                return ResearchResult(
+                res = ResearchResult(
                     topic=topic,
                     sources=sources,
                     research_notes=structured.get("research_notes", []),
                     originality_guidelines=structured.get("originality_guidelines", []),
                     status="success"
                 )
+                res.synthesis = self._build_research_synthesis(topic, subject, res.sources, res.research_notes)
+                return res
             except Exception as e:
                 logger.warning(f"AI research structuring failed ({e}), using deterministic academic grounding")
 
@@ -392,7 +397,7 @@ Return JSON:
             "Terminology: Standardize symbols across all sections (Greek letters for wave/field parameters)."
         ]
 
-        return ResearchResult(
+        res = ResearchResult(
             topic=safe_topic,
             sources=sources,
             research_notes=notes,
@@ -401,4 +406,83 @@ Return JSON:
                 "Verify mathematical steps independently."
             ],
             status="success"
+        )
+        res.synthesis = self._build_research_synthesis(safe_topic, subject, res.sources, res.research_notes)
+        return res
+
+    def _build_research_synthesis(
+        self,
+        topic: str,
+        subject: str,
+        sources: List[ResearchSourceData],
+        notes: List[str]
+    ) -> ResearchSynthesis:
+        knowledge = SubjectKnowledgeModel.get_knowledge_for_topic(topic, subject)
+        claims: List[ClaimEvidenceRecord] = []
+        src_titles = [s.title for s in sources] if sources else ["Standard University Reference"]
+
+        for p in knowledge.get("principles", []):
+            claims.append(ClaimEvidenceRecord(
+                claim=p,
+                topic=topic,
+                supporting_sources=src_titles[:2],
+                evidence_type="conceptual",
+                confidence="high"
+            ))
+
+        for eq in knowledge.get("equations", []):
+            claims.append(ClaimEvidenceRecord(
+                claim=f"{eq['name']}: {eq['latex']}",
+                topic=topic,
+                supporting_sources=src_titles[:2],
+                evidence_type="equation",
+                confidence="high"
+            ))
+
+        for m in knowledge.get("milestones", []):
+            claims.append(ClaimEvidenceRecord(
+                claim=m,
+                topic=topic,
+                supporting_sources=src_titles[:2],
+                evidence_type="experimental",
+                confidence="high"
+            ))
+
+        tier_counts: Dict[str, int] = {}
+        for s in sources:
+            tier_counts[f"Tier {s.tier}"] = tier_counts.get(f"Tier {s.tier}", 0) + 1
+
+        return ResearchSynthesis(
+            topic=topic,
+            authoritative_definitions=[f"Standard academic formulation for {topic} in {subject}."],
+            core_concepts=knowledge.get("principles", []),
+            important_equations=knowledge.get("equations", []),
+            derivations=[
+                {
+                    "name": eq["name"],
+                    "formula": eq["latex"],
+                    "steps": eq.get("derivation_steps", [])
+                }
+                for eq in knowledge.get("equations", [])
+            ],
+            experimental_evidence=knowledge.get("milestones", []),
+            historical_context=[
+                f"Historical emergence of {topic} establishing wave-particle duality and modern quantum foundations."
+            ],
+            applications=knowledge.get("applications", []),
+            limitations=[
+                f"Valid within non-relativistic limits; high-energy regimes require Dirac or quantum field corrections."
+            ],
+            misconceptions=[
+                "Confusing de Broglie matter waves with classical oscillating charge electromagnetic waves.",
+                "Assuming quantum uncertainty originates purely from instrument disturbance rather than fundamental wave mechanics."
+            ],
+            terminology={
+                "wave function": "Complex state probability amplitude Psi",
+                "Planck constant": "h = 6.626e-34 J*s"
+            },
+            source_claim_mapping=claims,
+            source_quality=tier_counts,
+            conflicting_claims=[],
+            unresolved_questions=[]
         )

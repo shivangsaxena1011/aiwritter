@@ -23,6 +23,13 @@ from backend.app.agents.document_structure_agent import DocumentStructureAgent
 from backend.app.agents.document_validation_agent import DocumentValidationAgent
 from backend.app.agents.toc_planner import TOCPlanner
 from backend.app.agents.content_writer import ContentWriter
+from backend.app.agents.subject_knowledge_model import SubjectKnowledgeModel
+from backend.app.agents.topic_classifier import TopicTypeClassifier, TopicType
+from backend.app.agents.equation_validation_agent import EquationValidationAgent, EquationValidationResult
+from backend.app.agents.repetition_detection_agent import RepetitionDetectionAgent
+from backend.app.agents.book_terminology_registry import BookTerminologyRegistry
+from backend.app.agents.academic_content_quality_agent import AcademicContentQualityAgent, ContentQualityMetrics
+from backend.app.agents.book_fact_check_agent import BookFactCheckAgent
 
 __all__ = [
     "BaseAgent",
@@ -50,5 +57,15 @@ __all__ = [
     "DocumentStructureAgent",
     "DocumentValidationAgent",
     "TOCPlanner",
-    "ContentWriter"
+    "ContentWriter",
+    "SubjectKnowledgeModel",
+    "TopicTypeClassifier",
+    "TopicType",
+    "EquationValidationAgent",
+    "EquationValidationResult",
+    "RepetitionDetectionAgent",
+    "BookTerminologyRegistry",
+    "AcademicContentQualityAgent",
+    "ContentQualityMetrics",
+    "BookFactCheckAgent"
 ]

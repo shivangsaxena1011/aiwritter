@@ -101,8 +101,154 @@ Return JSON:
 
     def _canonical_derivation(self, topic: str, equation_name: str, subject: str) -> Dict[str, Any]:
         """Deterministic high-quality analytical derivation for quantum / physics / engineering foundations."""
-        # Check if topic relates to particle in a box / quantum mechanics
-        if any(w in topic.lower() for w in ["particle", "box", "well", "schrodinger", "quantum", "wave"]):
+        t_lower = topic.lower() + " " + equation_name.lower()
+
+        # 1. de Broglie Hypothesis / Matter Waves
+        if any(w in t_lower for w in ["de broglie", "matter wave", "wavelength", "dual nature", "davisson"]):
+            steps = [
+                {
+                    "step_number": 1,
+                    "explanatory_prose": "According to the Planck-Einstein quantum relation, the total energy of a photon of frequency $\\nu$ propagating at the speed of light $c$ is:",
+                    "latex_equation": "E = h\\nu = \\frac{hc}{\\lambda}",
+                    "annotation": "Equation (1.1) — Planck-Einstein Photon Energy"
+                },
+                {
+                    "step_number": 2,
+                    "explanatory_prose": "From Einstein's special theory of relativity, the energy-momentum invariant for a massless photon ($m_0 = 0$) simplifies to $E = pc$. Equating the two independent energy formulations:",
+                    "latex_equation": "pc = \\frac{hc}{\\lambda} \\implies p = \\frac{h}{\\lambda}",
+                    "annotation": "Equation (1.2) — Relativistic Photon Momentum"
+                },
+                {
+                    "step_number": 3,
+                    "explanatory_prose": "Inverting the relationship establishes de Broglie's postulate associating wavelength with momentum $\\lambda = \\frac{h}{p}$. Hypothesizing that this wave-particle duality holds for all material particles of mass $m$ and velocity $v$:",
+                    "latex_equation": "\\lambda = \\frac{h}{mv}",
+                    "annotation": "Equation (1.3) — Universal Matter Wavelength Postulate"
+                },
+                {
+                    "step_number": 4,
+                    "explanatory_prose": "Relating mechanical momentum to non-relativistic kinetic energy $E_k = \\frac{p^2}{2m} \\implies p = \\sqrt{2mE_k}$, the wavelength in terms of kinetic energy becomes:",
+                    "latex_equation": "\\lambda = \\frac{h}{\\sqrt{2mE_k}}",
+                    "annotation": "Equation (1.4) — Kinetic Energy Formulation"
+                },
+                {
+                    "step_number": 5,
+                    "explanatory_prose": "For a particle carrying elementary charge $q$ accelerated from rest through an electrostatic potential difference $V$, $E_k = qV$. Substituting numerical values for an electron ($m_e = 9.109 \\times 10^{-31}\\text{ kg}, e = 1.602 \\times 10^{-19}\\text{ C}$):",
+                    "latex_equation": "\\lambda_e = \\frac{h}{\\sqrt{2m_e e V}} = \\sqrt{\\frac{150}{V}}\\text{ \\AA} = \\frac{1.227}{\\sqrt{V}}\\text{ nm}",
+                    "annotation": "Equation (1.5) — Practical Electron Wavelength Formula"
+                }
+            ]
+            md_parts = [
+                f"### Analytical Derivation of de Broglie Wavelength: {equation_name}\n",
+                "The derivation establishes the foundational equivalence between particle momentum and matter wave oscillation from relativistic and quantum axioms.\n"
+            ]
+            for s in steps:
+                md_parts.append(s["explanatory_prose"])
+                md_parts.append(f"\n$${s['latex_equation']}$$\n")
+            md_parts.append("\n**Physical Interpretation:** Matter waves bridge the corpuscular and wave representations of physical matter, scaling inversely with particle momentum $\\lambda \\propto 1/p$.")
+
+            return {
+                "equation_title": f"Derivation of de Broglie Wavelength: {equation_name}",
+                "starting_principles": "Planck-Einstein Quantum Energy and Relativistic Energy-Momentum Relation",
+                "steps": steps,
+                "final_result": {
+                    "latex_equation": "\\lambda = \\frac{h}{p} = \\frac{h}{\\sqrt{2mqV}}",
+                    "physical_interpretation": "All material particles exhibit an intrinsic matter wavelength inversely proportional to momentum."
+                },
+                "markdown_content": "\n".join(md_parts)
+            }
+
+        # 2. Heisenberg Uncertainty Principle
+        if any(w in t_lower for w in ["heisenberg", "uncertainty"]):
+            steps = [
+                {
+                    "step_number": 1,
+                    "explanatory_prose": "Consider a localized quantum particle represented by a wavepacket constructed by the continuous Fourier superposition of harmonic plane waves:",
+                    "latex_equation": "\\psi(x) = \\frac{1}{\\sqrt{2\\pi}} \\int_{-\\infty}^{\\infty} A(k) e^{ikx} dk",
+                    "annotation": "Equation (2.1) — Fourier Spatial Wavepacket"
+                },
+                {
+                    "step_number": 2,
+                    "explanatory_prose": "From the fundamental harmonic bandwidth theorem of Fourier transform pairs, the product of the spatial root-mean-square spread $\\Delta x$ and wavenumber spectral spread $\\Delta k$ satisfies:",
+                    "latex_equation": "\\Delta x \\cdot \\Delta k \\ge \\frac{1}{2}",
+                    "annotation": "Equation (2.2) — Classical Fourier Bandwidth Inequality"
+                },
+                {
+                    "step_number": 3,
+                    "explanatory_prose": "According to de Broglie's quantum relation, the physical momentum along the $x$-axis relates to the spatial wavenumber by $p_x = \\hbar k$. The differential uncertainty in momentum is therefore:",
+                    "latex_equation": "\\Delta p_x = \\hbar \\Delta k \\implies \\Delta k = \\frac{\\Delta p_x}{\\hbar}",
+                    "annotation": "Equation (2.3) — Quantum Momentum Transformation"
+                },
+                {
+                    "step_number": 4,
+                    "explanatory_prose": "Substituting the quantum momentum uncertainty $\\Delta k$ into the Fourier bandwidth inequality:",
+                    "latex_equation": "\\Delta x \\cdot \\left(\\frac{\\Delta p_x}{\\hbar}\\right) \\ge \\frac{1}{2} \\implies \\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}",
+                    "annotation": "Equation (2.4) — Position-Momentum Uncertainty Relation"
+                }
+            ]
+            md_parts = [
+                f"### Analytical Derivation of Heisenberg Uncertainty Principle: {equation_name}\n",
+                "The derivation demonstrates that quantum uncertainty originates directly from the wavepacket nature of matter.\n"
+            ]
+            for s in steps:
+                md_parts.append(s["explanatory_prose"])
+                md_parts.append(f"\n$${s['latex_equation']}$$\n")
+            md_parts.append("\n**Physical Interpretation:** Conjugate physical variables cannot be simultaneously localized beyond the quantum limit $\\hbar/2$ due to intrinsic Fourier dispersion.")
+
+            return {
+                "equation_title": f"Derivation of Heisenberg Uncertainty Principle: {equation_name}",
+                "starting_principles": "Fourier Transform Bandwidth Inequality and de Broglie Momentum",
+                "steps": steps,
+                "final_result": {
+                    "latex_equation": "\\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}",
+                    "physical_interpretation": "Position and momentum cannot be simultaneously measured to arbitrary precision."
+                },
+                "markdown_content": "\n".join(md_parts)
+            }
+
+        # 3. Phase Velocity and Group Velocity
+        if any(w in t_lower for w in ["phase velocity", "group velocity", "velocity"]):
+            steps = [
+                {
+                    "step_number": 1,
+                    "explanatory_prose": "The phase velocity $v_p$ of an individual monochromatic carrier wave and the group velocity $v_g$ of the modulating wavepacket envelope are defined by:",
+                    "latex_equation": "v_p = \\frac{\\omega}{k}, \\quad v_g = \\frac{d\\omega}{dk}",
+                    "annotation": "Equation (3.1) — Fundamental Wave Velocity Definitions"
+                },
+                {
+                    "step_number": 2,
+                    "explanatory_prose": "Applying the chain rule to total quantum energy $E = \\hbar\\omega$ and momentum $p = \\hbar k$:",
+                    "latex_equation": "v_g = \\frac{d(\\hbar\\omega)}{d(\\hbar k)} = \\frac{dE}{dp}",
+                    "annotation": "Equation (3.2) — Group Velocity in Energy-Momentum Representation"
+                },
+                {
+                    "step_number": 3,
+                    "explanatory_prose": "For a non-relativistic particle of mass $m$, total kinetic energy is $E = \\frac{p^2}{2m}$. Evaluating the derivative:",
+                    "latex_equation": "v_g = \\frac{d}{dp}\\left(\\frac{p^2}{2m}\\right) = \\frac{2p}{2m} = \\frac{p}{m} = v_{\\text{particle}}",
+                    "annotation": "Equation (3.3) — Wavepacket Group Velocity Equivalence"
+                }
+            ]
+            md_parts = [
+                f"### Analytical Derivation of Group and Phase Velocity: {equation_name}\n",
+                "The derivation proves that the group velocity of a de Broglie wavepacket identically matches the classical particle velocity.\n"
+            ]
+            for s in steps:
+                md_parts.append(s["explanatory_prose"])
+                md_parts.append(f"\n$${s['latex_equation']}$$\n")
+            md_parts.append("\n**Physical Interpretation:** While individual phase wavelets propagate at $v_p = v/2$, the localized wavepacket envelope moves at $v_g = v_{particle}$, physically transporting energy and particle presence.")
+
+            return {
+                "equation_title": f"Derivation of Group and Phase Velocity: {equation_name}",
+                "starting_principles": "Harmonic Dispersion Analysis and Energy-Momentum Operators",
+                "steps": steps,
+                "final_result": {
+                    "latex_equation": "v_g = \\frac{d\\omega}{dk} = \\frac{p}{m} = v_{\\text{particle}}",
+                    "physical_interpretation": "Group velocity of the matter wave packet is identically equal to the particle velocity."
+                },
+                "markdown_content": "\n".join(md_parts)
+            }
+
+        # 4. Check if topic relates to particle in a box / infinite potential well
+        if any(w in t_lower for w in ["particle", "box", "well", "potential well", "infinite potential"]):
             steps = [
                 {
                     "step_number": 1,

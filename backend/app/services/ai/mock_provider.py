@@ -17,78 +17,30 @@ class MockProvider(AIProvider):
         temperature: float = 0.7,
         max_output_tokens: Optional[int] = None
     ) -> str:
-        # Extract topic/subtopic from prompt if present
-        topic_match = re.search(r"(?:SUBTOPIC SECTION|SUBTOPIC):\s*([^\n\r]+)", prompt)
-        subtopic = topic_match.group(1).strip() if topic_match else "Core Principles"
+        from backend.app.agents.subject_knowledge_model import SubjectKnowledgeModel
+
+        # Extract metadata from prompt
+        subtopic_match = re.search(r"(?:SUBTOPIC SECTION|SUBTOPIC):\s*([^\n\r]+)", prompt)
+        subtopic = subtopic_match.group(1).strip() if subtopic_match else "Core Principles"
+
+        topic_match = re.search(r"(?:MAJOR TOPIC|TOPIC):\s*([^\n\r]+)", prompt)
+        topic = topic_match.group(1).strip() if topic_match else subtopic
+
+        subject_match = re.search(r"(?:SUBJECT / DISCIPLINE|SUBJECT):\s*([^\n\r]+)", prompt)
+        subject = subject_match.group(1).strip() if subject_match else "Engineering Physics"
 
         include_num = "INCLUDE WORKED NUMERICAL EXAMPLES" in prompt
         include_qa = "INCLUDE REVIEW QUESTIONS" in prompt
+        requires_derivation = any(k in f"{subtopic} {topic}".lower() for k in ["derivation", "equation", "box", "well", "hypothesis", "uncertainty", "velocity", "constant"])
 
-        content_parts = [
-            f"""### Foundations and Scope of {subtopic}
-This treatise establishes the rigorous theoretical framework and physical principles governing {subtopic}. Students and academic researchers will examine the underlying postulates, formulate the relevant continuous differential state relationships, and evaluate the physical consequences that emerge from boundary constraints. Modern engineering applications rely directly on these foundational dynamics to achieve stable, high-efficiency system performance across diverse operational regimes.
-
-### 1. Theoretical Framework and Physical Mechanisms
-The development of {subtopic} represents a cornerstone in contemporary physics and engineering analysis. Historically formulated to resolve fundamental limitations in classical continuum models, modern theory treats the phenomenon through unified differential state representations. By examining conservation symmetries and boundary conditions, investigators can establish direct analytical links between microscopic particle interactions and macroscopic observable behaviors.
-
-### 2. Analytical Formulation and Governing Equations
-The dynamic equilibrium of {subtopic} is captured quantitatively by the generalized conservation field relationship:
-
-$$\\frac{{d\\Psi}}{{dt}} + \\nabla \\cdot (\\mathbf{{v}} \\Psi) = \\kappa \\nabla^2 \\Psi + \\dot{{S}}_{{gen}}$$
-
-In this governing differential equation, the scalar field function $\\Psi$ characterizes the continuous physical state or probability amplitude across the active coordinate domain. The vector $\\mathbf{{v}}$ denotes the convective transport velocity field, while $\\kappa$ specifies the effective transport diffusivity governing dissipation. Volumetric source contributions and internal thermodynamic transformations are accounted for by the net generation rate term $\\dot{{S}}_{{gen}}$.
-
-Under steady-state conditions with uniform spatial gradients, the convective and time-dependent variations vanish. This reduction simplifies the system to an ordinary second-order differential formulation where characteristic eigenvalues correspond directly to discrete admissible physical states.
-
-### 3. Comparison of Core Architectures
-The table below contrasts standard configurations used across modern academic and commercial implementations:
-
-| Parameter | Configuration Alpha | Configuration Beta | Configuration Gamma |
-| :--- | :--- | :--- | :--- |
-| Operational Efficiency | 42% - 48% | 55% - 62% | 68% - 74% |
-| Temperature Range | 60°C - 80°C | 120°C - 180°C | 600°C - 800°C |
-| Response Latency | < 5 ms | 25 ms | > 100 ms |
-| Capital Cost Index | Moderate | High | Premium |
-| Durability Lifecycle | 15,000 Hours | 40,000 Hours | 80,000 Hours |
-
-### 4. Key Engineering Characteristics and Trade-offs
-While the fundamental mathematical solutions describe ideal continuous behavior, practical implementations exhibit distinct operational characteristics:
-- **Boundary Constraint Sensitivity:** Localized geometric perturbations shift the fundamental eigenvalue spectrum.
-- **Thermodynamic Dissipation:** Systems relax toward minimal entropy production in the absence of external driving potentials.
-- **Operational Scalability:** Modular configurations support high-density integration without compromising thermal dissipation.
-
-### 5. Summary and Physical Observations
-In summary, the physical behavior of {subtopic} illustrates how microscopic conservation symmetries dictate macroscopic observables. Modern engineering designs leverage these mathematical relationships to optimize stability, minimize dissipative losses, and ensure reliable performance across dynamic operational environments."""
-        ]
-
-        if include_num:
-            content_parts.append(f"""
-### 6. Worked Solved Numerical Problem
-**Problem Statement:** Consider a reference installation of {subtopic} operating under nominal boundary conditions with an input flux of $2.5\\text{{ kg/s}}$ and an active area of $14.2\\text{{ m}}^2$. Calculate the net specific flux and resultant dissipation factor.
-
-**Given Data:**
-- Influx rate $\\dot{{m}} = 2.5\\text{{ kg/s}}$
-- Cross-sectional surface area $A = 14.2\\text{{ m}}^2$
-
-**Governing Formula:**
-$$J = \\frac{{\\dot{{m}}}}{{A}}$$
-
-**Substitution:**
-$$J = \\frac{{2.5}}{{14.2}}$$
-
-**Calculation Steps:**
-$$J = 0.176056\\dots$$
-
-**Final Answer:**
-$$J = 0.1761\\text{{ kg}}/(m^2\\cdot\\text{{s}})$$""")
-
-        if include_qa:
-            content_parts.append("""
-### 7. Review Questions and Academic Exercises
-1. *Analytical*: Derive the steady-state solution for $\\Psi(x)$ assuming 1D planar symmetry and zero generation.
-2. *Conceptual*: Contrast the mechanical failure modes between Configuration Alpha and Beta under cyclic loading.""")
-
-        return "\n\n".join(content_parts)
+        return SubjectKnowledgeModel.generate_academic_section(
+            topic=topic,
+            subtopic=subtopic,
+            subject=subject,
+            include_numericals=include_num,
+            include_questions=include_qa,
+            requires_derivation=requires_derivation
+        )
 
     async def generate_structured(
         self,

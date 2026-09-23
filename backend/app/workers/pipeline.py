@@ -36,6 +36,13 @@ from backend.app.agents.book_context_manager import BookContextManager
 from backend.app.agents.chapter_depth_controller import ChapterDepthController
 from backend.app.agents.document_structure_agent import DocumentStructureAgent
 from backend.app.agents.document_validation_agent import DocumentValidationAgent
+from backend.app.agents.subject_knowledge_model import SubjectKnowledgeModel
+from backend.app.agents.topic_classifier import TopicTypeClassifier, TopicType
+from backend.app.agents.equation_validation_agent import EquationValidationAgent
+from backend.app.agents.repetition_detection_agent import RepetitionDetectionAgent
+from backend.app.agents.book_terminology_registry import BookTerminologyRegistry
+from backend.app.agents.academic_content_quality_agent import AcademicContentQualityAgent
+from backend.app.agents.book_fact_check_agent import BookFactCheckAgent
 from backend.app.services.document.docx_engine import DOCXExporter
 from backend.app.storage import get_storage_provider
 
@@ -65,6 +72,12 @@ class BookGenerationOrchestrator:
         self.review_agent = ContentReviewAgent(self.ai)
         self.fact_check_agent = FactCheckAgent(self.ai)
         self.consistency_agent = BookConsistencyAgent(self.ai)
+        self.topic_classifier = TopicTypeClassifier(self.ai)
+        self.equation_validator = EquationValidationAgent(self.ai)
+        self.repetition_detector = RepetitionDetectionAgent()
+        self.terminology_registry = BookTerminologyRegistry()
+        self.content_quality_agent = AcademicContentQualityAgent()
+        self.book_fact_check_agent = BookFactCheckAgent()
         self.docx_exporter = DOCXExporter()
 
     def _log_event(
@@ -223,6 +236,8 @@ class BookGenerationOrchestrator:
                 "fallback_calls": 0
             }
             research_traceability: List[Dict[str, Any]] = []
+            content_intelligence_audits: List[Dict[str, Any]] = []
+            equation_validation_records: List[Dict[str, Any]] = []
 
             job.status = "GENERATING"
             self.db.commit()
@@ -468,6 +483,24 @@ class BookGenerationOrchestrator:
                             # Originality Audit
                             orig_report = self.research_agent.assess_originality(content, research_res.sources)
 
+                            # Content Intelligence Audits (Equation, Repetition, Terminology, Quality Gate)
+                            eq_val = self.equation_validator.validate_equations(content, topic.title, subject)
+                            equation_validation_records.append({
+                                "subtopic": subtopic.title,
+                                "total_equations": eq_val.total_equations,
+                                "valid_equations": eq_val.valid_equations,
+                                "relevance_score": eq_val.topic_relevance_score,
+                                "issues": eq_val.issues
+                            })
+                            self.repetition_detector.register_section_paragraphs(
+                                content, f"{unit.title} > {topic.title} > {subtopic.title}"
+                            )
+                            self.terminology_registry.register_from_content(
+                                content, f"{unit.title} > {topic.title}"
+                            )
+                            q_metrics = self.content_quality_agent.evaluate_content(content, topic.title, subject)
+                            content_intelligence_audits.append(q_metrics.to_dict())
+
                             # Persist Section in DB
                             gen_sec = GeneratedSection(
                                 book_id=book.id,
@@ -643,11 +676,43 @@ class BookGenerationOrchestrator:
                 include_diagrams=include_diagrams
             )
 
+            # Content Intelligence Audit & Aggregation
+            fact_check_summary = self.book_fact_check_agent.audit_book_consistency(compiled_sections)
+            terminology_summary = self.terminology_registry.get_summary()
+            repetition_summary = self.repetition_detector.get_summary()
+
+            avg_genericity = (
+                sum(a["genericity_score"] for a in content_intelligence_audits) / len(content_intelligence_audits)
+                if content_intelligence_audits else 0.0
+            )
+            avg_alignment = (
+                sum(a["topic_alignment_score"] for a in content_intelligence_audits) / len(content_intelligence_audits)
+                if content_intelligence_audits else 1.0
+            )
+            total_unsupported = sum(a["unsupported_claims_count"] for a in content_intelligence_audits)
+            total_fabricated = sum(a["fabricated_data_count"] for a in content_intelligence_audits)
+
+            content_intelligence_summary = {
+                "average_genericity_score": round(avg_genericity, 3),
+                "average_topic_alignment_score": round(avg_alignment, 3),
+                "total_unsupported_claims": total_unsupported,
+                "total_fabricated_data": total_fabricated,
+                "repetition_audit": repetition_summary,
+                "terminology_audit": terminology_summary,
+                "fact_check_audit": fact_check_summary,
+                "equation_audit": {
+                    "total_equations_checked": sum(r["total_equations"] for r in equation_validation_records),
+                    "total_valid_equations": sum(r["valid_equations"] for r in equation_validation_records)
+                }
+            }
+            doc_quality["content_intelligence"] = content_intelligence_summary
+
             # Compile and attach telemetry
             telemetry = {
                 "timings": {k: round(v, 2) for k, v in timing_stats.items()},
                 "calls": call_counters,
-                "research_traceability": research_traceability
+                "research_traceability": research_traceability,
+                "content_intelligence": content_intelligence_summary
             }
             doc_quality["telemetry"] = telemetry
 

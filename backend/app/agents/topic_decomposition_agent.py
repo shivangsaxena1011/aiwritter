@@ -9,6 +9,9 @@ from typing import Dict, Any, List, Optional
 from backend.app.agents.base import BaseAgent, AgentContext, AgentResult
 from backend.app.services.ai.base import AIProvider
 
+from backend.app.agents.topic_classifier import TopicTypeClassifier, TopicType
+from backend.app.agents.subject_knowledge_model import SubjectKnowledgeModel
+
 logger = logging.getLogger(__name__)
 
 # Subject Archetype Section Blueprints
@@ -143,6 +146,92 @@ Return JSON:
 """
         return await self.ai.generate_structured(prompt)
 
+    CANONICAL_DECOMPOSITIONS: Dict[str, List[Dict[str, str]]] = {
+        "de broglie hypothesis": [
+            {"title": "Historical Motivation and Inadequacy of Classical Physics", "purpose": "Classical breakdown, radiation paradoxes, and the matter-wave proposal", "section_type": "concept"},
+            {"title": "The de Broglie Matter-Wave Postulate", "purpose": "Associating wave attributes with particulate matter", "section_type": "concept"},
+            {"title": "Derivation of the de Broglie Wavelength", "purpose": "Analytical formulation linking momentum to wavelength", "section_type": "derivation"},
+            {"title": "Phase Velocity and Group Velocity of Matter Waves", "purpose": "Propagation dynamics and wavepacket velocity matching particle motion", "section_type": "concept"},
+            {"title": "Experimental Confirmation by Davisson and Germer", "purpose": "Nickel crystal electron diffraction and wavelength measurement", "section_type": "concept"},
+            {"title": "Physical Interpretation and Matter Wave Limitations", "purpose": "Probability amplitude representation and relativistic constraints", "section_type": "concept"},
+            {"title": "Electron Microscopy and Modern Engineering Applications", "purpose": "Sub-angstrom resolving power in TEM/SEM nanoscale instruments", "section_type": "application"}
+        ],
+        "particle in a 1d infinite potential well (particle in a box)": [
+            {"title": "Physical Concept and Infinite Well Geometry", "purpose": "Idealized potential confinement and boundary specification", "section_type": "concept"},
+            {"title": "Mathematical Formulation of Time-Independent Schrödinger Equation", "purpose": "Differential equations inside and outside the barrier", "section_type": "concept"},
+            {"title": "Analytical Derivation and Boundary Conditions", "purpose": "Applying Dirichlet boundary conditions to determine spatial wave functions", "section_type": "derivation"},
+            {"title": "Quantization of Energy Eigenvalues and Spatial Eigenfunctions", "purpose": "Discrete energy spectra and zero-point ground state", "section_type": "derivation"},
+            {"title": "Normalization and Spatial Probability Density Distributions", "purpose": "Born postulate, probability density, and nodal structures", "section_type": "concept"},
+            {"title": "Quantum Well Lasers and Nanostructure Applications", "purpose": "Engineering applications in quantum heterostructures and optoelectronics", "section_type": "application"},
+            {"title": "Correspondence Principle and Classical Limit", "purpose": "High quantum number convergence to classical continuum behavior", "section_type": "concept"}
+        ],
+        "particle in a box": [
+            {"title": "Physical Concept and Infinite Well Geometry", "purpose": "Idealized potential confinement and boundary specification", "section_type": "concept"},
+            {"title": "Mathematical Formulation of Time-Independent Schrödinger Equation", "purpose": "Differential equations inside and outside the barrier", "section_type": "concept"},
+            {"title": "Analytical Derivation and Boundary Conditions", "purpose": "Applying Dirichlet boundary conditions to determine spatial wave functions", "section_type": "derivation"},
+            {"title": "Quantization of Energy Eigenvalues and Spatial Eigenfunctions", "purpose": "Discrete energy spectra and zero-point ground state", "section_type": "derivation"},
+            {"title": "Normalization and Spatial Probability Density Distributions", "purpose": "Born postulate, probability density, and nodal structures", "section_type": "concept"},
+            {"title": "Quantum Well Lasers and Nanostructure Applications", "purpose": "Engineering applications in quantum heterostructures and optoelectronics", "section_type": "application"},
+            {"title": "Correspondence Principle and Classical Limit", "purpose": "High quantum number convergence to classical continuum behavior", "section_type": "concept"}
+        ],
+        "heisenberg uncertainty principle": [
+            {"title": "Physical Concept and the Measurement Problem", "purpose": "Wavepacket dispersion and intrinsic limits on conjugate observables", "section_type": "concept"},
+            {"title": "Mathematical Formulation and Wavepacket Derivation", "purpose": "Fourier analysis of wavepackets yielding Delta x Delta p >= hbar/2", "section_type": "derivation"},
+            {"title": "Experimental Evidence and Single-Slit Diffraction", "purpose": "Demonstrating transverse momentum spreading upon narrow spatial confinement", "section_type": "concept"},
+            {"title": "Physical Interpretation and Non-Existence of Electrons in the Nucleus", "purpose": "Consequences of zero-point energy and nuclear stability", "section_type": "concept"},
+            {"title": "Quantum Limits in Precision Metrology and Sensing", "purpose": "Standard quantum limits in interferometry and nanoscale devices", "section_type": "application"}
+        ],
+        "introduction to quantum mechanics": [
+            {"title": "Inadequacy of Classical Physics and Blackbody Radiation", "purpose": "Ultraviolet catastrophe, Planck hypothesis, and discrete energy quanta", "section_type": "concept"},
+            {"title": "Photoelectric Effect and Einstein's Photon Theory", "purpose": "Particle-like light quanta, work function, and kinetic energy", "section_type": "concept"},
+            {"title": "Foundational Postulates of Modern Quantum Theory", "purpose": "State vectors, wave functions, and wave-particle duality", "section_type": "concept"}
+        ],
+        "wave nature of particles": [
+            {"title": "Historical Evolution from Radiation Duality to Matter Waves", "purpose": "Connecting optical diffraction to electron wave hypotheses", "section_type": "concept"},
+            {"title": "Mathematical Expression of Matter Wavelengths", "purpose": "Relating wavelength to kinetic energy and accelerating potentials", "section_type": "concept"},
+            {"title": "Davisson-Germer and Thomson Electron Diffraction", "purpose": "Experimental verification of de Broglie relations in crystals", "section_type": "concept"},
+            {"title": "Wavepacket Representation and Phase vs Group Velocity", "purpose": "Wave superposition matching physical particle speed", "section_type": "derivation"},
+            {"title": "Physical Interpretation and Born Probability Amplitude", "purpose": "Statistical interpretation of matter wave amplitudes", "section_type": "concept"},
+            {"title": "Electron Beam Technologies in Semiconductor Metrology", "purpose": "Application in TEM, SEM, and electron beam lithography", "section_type": "application"}
+        ],
+        "phase velocity and group velocity": [
+            {"title": "Superposition of Harmonic Waves and Wavepacket Formation", "purpose": "Phase relationships and modulating envelope dynamics", "section_type": "concept"},
+            {"title": "Mathematical Derivation of Phase Velocity and Group Velocity", "purpose": "Deriving vp = omega/k and vg = d omega / dk", "section_type": "derivation"},
+            {"title": "Physical Interpretation and Velocity of Matter Waves", "purpose": "Proving group velocity equals particle velocity in dispersion media", "section_type": "concept"}
+        ],
+        "operators": [
+            {"title": "Operator Formalism in Quantum Mechanics", "purpose": "Associating physical observables with linear operators in Hilbert space", "section_type": "concept"},
+            {"title": "Position, Momentum, and Hamiltonian Differential Operators", "purpose": "Exact mathematical expressions and differential definitions", "section_type": "concept"},
+            {"title": "Commutator Algebra and Heisenberg Uncertainty", "purpose": "Evaluating [x, p] = i hbar and compatible vs incompatible observables", "section_type": "derivation"},
+            {"title": "Hermitian Operators and Observable Conservation", "purpose": "Real eigenvalues, orthogonality, and expectation values", "section_type": "concept"}
+        ],
+        "eigenvalues and eigenfunctions": [
+            {"title": "The Quantum Eigenvalue Equation", "purpose": "Defining A psi = a psi and physical measurement postulate", "section_type": "concept"},
+            {"title": "Mathematical Derivation of Real Eigenvalues for Hermitian Operators", "purpose": "Proof that observable quantities possess strictly real eigenvalues", "section_type": "derivation"},
+            {"title": "Orthogonality and Completeness of Eigenfunctions", "purpose": "Expansion of arbitrary state functions in orthonormal bases", "section_type": "concept"}
+        ],
+        "time-dependent schrodinger equation": [
+            {"title": "Physical Motivation and Operator Formulation", "purpose": "Constructing dynamic wave equation from conservation of total energy", "section_type": "concept"},
+            {"title": "Mathematical Derivation of the Time-Dependent Equation", "purpose": "Combining energy operator with Hamiltonian to yield i hbar dPsi/dt = H Psi", "section_type": "derivation"},
+            {"title": "Probability Current Density and Continuity Equation", "purpose": "Proving local conservation of quantum probability", "section_type": "derivation"},
+            {"title": "Physical Significance in Dynamic Quantum Systems", "purpose": "Time evolution of non-stationary states and wavepacket propagation", "section_type": "concept"}
+        ],
+        "time-independent schrodinger equation": [
+            {"title": "Stationary States and Separation of Variables", "purpose": "Factoring space-time wave function into spatial and harmonic temporal parts", "section_type": "concept"},
+            {"title": "Derivation of the Time-Independent Differential Formulation", "purpose": "Isolating energy eigenvalue equation H psi = E psi", "section_type": "derivation"},
+            {"title": "Boundary Conditions for Physically Admissible Wave Functions", "purpose": "Continuity, single-valuedness, and finite integral constraints", "section_type": "concept"}
+        ],
+        "physical interpretation of wave function": [
+            {"title": "Max Born Probability Postulate", "purpose": "Interpreting |Psi|^2 as spatial probability density", "section_type": "concept"},
+            {"title": "Normalization Condition and Mathematical Rigor", "purpose": "Total unit probability integration across coordinate space", "section_type": "derivation"},
+            {"title": "Wavepacket Collapse and Quantum Measurement", "purpose": "Transition from superposition to definitive eigenstate upon observation", "section_type": "concept"}
+        ],
+        "applications of quantum mechanics": [
+            {"title": "Quantum Barrier Penetration and Tunneling Devices", "purpose": "Tunnel diodes, alpha decay, and Scanning Tunneling Microscopy (STM)", "section_type": "application"},
+            {"title": "Quantum Heterostructures, Dots, and Semiconductor Devices", "purpose": "Nanoscale confinement in LEDs, quantum well lasers, and SQUIDs", "section_type": "application"}
+        ]
+    }
+
     def _decompose_heuristically(
         self,
         topic_title: str,
@@ -150,120 +239,42 @@ Return JSON:
         requires_derivation: bool,
         requires_numericals: bool
     ) -> Dict[str, Any]:
-        subj_lower = subject.lower()
-        topic_lower = topic_title.lower()
+        topic_clean = topic_title.strip().lower()
+        domain = SubjectKnowledgeModel.get_subject_domain(subject, topic_title).title()
 
-        # Identify subject domain
-        if any(w in subj_lower for w in ["physic", "quantum", "thermodynamic", "mechanic", "optics", "electromagnet"]):
-            domain = "Physics"
-            raw_blueprint = list(PHYSICS_BLUEPRINT)
-        elif any(w in subj_lower for w in ["computer", "software", "program", "data structure", "algorithm", "ai", "machine learning"]):
-            domain = "Computer Science"
-            raw_blueprint = list(CS_BLUEPRINT)
-        elif any(w in subj_lower for w in ["math", "calculus", "linear algebra", "discrete", "geometry", "probability", "statistics"]):
-            domain = "Mathematics"
-            raw_blueprint = list(MATH_BLUEPRINT)
-        elif any(w in subj_lower for w in ["engineer", "electrical", "mechanical", "chemical", "civil", "robot"]):
-            domain = "Engineering"
-            raw_blueprint = list(ENGINEERING_BLUEPRINT)
-        else:
-            domain = "General Science"
-            raw_blueprint = list(GENERAL_BLUEPRINT)
+        # Check canonical decompositions first
+        for canonical_key, sec_list in self.CANONICAL_DECOMPOSITIONS.items():
+            if canonical_key in topic_clean or topic_clean in canonical_key:
+                sections = [dict(s) for s in sec_list]
+                if requires_numericals and not any("numerical" in s["title"].lower() for s in sections):
+                    sections.append({
+                        "title": f"Worked Numerical Examples on {topic_title}",
+                        "purpose": "Step-by-step verified numerical problem solutions with units",
+                        "section_type": "numerical"
+                    })
+                return {
+                    "topic": topic_title,
+                    "subject_domain": domain,
+                    "complexity_level": "High" if len(sections) >= 5 else "Medium",
+                    "sections": sections
+                }
 
-        # Determine topic complexity class: low (1-2), medium (2-3), high/derivation (4-6)
-        is_intro = any(w in topic_lower for w in ["introduction", "overview", "history", "basic", "foundations"])
-        is_app = any(w in topic_lower for w in ["application", "advantages", "devices"]) and not any(w in topic_lower for w in ["laser", "diode", "transistor"])
-        is_complex = requires_derivation or any(w in topic_lower for w in [
-            "schrödinger", "schrodinger", "box", "well", "newton", "thin film", "einstein",
-            "numerical aperture", "hall effect", "dispersion", "grating", "interferometer", "cavity", "ruby", "he-ne"
-        ])
+        # Otherwise, dynamically classify topic using TopicTypeClassifier
+        labels = TopicTypeClassifier.classify(topic_title, subject, requires_derivation, requires_numericals)
+        pedagogical_flow = TopicTypeClassifier.get_pedagogical_structure(labels, topic_title)
 
         sections = []
-        if is_intro:
-            # Concise foundational treatment (1-2 sections)
+        for step in pedagogical_flow:
+            s_type = "derivation" if "derivation" in step["title"].lower() else ("application" if "application" in step["title"].lower() else ("numerical" if "numerical" in step["title"].lower() else "concept"))
             sections.append({
-                "title": f"Historical Evolution and Theoretical Need for {topic_title}",
-                "purpose": f"Foundational background, classical inadequacies, and modern emergence of {topic_title}.",
-                "section_type": "concept"
-            })
-            sections.append({
-                "title": f"Governing Principles and Core Postulates of {topic_title}",
-                "purpose": f"Essential operational definitions, physical meaning, and domain scope.",
-                "section_type": "concept"
-            })
-        elif is_app:
-            # Applications & engineering scope (2 sections)
-            sections.append({
-                "title": f"Industrial and Engineering Implementations of {topic_title}",
-                "purpose": f"Comprehensive exploration of field applications and operational case studies.",
-                "section_type": "application"
-            })
-            sections.append({
-                "title": f"Technological Frontiers and Performance Limits of {topic_title}",
-                "purpose": f"Analysis of operational trade-offs, degradation mechanisms, and efficiency limits.",
-                "section_type": "application"
-            })
-        elif is_complex:
-            # Deep analytical & mathematical treatment (4-6 sections)
-            sections.append({
-                "title": f"Theoretical Framework and Physical Postulates of {topic_title}",
-                "purpose": f"Underlying physical laws, conservation symmetries, and starting hypotheses.",
-                "section_type": "concept"
-            })
-            sections.append({
-                "title": f"Mathematical Formulation and Boundary Conditions for {topic_title}",
-                "purpose": f"Establishing coordinates, boundary conditions, and differential equations.",
-                "section_type": "concept"
-            })
-            if requires_derivation:
-                sections.append({
-                    "title": f"Formal Step-by-Step Analytical Derivation of {topic_title}",
-                    "purpose": f"Rigorous proof moving from axioms through substitution to final closed-form result.",
-                    "section_type": "derivation"
-                })
-            sections.append({
-                "title": f"Physical Interpretation and Eigenstate Analysis of {topic_title}",
-                "purpose": f"Examining physical meaning of solutions, quantization, and spatial probability distributions.",
-                "section_type": "concept"
-            })
-            sections.append({
-                "title": f"Engineering Applications and Experimental Verification of {topic_title}",
-                "purpose": f"Metrology, technological devices, and laboratory validation.",
-                "section_type": "application"
-            })
-            sections.append({
-                "title": f"Domain Boundaries and Analytical Limitations of {topic_title}",
-                "purpose": f"Operating limits, high-energy breakdown, and real-world non-idealities.",
-                "section_type": "concept"
-            })
-        else:
-            # Standard analytical treatment (2-3 sections)
-            sections.append({
-                "title": f"Conceptual Axioms and Physical Mechanism of {topic_title}",
-                "purpose": f"Core theory, operational definitions, and physical phenomena.",
-                "section_type": "concept"
-            })
-            sections.append({
-                "title": f"Quantitative Properties and Analytical Behavior of {topic_title}",
-                "purpose": f"Governing relations, physical variables, and mathematical consequences.",
-                "section_type": "concept"
-            })
-            sections.append({
-                "title": f"Technological Applications and Observational Insights in {topic_title}",
-                "purpose": f"Practical significance and real-world manifestation in modern engineering.",
-                "section_type": "application"
-            })
-
-        if requires_numericals:
-            sections.append({
-                "title": f"Worked Numerical Examples on {topic_title}",
-                "purpose": "Step-by-step verified numerical problem solutions with units.",
-                "section_type": "numerical"
+                "title": step["title"],
+                "purpose": step["pedagogy"],
+                "section_type": s_type
             })
 
         return {
             "topic": topic_title,
             "subject_domain": domain,
-            "complexity_level": "High" if is_complex else ("Low" if (is_intro or is_app) else "Medium"),
+            "complexity_level": "High" if len(sections) >= 5 else ("Low" if len(sections) <= 2 else "Medium"),
             "sections": sections
         }
