@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Book Writer v3.0 — Agentic Academic Publishing Platform</title>
-    <meta name="description" content="Generate university-grade academic reference textbooks using agentic AI. Full syllabus structuring, Imagen & Matplotlib diagrams, peer-review scoring, and native Word export.">
+    <title>AIWritter — Agentic Academic Book Publishing Engine</title>
+    <meta name="description" content="AIWritter — Autonomous academic publishing engine generating university-grade Microsoft Word textbooks with math derivations, educational research, and publication validation.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,8 +23,8 @@
             <div class="brand">
                 <i class="fa-solid fa-book-open-reader brand-icon"></i>
                 <div class="brand-text">
-                    <h1>AI Book Writer</h1>
-                    <span>Publishing Engine v3.0</span>
+                    <h1>AIWritter</h1>
+                    <span>Publishing Engine</span>
                 </div>
             </div>
             <nav class="nav-steps">
@@ -42,7 +42,7 @@
                 </div>
             </nav>
             <div class="sidebar-footer">
-                <p>AI Book Writer v3.0</p>
+                <p>AIWritter Publishing Engine</p>
                 <span>Production Grade</span>
             </div>
         </aside>
@@ -52,7 +52,7 @@
             <!-- Header -->
             <header class="top-header">
                 <div class="header-title">
-                    <h2>AI Book Writer <span class="badge-tag">v3.0 Production</span></h2>
+                    <h2>AIWritter <span class="badge-tag">Academic Publishing Engine</span></h2>
                     <p>Agentic platform for autonomous academic textbook creation with native DOCX formatting.</p>
                 </div>
                 <div class="status-badge" id="system-status">
@@ -75,6 +75,10 @@
                         <div class="form-group full-width">
                             <label for="book-title"><i class="fa-solid fa-heading"></i> Book Title</label>
                             <input type="text" id="book-title" placeholder="e.g., Quantum Computing: Foundations and Algorithms" class="large-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="book-subject"><i class="fa-solid fa-atom"></i> Academic Discipline / Subject</label>
+                            <input type="text" id="book-subject" placeholder="e.g., Engineering Physics, Computer Science">
                         </div>
                         <div class="form-group">
                             <label for="book-subtitle"><i class="fa-solid fa-subscript"></i> Subtitle (Optional)</label>
@@ -116,13 +120,63 @@
                             <input type="password" id="api-key" placeholder="AIzaSy... (kept in local memory only)">
                         </div>
                         <div class="form-group">
-                            <label><i class="fa-solid fa-image"></i> Scientific Diagrams (Imagen & Matplotlib)</label>
+                            <label><i class="fa-solid fa-image"></i> Scientific Diagrams (B&W Schematics / Plots)</label>
                             <div class="toggle-container">
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="toggle-images" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <span class="toggle-label" id="toggle-label">Enabled</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-globe"></i> Web Research & Grounding</label>
+                            <div class="toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle-research" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enabled</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-square-root-variable"></i> Numerical Problems & Calculations</label>
+                            <div class="toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle-numericals">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Optional</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-circle-question"></i> Questions & Answers / Exercises</label>
+                            <div class="toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle-questions">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Optional</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-lightbulb"></i> Conceptual Examples</label>
+                            <div class="toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle-examples" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enabled</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-bookmark"></i> References & Bibliography</label>
+                            <div class="toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="toggle-references" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span class="toggle-label">Enabled</span>
                             </div>
                         </div>
                     </div>

@@ -35,7 +35,7 @@ class GeminiProvider(AIProvider):
             for attempt in range(retries):
                 try:
                     response = self.client.models.generate_content(
-                        model=settings.TEXT_MODEL,
+                        model=settings.effective_text_model,
                         contents=prompt,
                         config=config
                     )
@@ -68,7 +68,7 @@ class GeminiProvider(AIProvider):
             for attempt in range(retries):
                 try:
                     response = self.client.models.generate_content(
-                        model=settings.STRUCTURED_MODEL,
+                        model=settings.effective_text_model,
                         contents=prompt,
                         config=config
                     )
@@ -99,7 +99,7 @@ class GeminiProvider(AIProvider):
         def _call():
             try:
                 response = self.client.models.generate_images(
-                    model=settings.IMAGE_MODEL,
+                    model=settings.effective_image_model,
                     prompt=prompt,
                     config=types.GenerateImagesConfig(
                         number_of_images=1,

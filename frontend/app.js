@@ -476,6 +476,18 @@ async function startGeneration() {
     const citationStyle = document.getElementById('citation-style').value;
     const apiKey = document.getElementById('api-key').value.trim();
     const generateImages = document.getElementById('toggle-images').checked;
+    const subjectEl = document.getElementById('book-subject');
+    const subject = subjectEl ? subjectEl.value.trim() : title;
+    const researchEl = document.getElementById('toggle-research');
+    const includeResearch = researchEl ? researchEl.checked : true;
+    const numericalsEl = document.getElementById('toggle-numericals');
+    const includeNumericals = numericalsEl ? numericalsEl.checked : false;
+    const questionsEl = document.getElementById('toggle-questions');
+    const includeQuestions = questionsEl ? questionsEl.checked : false;
+    const examplesEl = document.getElementById('toggle-examples');
+    const includeExamples = examplesEl ? examplesEl.checked : true;
+    const referencesEl = document.getElementById('toggle-references');
+    const includeReferences = referencesEl ? referencesEl.checked : true;
 
     // Validation
     if (!title) {
@@ -512,7 +524,7 @@ async function startGeneration() {
 
     // Reset progress UI
     document.getElementById('console-log').innerHTML = '';
-    appendLog('🚀 Initializing Agentic Publishing Platform v3.0...', 'system');
+    appendLog('🚀 Initializing AIWritter Academic Publishing Pipeline...', 'system');
     updateProgress(0);
     document.getElementById('current-task').textContent = 'Initializing pipeline...';
     document.getElementById('current-item').textContent = 'Registering book and persistent job...';
@@ -532,10 +544,17 @@ async function startGeneration() {
             title,
             subtitle,
             author,
+            subject: subject || title,
             academic_level: academicLevel,
             writing_depth: writingDepth,
+            research_depth: includeResearch ? 'Standard' : 'None',
             citation_style: citationStyle,
             generate_images: generateImages,
+            include_diagrams: generateImages,
+            include_numericals: includeNumericals,
+            include_questions: includeQuestions,
+            include_examples: includeExamples,
+            include_references: includeReferences,
             toc: { units: state.treeData.units }
         };
 

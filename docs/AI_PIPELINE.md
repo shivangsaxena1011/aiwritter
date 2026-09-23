@@ -1,8 +1,10 @@
-# AI Book Writer v3.0 — AI Pipeline & Multi-Agent Architecture
+# AIWritter — AI Pipeline & Multi-Agent Architecture
+
+AIWritter decouples textbook generation across 15 specialized agents. LLM and image calls are unified via the `AIProvider` base interface (`backend/app/services/ai/base.py`).
+
+---
 
 ## 1. AI Provider Abstraction
-
-All LLM and image calls are decoupled via the `AIProvider` base interface (`backend/app/services/ai/base.py`):
 
 ```python
 class AIProvider(ABC):
@@ -14,11 +16,9 @@ class AIProvider(ABC):
 ### Supported Providers:
 1. **Google Gemini (`GeminiProvider`):**
    - Utilizes Google GenAI SDK (`google-genai>=1.0.0`).
-   - Primary Text Model: `gemini-2.5-flash` (balanced latency and academic depth).
-   - High-Complexity Fallback: `gemini-2.5-pro` (used on proofs or difficult derivations).
-   - Image Model: `imagen-3.0-generate-002` (generates 16:9 photorealistic scientific illustrations).
+   - Primary Text Model: Configurable via `GEMINI_TEXT_MODEL` (default: `gemini-2.5-flash`).
+   - Image Model: Configurable via `GEMINI_IMAGE_MODEL` (default: `imagen-3.0-generate-002`).
    - Exponential Backoff & Retry: Automatically retries on 429 rate limits or 503 server overloads.
-
 2. **Deterministic Mock Provider (`MockProvider`):**
    - Fully offline provider generating compliant structured JSON, technical markdown, and PIL technical schematics.
    - Used for zero-cost automated tests (`pytest`) and local continuous integration.
@@ -31,11 +31,14 @@ Prompts are separated from application code into parameterized text files with s
 
 | Template | Purpose | Key Constraints |
 |---|---|---|
-| `toc_planner.txt` | Table of contents structuring | Strictly academic, no introductory conversational fluff. |
-| `chapter_planner.txt` | Chapter introductions & roadmaps | Prerequisites, learning outcomes, thematic breakdown. |
-| `content_writer.txt` | Academic subsection text | Mandates mathematical formulations, tables, worked problems. Banned phrases: *"In today's fast-paced world"*, *"Delve"*, *"Tapestry"*. |
-| `diagram_planner.txt` | Figure prompt design | Scientific precision, clean labels, choosing between Imagen or Matplotlib. |
-| `reviewer.txt` | Editorial peer review | Rigorous grading 1–100 across 5 dimensions. |
+| `syllabus_analysis.txt` | Syllabus analysis & topic decomposition | Extracts subject, level, units, and topics with zero omissions. |
+| `topic_blueprints.txt` | Domain blueprint expansion | Specialized blueprints for Physics, CS, Math, and Engineering. |
+| `chapter_planner.txt` | Chapter introductions & roadmaps | Prerequisites, learning outcomes (Bloom's Taxonomy), pedagogical flow. |
+| `content_writer.txt` | Academic subsection text | Paragraph-first, strictly limits bullet points, mandates LaTeX and tables. Anti-AI clichés enforced. |
+| `derivation_agent.txt` | Mathematical derivations | Starting Equation → Assumptions → Step-by-Step Transformations → Final Result. |
+| `diagram_planner.txt` | Figure prompt design | High-contrast monochrome line art, chapter-aware captions (`Figure X.Y`). |
+| `reviewer.txt` | Editorial peer review | Rigorous grading 1–100 across 5 dimensions. Scores < 75 trigger rewrite loop. |
+| `fact_check.txt` | Claim categorization | Classifies assertions: Verified, Needs Review, Conflicting, Unsupported. |
 | `consistency_checker.txt` | Cross-chapter audit | Verifies variable notation ($E$, $V$, $T$), unit conventions, acronyms. |
 | `quality_controller.txt` | Final publication audit | Verifies word budgets, chapter completeness, formatting standards. |
 
@@ -55,27 +58,13 @@ The `ChapterDepthController` regulates section length, token consumption, and ac
 
 ---
 
-## 4. Scientific Diagram Generation System
+## 4. Editorial Review & Quality Scorecard
 
-The `DiagramSystem` evaluates whether each subsection requires visual clarification:
-
-1. **Photorealistic & Concept Schematics:**
-   - Generated via Google Imagen 3 (`imagen-3.0-generate-002`).
-   - Clean, publication-grade academic style with solid dark or white neutral backgrounds.
-
-2. **Deterministic Scientific Plots (Matplotlib):**
-   - System dynamics, phase portraits, statistical distributions, Bode plots, and polarization curves are rendered via headless `matplotlib.pyplot` scripts.
-   - Rendered as high-DPI (300 DPI) figures.
-
----
-
-## 5. Peer Review & Quality Scorecard
-
-Every generated section is passed to the `ReviewAgent` which scores the material across 5 distinct axes (0–20 points each, 100 total):
+Every generated section is passed to the `ContentReviewAgent` which scores the material across 5 distinct axes (0–20 points each, 100 total):
 - **Depth & Rigor (0–20):** Sufficient mathematical and conceptual density.
 - **Pedagogical Value (0–20):** Clear examples, worked problems, exercise questions.
-- **Zero Filler (0–20):** Absence of generic AI clichés and fluff.
+- **Zero Filler (0–20):** Absence of generic AI clichés and conversational fluff.
 - **Technical Accuracy (0–20):** Correct formulas and coherent explanations.
 - **Completeness (0–20):** All subtopic points addressed.
 
-If a section scores below 70, the rewrite loop triggers automatically with targeted correction guidance.
+If a section scores below **75**, the rewrite loop triggers automatically with targeted correction guidance, up to `MAX_CONTENT_REVIEW_RETRIES` (default: 2).

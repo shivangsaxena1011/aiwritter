@@ -47,3 +47,7 @@ class ConsistencyAuditor:
                 "new_terms_introduced": [],
                 "new_acronyms": []
             }
+
+# Semantic Alias
+BookConsistencyAgent = ConsistencyAuditor
+

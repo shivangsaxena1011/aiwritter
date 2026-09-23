@@ -12,6 +12,7 @@ from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
 from backend.app.services.document.base import DocumentExporter
+from backend.app.services.math.omml_engine import OMMLEngine
 
 logger = logging.getLogger(__name__)
 
@@ -88,12 +89,16 @@ class DOCXExporter(DocumentExporter):
         return output_path
 
     def _configure_document_styles(self, doc: Document):
-        """Standardizes typography and heading hierarchies."""
+        """Standardizes typography and heading hierarchies: Times New Roman, 12pt, 1.5 spacing, Justified."""
         normal_style = doc.styles["Normal"]
         font = normal_style.font
         font.name = "Times New Roman"
-        font.size = Pt(11)
-        font.color.rgb = RGBColor(30, 41, 59)
+        font.size = Pt(12)
+        font.color.rgb = RGBColor(15, 23, 42)
+
+        # Paragraph formatting default
+        normal_style.paragraph_format.line_spacing = 1.5
+        normal_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
 
         # Ensure margins on all sections
         for section in doc.sections:
@@ -255,17 +260,17 @@ class DOCXExporter(DocumentExporter):
         try:
             pic_p = doc.add_paragraph()
             pic_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            pic_p.paragraph_format.space_before = Pt(12)
+            pic_p.paragraph_format.space_before = Pt(14)
             pic_p.paragraph_format.space_after = Pt(4)
             pic_run = pic_p.add_run()
-            pic_run.add_picture(img_path, width=Inches(5.6))
+            pic_run.add_picture(img_path, width=Inches(5.5))
 
             cap_p = doc.add_paragraph()
             cap_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             cap_p.paragraph_format.space_after = Pt(14)
             cap_run = cap_p.add_run(caption)
-            cap_run.font.name = "Calibri"
-            cap_run.font.size = Pt(9.5)
+            cap_run.font.name = "Times New Roman"
+            cap_run.font.size = Pt(10)
             cap_run.font.bold = True
             cap_run.font.italic = True
             cap_run.font.color.rgb = RGBColor(51, 65, 85)
@@ -325,15 +330,15 @@ class DOCXExporter(DocumentExporter):
                 h.paragraph_format.space_after = Pt(4)
             elif line_str.startswith("### "):
                 h = doc.add_heading(line_str[4:], level=3)
-                h.paragraph_format.space_before = Pt(10)
+                h.paragraph_format.space_before = Pt(12)
                 h.paragraph_format.space_after = Pt(4)
             elif line_str.startswith("## "):
                 h = doc.add_heading(line_str[3:], level=2)
-                h.paragraph_format.space_before = Pt(14)
+                h.paragraph_format.space_before = Pt(16)
                 h.paragraph_format.space_after = Pt(6)
             elif line_str.startswith("# "):
                 h = doc.add_heading(line_str[2:], level=1)
-                h.paragraph_format.space_before = Pt(18)
+                h.paragraph_format.space_before = Pt(20)
                 h.paragraph_format.space_after = Pt(8)
 
             # 4. Callout Blocks (> )
@@ -345,6 +350,7 @@ class DOCXExporter(DocumentExporter):
                 self._parse_inline_formatting(call_p, line_str[2:])
                 for r in call_p.runs:
                     r.font.italic = True
+                    r.font.name = "Times New Roman"
                     r.font.color.rgb = RGBColor(71, 85, 105)
 
             # 5. Bullet Lists
@@ -360,21 +366,25 @@ class DOCXExporter(DocumentExporter):
                 np.paragraph_format.space_after = Pt(2)
                 self._parse_inline_formatting(np, num_text)
 
-            # 7. Math Equation Blocks ($$ ... $$)
+            # 7. Math Equation Blocks ($$ ... $$) — Rendered via OMML Engine
             elif line_str.startswith("$$") and line_str.endswith("$$"):
                 math_p = doc.add_paragraph()
                 math_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                math_p.paragraph_format.space_before = Pt(6)
-                math_p.paragraph_format.space_after = Pt(6)
-                math_run = math_p.add_run(line_str[2:-2].strip())
-                math_run.font.name = "Cambria Math"
-                math_run.font.size = Pt(11)
-                math_run.font.italic = True
+                math_p.paragraph_format.space_before = Pt(8)
+                math_p.paragraph_format.space_after = Pt(8)
+                raw_eq = line_str[2:-2].strip()
+                success = OMMLEngine.insert_equation_into_paragraph(math_p, raw_eq, is_display=True)
+                if not success:
+                    math_run = math_p.add_run(OMMLEngine.sanitize_math_text(raw_eq))
+                    math_run.font.name = "Cambria Math"
+                    math_run.font.size = Pt(12)
+                    math_run.font.italic = True
 
-            # 8. Standard Paragraph
+            # 8. Standard Paragraph — Times New Roman, 12pt, 1.5 line spacing, Justified
             elif line_str:
                 p = doc.add_paragraph()
-                p.paragraph_format.line_spacing = 1.15
+                p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                p.paragraph_format.line_spacing = 1.5
                 p.paragraph_format.space_after = Pt(6)
                 self._parse_inline_formatting(p, line_str)
 
@@ -404,24 +414,24 @@ class DOCXExporter(DocumentExporter):
                     cell = table.cell(r_idx, c_idx)
                     cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
                     p = cell.paragraphs[0]
-                    p.paragraph_format.space_before = Pt(3)
-                    p.paragraph_format.space_after = Pt(3)
+                    p.paragraph_format.space_before = Pt(4)
+                    p.paragraph_format.space_after = Pt(4)
                     self._parse_inline_formatting(p, cell_text)
 
                     # Header row styling
                     if r_idx == 0:
                         for r in p.runs:
                             r.font.bold = True
-                            r.font.name = "Calibri"
-                            r.font.size = Pt(10)
+                            r.font.name = "Times New Roman"
+                            r.font.size = Pt(11)
                             r.font.color.rgb = RGBColor(255, 255, 255)
                         # Set header background shading to dark slate blue
-                        shading = parse_xml(r'<w:shd {} w:fill="2563EB"/>'.format(nsdecls('w')))
+                        shading = parse_xml(r'<w:shd {} w:fill="1E3A8A"/>'.format(nsdecls('w')))
                         cell._tc.get_or_add_tcPr().append(shading)
                     else:
                         for r in p.runs:
-                            r.font.name = "Calibri"
-                            r.font.size = Pt(9.5)
+                            r.font.name = "Times New Roman"
+                            r.font.size = Pt(10.5)
                         # Alternate row shading
                         if r_idx % 2 == 1:
                             shading = parse_xml(r'<w:shd {} w:fill="F8FAFC"/>'.format(nsdecls('w')))
@@ -431,7 +441,6 @@ class DOCXExporter(DocumentExporter):
 
     def _parse_inline_formatting(self, paragraph, text: str):
         """Parses inline bold, italics, code, and inline math."""
-        # Tokens: **bold**, *italic*, `code`, $math$
         pattern = r"(\*\*.*?\*\*|\*.*?\*|`.*?`|\$.*?\$)"
         tokens = re.split(pattern, text)
         for t in tokens:
@@ -440,19 +449,23 @@ class DOCXExporter(DocumentExporter):
             if t.startswith("**") and t.endswith("**"):
                 r = paragraph.add_run(t[2:-2])
                 r.bold = True
+                r.font.name = "Times New Roman"
             elif t.startswith("*") and t.endswith("*"):
                 r = paragraph.add_run(t[1:-1])
                 r.italic = True
+                r.font.name = "Times New Roman"
             elif t.startswith("`") and t.endswith("`"):
                 r = paragraph.add_run(t[1:-1])
                 r.font.name = "Courier New"
-                r.font.size = Pt(9.5)
+                r.font.size = Pt(10)
             elif t.startswith("$") and t.endswith("$"):
-                r = paragraph.add_run(t[1:-1])
+                clean_sym = OMMLEngine.sanitize_math_text(t[1:-1])
+                r = paragraph.add_run(clean_sym)
                 r.font.name = "Cambria Math"
                 r.font.italic = True
             else:
-                paragraph.add_run(t)
+                r = paragraph.add_run(t)
+                r.font.name = "Times New Roman"
 
     def _build_back_matter(self, doc: Document, quality_report: Dict[str, Any]):
         """Generates final academic audit scorecard and publication verification report."""
@@ -500,4 +513,7 @@ class DOCXExporter(DocumentExporter):
             logger.warning(f"Page numbering injection skipped: {e}")
 
 DocxEngine = DOCXExporter
+DOCXExportAgent = DOCXExporter
+DocumentFormattingAgent = DOCXExporter
+
 

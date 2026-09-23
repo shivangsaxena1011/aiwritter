@@ -14,6 +14,8 @@ services:
       - APP_ENV=production
       - AI_MODE=${AI_MODE:-gemini}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_TEXT_MODEL=${GEMINI_TEXT_MODEL:-gemini-2.5-flash}
+      - GEMINI_IMAGE_MODEL=${GEMINI_IMAGE_MODEL:-imagen-3.0-generate-002}
       - TEXT_MODEL=${TEXT_MODEL:-gemini-2.5-flash}
       - IMAGE_MODEL=${IMAGE_MODEL:-imagen-3.0-generate-002}
       - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/aiwriter.db}

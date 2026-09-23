@@ -30,9 +30,9 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down AI Book Writer...")
 
 app = FastAPI(
-    title="AI Book Writer v3.0 — Academic Publishing Platform",
+    title="AIWritter — Agentic Academic Book Publishing Engine",
     version=settings.APP_VERSION,
-    description="Production-grade AI textbook publishing engine with multi-stage agents, durable jobs, and DOCX/PDF export.",
+    description="Production-grade agentic academic textbook publishing engine with multi-stage agents, derivations, educational research, durable jobs, and native Word export.",
     lifespan=lifespan
 )
 

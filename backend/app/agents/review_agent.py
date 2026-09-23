@@ -30,6 +30,15 @@ class ReviewAgent:
             # Ensure safe fields
             score = float(result.get("overall_score", 85.0))
             rewrite = bool(result.get("rewrite_required", False))
+
+            # Additional check: excessive bullet points penalty (Section 12 & 31)
+            bullet_count = len([line for line in content.splitlines() if line.strip().startswith("- ") or line.strip().startswith("* ")])
+            total_lines = len([line for line in content.splitlines() if line.strip()])
+            if total_lines > 0 and (bullet_count / total_lines) > 0.40:
+                result.setdefault("issues", []).append("Excessive bullet usage detected; textbook material must be predominantly explanatory paragraphs.")
+                score = min(score, 68.0)
+                rewrite = True
+
             if score < 70.0:
                 rewrite = True
 
@@ -59,3 +68,7 @@ class ReviewAgent:
                 "corrections": [],
                 "rewrite_required": False
             }
+
+# Semantic Alias
+ContentReviewAgent = ReviewAgent
+

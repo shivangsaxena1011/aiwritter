@@ -23,11 +23,22 @@ class Settings(BaseSettings):
 
     # AI Configuration
     AI_MODE: str = Field(default="gemini", description="gemini | mock")
+    AI_PROVIDER: str = Field(default="gemini", description="gemini | mock")
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
+    GEMINI_TEXT_MODEL: Optional[str] = None
+    GEMINI_IMAGE_MODEL: Optional[str] = None
     TEXT_MODEL: str = "gemini-2.5-flash"
     STRUCTURED_MODEL: str = "gemini-2.5-flash"
     IMAGE_MODEL: str = "imagen-3.0-generate-002"
+
+    @property
+    def effective_text_model(self) -> str:
+        return self.GEMINI_TEXT_MODEL or self.TEXT_MODEL
+
+    @property
+    def effective_image_model(self) -> str:
+        return self.GEMINI_IMAGE_MODEL or self.IMAGE_MODEL
 
     # Storage
     STORAGE_PROVIDER: str = Field(default="local", description="local | s3 | r2")
@@ -41,6 +52,7 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_JOBS: int = 3
     MAX_BOOK_WORDS: int = 300000
     SECTION_RETRY_LIMIT: int = 3
+    MAX_CONTENT_REVIEW_RETRIES: int = 2
     AI_TIMEOUT_SECONDS: float = 120.0
 
     # Security

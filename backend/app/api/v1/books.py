@@ -60,9 +60,16 @@ def create_book(req: CreateBookRequest, db: Session = Depends(get_db)):
         target_audience=req.target_audience or "Undergraduate & Graduate",
         language=req.language or "en",
         book_metadata={
+            "subject": req.subject or req.title.strip(),
             "writing_depth": req.writing_depth or "Detailed",
+            "research_depth": req.research_depth or "Standard",
             "citation_style": req.citation_style or "IEEE",
-            "generate_images": req.generate_images
+            "generate_images": req.generate_images,
+            "include_diagrams": req.include_diagrams,
+            "include_numericals": req.include_numericals,
+            "include_questions": req.include_questions,
+            "include_examples": req.include_examples,
+            "include_references": req.include_references
         }
     )
     db.add(book)

@@ -58,6 +58,9 @@ class Book(Base):
     jobs = relationship("GenerationJob", back_populates="book", cascade="all, delete-orphan")
     assets = relationship("GeneratedAsset", back_populates="book", cascade="all, delete-orphan")
     sections = relationship("GeneratedSection", back_populates="book", cascade="all, delete-orphan")
+    research_sources = relationship("ResearchSource", back_populates="book", cascade="all, delete-orphan")
+    review_results = relationship("ReviewResult", back_populates="book", cascade="all, delete-orphan")
+    exports = relationship("DocumentExport", back_populates="book", cascade="all, delete-orphan")
 
 class BookUnit(Base):
     __tablename__ = "book_units"
@@ -157,3 +160,60 @@ class GeneratedSection(Base):
     book = relationship("Book", back_populates="sections")
 
 Index("idx_sections_book_subtopic", GeneratedSection.book_id, GeneratedSection.subtopic_id)
+
+class ResearchSource(Base):
+    __tablename__ = "research_sources"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    book_id = Column(String(36), ForeignKey("books.id"), nullable=False, index=True)
+    topic_id = Column(String(36), ForeignKey("book_topics.id"), nullable=True, index=True)
+    title = Column(String(512), nullable=False)
+    url = Column(String(1024), nullable=True)
+    author = Column(String(255), nullable=True)
+    publisher = Column(String(255), nullable=True)
+    publication_date = Column(String(100), nullable=True)
+    accessed_date = Column(String(100), nullable=True)
+    source_type = Column(String(100), default="educational")  # textbook, university, paper, standard, web
+    key_points = Column(JSON, default=list)
+    relevance = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    book = relationship("Book", back_populates="research_sources")
+
+class ReviewResult(Base):
+    __tablename__ = "review_results"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    book_id = Column(String(36), ForeignKey("books.id"), nullable=False, index=True)
+    section_id = Column(String(36), ForeignKey("generated_sections.id"), nullable=True, index=True)
+    agent = Column(String(100), default="ContentReviewAgent")
+    status = Column(String(50), default="approved", index=True)  # approved, rewrite, warning
+    quality_score = Column(Float, default=0.0)
+    fact_check_status = Column(String(50), default="verified")  # verified, needs_review, conflicting_sources, unsupported
+    originality_score = Column(Float, default=100.0)
+    issues = Column(JSON, default=list)
+    recommendations = Column(JSON, default=list)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    book = relationship("Book", back_populates="review_results")
+
+class DocumentExport(Base):
+    __tablename__ = "document_exports"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    book_id = Column(String(36), ForeignKey("books.id"), nullable=False, index=True)
+    job_id = Column(String(36), ForeignKey("generation_jobs.id"), nullable=True, index=True)
+    format = Column(String(50), default="docx")  # docx, pdf
+    file_path = Column(String(1024), nullable=False)
+    file_size = Column(Integer, default=0)
+    validation_report = Column(JSON, default=dict)
+    syllabus_coverage = Column(JSON, default=dict)
+    created_at = Column(DateTime(timezone=True), default=utc_now)
+
+    book = relationship("Book", back_populates="exports")
+
+# Semantic Aliases
+Chapter = BookUnit
+Topic = BookTopic
+Subtopic = BookSubtopic
+

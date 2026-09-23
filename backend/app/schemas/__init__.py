@@ -30,10 +30,17 @@ class CreateBookRequest(BaseModel):
     author: Optional[str] = Field("AI Academic Press", max_length=100)
     academic_level: Optional[str] = Field("University / Reference", max_length=50)
     target_audience: Optional[str] = Field("Undergraduate & Graduate", max_length=100)
+    subject: Optional[str] = Field(None, max_length=255)
     writing_depth: Optional[str] = Field("Detailed", description="Concise | Standard | Detailed | Deep Academic | Reference")
+    research_depth: Optional[str] = Field("Standard", description="None | Basic | Standard | Deep")
     language: Optional[str] = Field("en", max_length=10)
     citation_style: Optional[str] = Field("IEEE", max_length=20)
     generate_images: bool = False
+    include_diagrams: bool = True
+    include_numericals: bool = False
+    include_questions: bool = False
+    include_examples: bool = True
+    include_references: bool = True
     api_key: Optional[str] = None
     toc: TableOfContentsSchema
 
@@ -43,6 +50,14 @@ class CreateBookRequest(BaseModel):
         valid_depths = {"Concise", "Standard", "Detailed", "Deep Academic", "Reference"}
         if v not in valid_depths:
             return "Detailed"
+        return v
+
+    @field_validator("research_depth")
+    @classmethod
+    def validate_research_depth(cls, v):
+        valid = {"None", "Basic", "Standard", "Deep"}
+        if v not in valid:
+            return "Standard"
         return v
 
 class EstimationResponse(BaseModel):

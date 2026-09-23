@@ -1,4 +1,5 @@
 import json
+import uuid
 import asyncio
 from datetime import datetime, timezone
 from typing import Optional, List
@@ -112,9 +113,12 @@ async def stream_job_events(job_id: str, request: Request, db: Session = Depends
             for ev in new_events:
                 last_event_time = ev.created_at
                 payload = {
+                    "event_id": ev.id,
+                    "job_id": ev.job_id,
                     "type": ev.event_type,
                     "message": ev.message,
                     "progress": ev.progress,
+                    "timestamp": ev.created_at.isoformat(),
                     "created_at": ev.created_at.isoformat(),
                     "metadata": ev.event_metadata
                 }
@@ -123,15 +127,17 @@ async def stream_job_events(job_id: str, request: Request, db: Session = Depends
             # Check job status
             db.expire(job)
             current_job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-            if current_job and current_job.status in ["COMPLETED", "FAILED", "CANCELLED"]:
+            if current_job and current_job.status in ["COMPLETED", "PARTIAL", "FAILED", "CANCELLED"]:
                 asset = db.query(GeneratedAsset).filter(
                     GeneratedAsset.job_id == job_id,
                     GeneratedAsset.type == "docx"
                 ).first()
                 final_payload = {
-                    "type": "complete" if current_job.status == "COMPLETED" else "error",
+                    "event_id": str(uuid.uuid4()),
+                    "job_id": job_id,
+                    "type": "complete" if current_job.status in ["COMPLETED", "PARTIAL"] else "error",
                     "status": current_job.status,
-                    "message": current_job.error or "Pipeline completed",
+                    "message": current_job.error or f"Pipeline finished ({current_job.status})",
                     "progress": current_job.progress,
                     "download_url": asset.url if asset else None
                 }

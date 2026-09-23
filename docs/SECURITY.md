@@ -1,6 +1,6 @@
-# AI Book Writer v3.0 — Security & Privacy Architecture
+# AIWritter — Security & Privacy Architecture
 
-Security and privacy are core architectural tenets of AI Book Writer v3.0.
+Security, privacy, and prompt boundary integrity are core architectural tenets of AIWritter.
 
 ---
 
@@ -22,7 +22,7 @@ def validate_safe_path(base_dir: str, filename: str) -> str:
 ### Protection Measures:
 - Explicit rejection of `../`, `..\\`, absolute paths (`/etc/passwd`, `C:\Windows\...`), and null bytes.
 - Download endpoint `/api/v1/files/{filename}` strips dangerous symbols and verifies file existence strictly within `STORAGE_LOCAL_DIR`.
-- Only approved file extensions (`.docx`, `.pdf`, `.png`, `.jpg`) can be streamed to clients.
+- Only approved file extensions (`.docx`, `.pdf`, `.png`, `.jpg`, `.json`) can be streamed to clients.
 
 ---
 
@@ -36,7 +36,7 @@ def validate_safe_path(base_dir: str, filename: str) -> str:
 
 3. **Masking & Log Scrubbing:**
    The logging infrastructure filters secret credentials using `mask_api_key()`:
-   ```
+   ```text
    AIzaSy1234567890abcdef -> AIza...cdef
    ```
 
@@ -51,7 +51,21 @@ All inbound API payloads are validated via **Pydantic v2**:
 
 ---
 
-## 4. Cross-Origin Resource Sharing (CORS)
+## 4. Prompt Injection Defense & Research Data Fencing
+
+External web research materials and untrusted syllabus texts can contain adversarial prompts designed to hijack LLM behavior. AIWritter isolates all external research data:
+
+1. **Boundary Delimiters:** External texts are enclosed in unambiguous structural tags:
+   ```text
+   <<<UNTRUSTED_RESEARCH_DATA_START>>>
+   [External Content]
+   <<<UNTRUSTED_RESEARCH_DATA_END>>>
+   ```
+2. **Explicit LLM Directive:** The system prompt explicitly commands the model to treat content within these boundaries as passive factual data, neutralizing instruction injection attempts.
+
+---
+
+## 5. Cross-Origin Resource Sharing (CORS)
 
 Configured via `backend/app/core/config.py`:
 - In local development, defaults to `*`.

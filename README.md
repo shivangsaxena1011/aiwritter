@@ -1,67 +1,76 @@
-# AI Book Writer v3.0 — Agentic Academic Publishing Platform
+# AIWritter — Agentic Academic Book Publishing Platform
 
-[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://python.org)
+[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue.svg)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0+-red.svg)](https://www.sqlalchemy.org/)
 [![Google Gemini](https://img.shields.io/badge/Gemini%202.5-Flash%20%2F%20Pro-8E75C2.svg)](https://ai.google.dev/)
 [![Imagen 3](https://img.shields.io/badge/Imagen%203-Enabled-blue.svg)](https://cloud.google.com/vertex-ai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Autonomous AI-powered platform for generating university-grade academic textbooks (300+ pages) from syllabi or raw outlines, featuring multi-agent editorial review, Imagen 3 & Matplotlib scientific diagrams, and native Word `.docx` formatting.**
+> **Autonomous multi-agent publishing platform transforming university syllabi, course outlines, and research topics into complete, publication-grade Microsoft Word (`.docx`) textbooks. Features native OMML mathematical typesetting, academic black-and-white schematics, rigorous peer review, and automated quality validation.**
 
 ---
 
-## 🌟 Key Highlights & Innovations in v3.0
+## 🌟 Key Capabilities & Architectural Innovations
 
-- **🤖 8 Autonomous Domain Agents:** Full editorial team including `TOCPlanner`, `BookContextManager`, `ChapterDepthController`, `ContentWriter`, `DiagramSystem`, `ReviewAgent` (1–100 rubric), `ConsistencyAuditor`, and `QualityController`.
-- **📊 Real Native Word Tables:** Converts markdown tables into true Word XML tables (`<w:tbl>`) with colored headers and alternating zebra row striping—never raw markdown text blocks.
-- **📈 Scientific Diagrams:** Automatically balances between **Google Imagen 3** photorealistic illustrations and **Matplotlib** technical graphs (polarization curves, distributions, state diagrams).
-- **🔄 Durable Job Engine & Partial Recovery:** Background worker queue backed by SQLite or PostgreSQL. If a network blip occurs, the pipeline checkpoints to disk and resumes from the exact section without regenerating previous chapters.
-- **⚡ Pre-Generation Live Estimator:** Real-time computation of total word count, page count (~380 words/page), generation duration, and diagram counts as you edit the outline or adjust depth levels.
-- **🎨 Dark Glassmorphic Interface:** Futuristic glassmorphic cards, glowing orbs, interactive tree editor, live progress bar, and real-time console log with Server-Sent Events (SSE).
+- **🤖 15 Autonomous Domain Agents:** Specialized multi-agent publishing team including:
+  - `SyllabusAnalysisAgent` (Zero topic omission parser & domain classification)
+  - `TopicDecompositionAgent` (Physics, CS, Math, Engineering blueprints)
+  - `ResearchAgent` (IEEE/APA bibliography management, 6-gram originality audit)
+  - `ContentPlanningAgent` (Pedagogical roadmaps, learning outcomes)
+  - `ContentWriterAgent` (Paragraph-first academic prose, anti-AI cliché filters)
+  - `DerivationAgent` (Formal mathematical proof structures)
+  - `DiagramPromptAgent`, `DiagramPlannerAgent`, & `DiagramGeneratorAgent` (Monochrome line art & chapter-aware captions)
+  - `ContentReviewAgent` (Multi-dimensional 100-point rubric, automatic rewrite loops)
+  - `FactCheckAgent` & `BookConsistencyAgent` (Claim auditing, cross-chapter terminology memory)
+  - `DocumentStructureAgent`, `DOCXExportEngine`, & `DocumentValidationAgent` (Canonical textbook layout, native OMML, and automated DOCX inspection)
+- **📐 Native Word OMML Equations:** Converts LaTeX equations directly into Microsoft Word OMML XML elements (`<m:oMathPara>`, `<m:f>`, `<m:rad>`, `<m:sSup>`). Equations are crisp, vectorized, and editable in Microsoft Word with Cambria Math.
+- **📊 Publication-Grade Typography & Tables:** Strict adherence to academic standards: Times New Roman, 12pt body, 1.5 line spacing, Justified alignment, 1-inch margins, running headers, and native XML tables with dark slate headers (`#1E293B`) and zebra striping.
+- **📈 Black-and-White Academic Schematics:** Automatically generates high-contrast technical line art using **Google Imagen 3** or deterministic **Matplotlib** scientific plots, with resilient multi-tier fallback to styled academic callouts.
+- **🔄 Durable Job Engine & Partial Recovery:** Background worker queue backed by SQLite or PostgreSQL. Checkpoints completed sections to disk and database—if interrupted, generation resumes seamlessly without lost progress.
+- **🔍 Automated Quality Reports:** Emits `document_quality_report.json` auditing font compliance, line spacing, margins, OMML display equations, table shading, and syllabus coverage.
 - **🔒 Zero-Credential Persistence:** Gemini API keys are held strictly in runtime memory, never written to disk, database, or browser `localStorage`.
 
 ---
 
 ## 🏛️ System Architecture
 
-```
-                      +---------------------------------------+
-                      |       Web Client (Browser SPA)        |
-                      |   Dark Glassmorphism, SSE, Tree Editor|
-                      +---------------------------------------+
-                                          |
-                                HTTP / SSE / REST
-                                          v
-+-----------------------------------------------------------------------------------+
-|                            FastAPI Application (ASGI)                             |
-|  - API Router (/api/v1/books, /api/v1/jobs, /api/v1/files)                       |
-|  - Core Security (Path traversal defenses, API sanitization)                      |
-|  - Static Asset Server                                                            |
-|  - Backward Compatibility Adapter (/api/generate, /api/stream)                   |
-+-----------------------------------------------------------------------------------+
-       |                                          |                         |
-       v                                          v                         v
-+--------------+                       +--------------------+     +-------------------+
-|  SQLAlchemy  |                       | Background Worker  |     |  Storage Engine   |
-|  Data Layer  |                       |   Queue Manager    |     |  Local / S3 / GCS |
-+--------------+                       +--------------------+     +-------------------+
-  (SQLite / PG)                                   |
-                                                  v
-                     +---------------------------------------------+
-                     |    BookGenerationPipeline (14-Stage DAG)    |
-                     +---------------------------------------------+
-                               |              |              |
-                               v              v              v
-                     +---------------+ +--------------+ +---------------+
-                     | Agent Layer   | | AI Provider  | | Document      |
-                     | - TOCPlanner  | | - Gemini 2.5 | |   Engine      |
-                     | - ContextMgr  | | - Imagen 3   | | - DOCXEngine  |
-                     | - DepthCtrl   | | - Matplotlib | | - Native Tabs |
-                     | - Writer      | | - MockProvider | - PDF Export  |
-                     | - Reviewer    | +--------------+ +---------------+
-                     | - Auditor     |
-                     +---------------+
+```text
+USER / BROWSER CLIENT
+  │
+  ▼
+SYLLABUS / TOPIC INPUT (with Academic Toggles)
+  │
+  ▼
+SYLLABUS ANALYSIS AGENT (Zero-Omission Parsing)
+  │
+  ▼
+TOPIC DECOMPOSITION AGENT (Domain Blueprints: Physics, CS, Math, Engineering)
+  │
+  ▼
+CONTENT PLANNING AGENT (Pedagogical Roadmaps & Outcomes)
+  │
+  ├──► WEB RESEARCH AGENT (Data Fencing, Citations & IEEE/APA Bibliography)
+  │
+  ▼
+CONTENT WRITER & DERIVATION AGENTS (Paragraph-First Prose, Anti-AI Filter)
+  │
+  ├──► DIAGRAM SYSTEM (Monochrome Line Art / Matplotlib Plots, Chapter Captions)
+  │
+  ▼
+EDITORIAL REVIEW & FACT-CHECK AGENTS (5-Dimension Rubric, Rewrite Loops)
+  │
+  ▼
+BOOK CONSISTENCY AGENT (Terminology & Notation Continuity)
+  │
+  ▼
+DOCUMENT STRUCTURE & DOCX EXPORT ENGINE (Times New Roman, 1.5 Spacing, OMML)
+  │
+  ▼
+DOCUMENT VALIDATION AGENT (Automated XML & Typography Compliance Report)
+  │
+  ▼
+PRODUCTION MICROSOFT WORD TEXTBOOK (.docx) + QUALITY REPORT
 ```
 
 ---
@@ -89,60 +98,65 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 ---
 
-## 🛠️ Configuration & Deployment Modes
+## 🛠️ Configuration & Deployment
 
 Copy the configuration template:
 ```bash
 cp .env.example .env
 ```
 
-### Mode A: Local Standalone (Default)
-- **Database:** SQLite (`data/aiwriter.db`) with Write-Ahead Logging (WAL).
-- **Worker:** In-process asyncio semaphore queue.
-- **Storage:** Local filesystem (`./output/`).
+### Key Configuration Variables:
+```env
+# AI Provider Configuration
+AI_MODE=gemini                          # gemini or mock
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_TEXT_MODEL=gemini-2.5-flash
+GEMINI_IMAGE_MODEL=imagen-3.0-generate-002
+MAX_CONTENT_REVIEW_RETRIES=2
 
-### Mode B: Cloud Distributed (Production)
-- **Frontend:** Deployed to Vercel via included `vercel.json`.
-- **Backend & Worker:** Deployed on Render, Railway, or AWS ECS.
-- **Database:** Managed PostgreSQL (`DATABASE_URL="postgresql+psycopg2://..."`).
-- **Distributed Queue:** Redis (`REDIS_URL="redis://..."`).
-- **Storage:** S3 / Cloudflare R2 / GCS (`STORAGE_TYPE="s3"`).
+# Database & Storage
+DATABASE_URL=sqlite:///./data/aiwriter.db  # or postgresql+psycopg2://...
+STORAGE_TYPE=local                      # local, s3, gcs
+STORAGE_LOCAL_DIR=./output
+```
 
 ---
 
-## 🧪 Automated Test Suite
+## 🧪 Comprehensive Automated Test Suite
 
-AI Book Writer comes with a comprehensive **24-test suite** covering all critical subsystems:
+AIWritter features a robust **39-test suite** verifying all mathematical engines, multi-agent pipelines, document typography, and security boundaries:
 
-```bash
-# Run full test suite
-pytest -v
+```powershell
+# Run complete test suite
+.\venv\Scripts\python.exe -m pytest -v
 ```
 
-### Verified Test Categories:
-- `test_api.py`: FastAPI endpoints, health check, job dispatch, legacy compatibility.
-- `test_content_pipeline.py`: Agent orchestration, context continuity, review scoring, consistency audits.
-- `test_docx_exporter.py`: Production Word exporter, master template integration, native table rendering.
-- `test_file_security.py`: Path traversal protection, safe slugification, API key masking.
-- `test_job_state.py`: Job state machine transitions (`QUEUED` -> `GENERATING` -> `CANCELLED` -> `RETRYING`).
-- `test_toc_parser.py`: Regex syllabus parsing, markdown heading parsing, AI planning fallback.
-- `test_validation.py`: Pydantic schema validation, depth controller profiles.
+### Test Coverage Highlights:
+- `test_omml_and_math.py`: OMML XML conversion, nested radicals (`\sqrt{\frac{2}{L}}`), canonical numerical structure, and arithmetic sanity checks.
+- `test_research_and_originality.py`: Academic research gathering, IEEE/APA references, prompt injection data fencing, and 6-gram originality audit.
+- `test_diagram_and_images.py`: Academic monochrome prompt enforcement, Matplotlib technical schematics, and chapter-aware captions (`Figure X.Y`).
+- `test_document_validation_and_quality.py`: Programmatic `.docx` validation of font family, line spacing, margins, OMML equations, and table formatting.
+- `test_e2e_publishing_pipeline.py`: Complete 14-stage end-to-end publishing pipeline execution and asset persistence.
+- `test_file_security.py`: Path traversal defenses, key isolation, safe filename sanitization.
 
 ---
 
 ## 📚 Technical Documentation
 
-Comprehensive architectural and engineering guides are available in the [`docs/`](docs/) directory:
+Explore the comprehensive engineering documentation in the [`docs/`](docs/) directory:
 
-- [**System Architecture**](docs/ARCHITECTURE.md): Component interactions, data flow, dual-mode deployment.
-- [**REST API Specification**](docs/API.md): Full OpenAPI reference for `/api/v1/` and SSE streaming endpoints.
-- [**AI Pipeline & Agents**](docs/AI_PIPELINE.md): Multi-agent orchestration, prompt registry, depth controller.
-- [**Generation Pipeline**](docs/GENERATION_PIPELINE.md): 14-stage DAG execution sequence and partial recovery.
-- [**Database & Schema**](docs/DATABASE.md): SQLAlchemy models, ER diagram, SQLite vs PostgreSQL.
-- [**Deployment Guide**](docs/DEPLOYMENT.md): Step-by-step instructions for local and cloud production setups.
-- [**Security & Privacy**](docs/SECURITY.md): Path traversal defense, key isolation, schema validation.
-- [**Contributing Guide**](docs/CONTRIBUTING.md): Code style, adding agents, running test suites.
-- [**Troubleshooting FAQ**](docs/TROUBLESHOOTING.md): Rate limits, template recovery, error handling.
+- [**System Architecture**](docs/ARCHITECTURE.md): Multi-agent pipeline overview, component interaction, and deployment modes.
+- [**Agent Catalog & Specifications**](docs/AGENTS.md): Detailed specifications for all 15 publishing agents.
+- [**Mathematical & OMML Engine**](docs/MATH_RENDERING.md): Native Word OMML XML generation, balanced-brace parsing, and numerical problem validation.
+- [**Document Engine & Typography**](docs/DOCUMENT_ENGINE.md): Times New Roman standards, 1.5 line spacing, Justified alignment, and native XML tables.
+- [**Academic Research Pipeline**](docs/RESEARCH_PIPELINE.md): Data fencing, prompt injection defenses, IEEE/APA bibliographies, and originality auditing.
+- [**Diagram & Image Generation**](docs/IMAGE_GENERATION.md): Monochrome line art standards, Imagen 3, Matplotlib plotting, and chapter-aware captions.
+- [**REST API Specification**](docs/API.md): Full OpenAPI reference for `/api/v1/` endpoints and SSE streams.
+- [**Database Schema & Data Layer**](docs/DATABASE.md): SQLAlchemy 2.0 models, ER diagrams, and partial recovery storage.
+- [**Testing & Verification Guide**](docs/TESTING.md): Test suite architecture, pytest commands, and verification protocols.
+- [**Deployment Guide**](docs/DEPLOYMENT.md): Step-by-step instructions for local standalone and cloud production setups.
+- [**Security & Privacy**](docs/SECURITY.md): Path traversal defenses, API key isolation, and prompt fencing.
+- [**Troubleshooting FAQ**](docs/TROUBLESHOOTING.md): Operational solutions for API rate limits, OMML equations, and database concurrency.
 
 ---
 

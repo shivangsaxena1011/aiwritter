@@ -17,3 +17,7 @@ class LocalStorageProvider(StorageProvider):
 
     def get_file_path(self, storage_key: str) -> str:
         return os.path.join(self.base_dir, storage_key)
+
+    @property
+    def local_dir(self) -> str:
+        return self.base_dir
