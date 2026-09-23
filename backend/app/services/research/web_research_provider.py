@@ -213,16 +213,47 @@ Return JSON:
                             issued = item.get("issued", {}).get("date-parts", [["2022"]])
                             pub_year = str(issued[0][0]) if issued and issued[0] else "2022"
 
-                            # Source Quality Hierarchy classification
+                            # Evidence-based Source Quality & Type classification
                             pub_lower = t_publisher.lower()
-                            if any(k in pub_lower for k in ["university", "cambridge", "oxford", "mit", "stanford", "nist", "standard", "cern", "iso"]):
+                            cr_type = item.get("type", "other").lower()
+                            containers = item.get("container-title", [])
+                            container_str = containers[0].lower() if containers else ""
+
+                            if any(k in pub_lower for k in ["nist", "national institute of standards", "iso", "ansi", "cern", "ieee standards"]):
                                 s_tier = 1
                                 s_tier_name = "Government / University / Official Standards"
-                                s_type = "university_standard"
-                            else:
+                                s_type = "standard"
+                                desc = f"Official standard and metrology specification published by {t_publisher}."
+                            elif any(k in pub_lower for k in ["university", "cambridge", "oxford", "mit", "stanford", "harvard", "princeton"]):
+                                s_tier = 1
+                                s_tier_name = "Government / University / Official Standards"
+                                s_type = "university source"
+                                desc = f"University press academic monograph published by {t_publisher}."
+                            elif "journal" in cr_type or any(k in container_str for k in ["journal", "transactions", "letters", "physical review", "applied physics"]):
                                 s_tier = 2
                                 s_tier_name = "Peer-reviewed journals / research papers"
-                                s_type = "peer_reviewed_paper"
+                                s_type = "journal metadata"
+                                desc = f"Journal article indexed via CrossRef in {containers[0] if containers else t_publisher}."
+                            elif "proceeding" in cr_type or "conference" in cr_type or "symposium" in container_str:
+                                s_tier = 2
+                                s_tier_name = "Peer-reviewed journals / research papers"
+                                s_type = "conference metadata"
+                                desc = f"Conference proceedings paper indexed via CrossRef ({t_publisher})."
+                            elif cr_type in ["book", "monograph", "book-chapter"]:
+                                s_tier = 4
+                                s_tier_name = "Established educational resources"
+                                s_type = "book"
+                                desc = f"Academic book/monograph indexed under DOI by {t_publisher}."
+                            elif any(k in pub_lower for k in ["documentation", "spec", "manual", "technical report"]):
+                                s_tier = 3
+                                s_tier_name = "Official technical documentation"
+                                s_type = "technical documentation"
+                                desc = f"Technical documentation from {t_publisher}."
+                            else:
+                                s_tier = 6
+                                s_tier_name = "General websites"
+                                s_type = "publisher source"
+                                desc = f"Publisher source indexed under DOI by {t_publisher}."
 
                             sources.append(ResearchSourceData(
                                 title=t_title,
@@ -234,11 +265,11 @@ Return JSON:
                                 source_type=s_type,
                                 tier=s_tier,
                                 tier_name=s_tier_name,
-                                relevance=f"Primary Tier {s_tier} academic reference & peer-reviewed treatise",
+                                relevance=f"Tier {s_tier} {s_type} for {topic}",
                                 key_points=[
-                                    f"Peer-reviewed analytical formulation of {topic}.",
-                                    f"Published via {t_publisher} under official DOI indexing ({s_tier_name}).",
-                                    f"Authoritative foundational research grounding for {subject}."
+                                    f"Analytical treatise examining {topic}.",
+                                    desc,
+                                    f"Grounding research reference for {subject}."
                                 ]
                             ))
                 except Exception as cr_err:
@@ -272,13 +303,13 @@ Return JSON:
                                 publisher="Wikimedia Foundation",
                                 publication_date=now_str[:4],
                                 accessed_date=now_str,
-                                source_type="educational_encyclopedia",
+                                source_type="encyclopedic source",
                                 tier=5,
                                 tier_name="Encyclopedic references",
                                 relevance="Secondary orientation and encyclopedic conceptual overview (Tier 5)",
                                 key_points=[
                                     f"Foundational definition and mathematical terminology for {w_title}.",
-                                    f"Historical development and key experimental validations.",
+                                    "Historical development and key experimental validations.",
                                     clean_snippet[:150] if clean_snippet else f"Standard syllabus overview of {topic}."
                                 ]
                             ))
@@ -327,7 +358,7 @@ Return JSON:
                 publisher="MIT OpenCourseWare",
                 publication_date="2023",
                 accessed_date=now_str,
-                source_type="university",
+                source_type="university source",
                 tier=1,
                 tier_name="Government / University / Official Standards",
                 relevance="Primary Tier 1 foundational course reference",

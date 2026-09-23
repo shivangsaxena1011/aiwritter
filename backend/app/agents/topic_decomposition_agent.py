@@ -170,25 +170,88 @@ Return JSON:
             domain = "General Science"
             raw_blueprint = list(GENERAL_BLUEPRINT)
 
+        # Determine topic complexity class: low (1-2), medium (2-3), high/derivation (4-6)
+        is_intro = any(w in topic_lower for w in ["introduction", "overview", "history", "basic", "foundations"])
+        is_app = any(w in topic_lower for w in ["application", "advantages", "devices"]) and not any(w in topic_lower for w in ["laser", "diode", "transistor"])
+        is_complex = requires_derivation or any(w in topic_lower for w in [
+            "schrödinger", "schrodinger", "box", "well", "newton", "thin film", "einstein",
+            "numerical aperture", "hall effect", "dispersion", "grating", "interferometer", "cavity", "ruby", "he-ne"
+        ])
+
         sections = []
-        for name in raw_blueprint:
-            # Skip derivation if not needed
-            if "derivation" in name.lower() and not requires_derivation:
-                continue
-            # Skip proof if not mathematical
-            if "proof" in name.lower() and not requires_derivation:
-                continue
-
-            sec_type = "concept"
-            if "derivation" in name.lower() or "proof" in name.lower():
-                sec_type = "derivation"
-            elif "application" in name.lower():
-                sec_type = "application"
-
+        if is_intro:
+            # Concise foundational treatment (1-2 sections)
             sections.append({
-                "title": f"{name} of {topic_title}",
-                "purpose": f"Detailed academic exploration of {name.lower()}.",
-                "section_type": sec_type
+                "title": f"Historical Evolution and Theoretical Need for {topic_title}",
+                "purpose": f"Foundational background, classical inadequacies, and modern emergence of {topic_title}.",
+                "section_type": "concept"
+            })
+            sections.append({
+                "title": f"Governing Principles and Core Postulates of {topic_title}",
+                "purpose": f"Essential operational definitions, physical meaning, and domain scope.",
+                "section_type": "concept"
+            })
+        elif is_app:
+            # Applications & engineering scope (2 sections)
+            sections.append({
+                "title": f"Industrial and Engineering Implementations of {topic_title}",
+                "purpose": f"Comprehensive exploration of field applications and operational case studies.",
+                "section_type": "application"
+            })
+            sections.append({
+                "title": f"Technological Frontiers and Performance Limits of {topic_title}",
+                "purpose": f"Analysis of operational trade-offs, degradation mechanisms, and efficiency limits.",
+                "section_type": "application"
+            })
+        elif is_complex:
+            # Deep analytical & mathematical treatment (4-6 sections)
+            sections.append({
+                "title": f"Theoretical Framework and Physical Postulates of {topic_title}",
+                "purpose": f"Underlying physical laws, conservation symmetries, and starting hypotheses.",
+                "section_type": "concept"
+            })
+            sections.append({
+                "title": f"Mathematical Formulation and Boundary Conditions for {topic_title}",
+                "purpose": f"Establishing coordinates, boundary conditions, and differential equations.",
+                "section_type": "concept"
+            })
+            if requires_derivation:
+                sections.append({
+                    "title": f"Formal Step-by-Step Analytical Derivation of {topic_title}",
+                    "purpose": f"Rigorous proof moving from axioms through substitution to final closed-form result.",
+                    "section_type": "derivation"
+                })
+            sections.append({
+                "title": f"Physical Interpretation and Eigenstate Analysis of {topic_title}",
+                "purpose": f"Examining physical meaning of solutions, quantization, and spatial probability distributions.",
+                "section_type": "concept"
+            })
+            sections.append({
+                "title": f"Engineering Applications and Experimental Verification of {topic_title}",
+                "purpose": f"Metrology, technological devices, and laboratory validation.",
+                "section_type": "application"
+            })
+            sections.append({
+                "title": f"Domain Boundaries and Analytical Limitations of {topic_title}",
+                "purpose": f"Operating limits, high-energy breakdown, and real-world non-idealities.",
+                "section_type": "concept"
+            })
+        else:
+            # Standard analytical treatment (2-3 sections)
+            sections.append({
+                "title": f"Conceptual Axioms and Physical Mechanism of {topic_title}",
+                "purpose": f"Core theory, operational definitions, and physical phenomena.",
+                "section_type": "concept"
+            })
+            sections.append({
+                "title": f"Quantitative Properties and Analytical Behavior of {topic_title}",
+                "purpose": f"Governing relations, physical variables, and mathematical consequences.",
+                "section_type": "concept"
+            })
+            sections.append({
+                "title": f"Technological Applications and Observational Insights in {topic_title}",
+                "purpose": f"Practical significance and real-world manifestation in modern engineering.",
+                "section_type": "application"
             })
 
         if requires_numericals:
@@ -201,5 +264,6 @@ Return JSON:
         return {
             "topic": topic_title,
             "subject_domain": domain,
+            "complexity_level": "High" if is_complex else ("Low" if (is_intro or is_app) else "Medium"),
             "sections": sections
         }

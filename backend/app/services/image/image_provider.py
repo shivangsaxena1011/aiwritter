@@ -47,11 +47,18 @@ class DefaultImageProvider(ImageGenerationProvider):
                     if res.get("success") and res.get("path") and os.path.exists(res["path"]):
                         # Validate generated image
                         if self.validate_image(res["path"]):
+                            is_live = "gemini" in type(self.ai).__name__.lower()
                             return {
                                 "success": True,
                                 "path": res["path"],
                                 "caption": caption,
-                                "modality": "ai_illustration"
+                                "modality": "ai_illustration",
+                                "provenance": {
+                                    "asset_id": os.path.splitext(os.path.basename(res["path"]))[0],
+                                    "provider": "gemini" if is_live else "matplotlib",
+                                    "model": getattr(settings, "effective_image_model", "imagen-3.0-generate-002"),
+                                    "generation_mode": "live" if is_live else "deterministic"
+                                }
                             }
                         else:
                             logger.warning(f"Image validation failed on attempt {attempt+1}")
@@ -65,14 +72,26 @@ class DefaultImageProvider(ImageGenerationProvider):
                 "success": True,
                 "path": fallback_path,
                 "caption": caption,
-                "modality": "deterministic_schematic"
+                "modality": "deterministic_schematic",
+                "provenance": {
+                    "asset_id": os.path.splitext(os.path.basename(fallback_path))[0],
+                    "provider": "matplotlib",
+                    "model": "matplotlib-300dpi-monochrome-engine",
+                    "generation_mode": "deterministic"
+                }
             }
 
         return {
             "success": False,
             "path": None,
             "caption": caption,
-            "modality": "placeholder"
+            "modality": "placeholder",
+            "provenance": {
+                "asset_id": os.path.splitext(os.path.basename(output_path))[0],
+                "provider": "fallback",
+                "model": "placeholder-box",
+                "generation_mode": "fallback"
+            }
         }
 
     @classmethod

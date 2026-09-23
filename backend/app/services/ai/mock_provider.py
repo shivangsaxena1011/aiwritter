@@ -25,24 +25,20 @@ class MockProvider(AIProvider):
         include_qa = "INCLUDE REVIEW QUESTIONS" in prompt
 
         content_parts = [
-            f"""### Learning Objectives
-1. Understand the theoretical foundations and core dynamics of {subtopic}.
-2. Formulate governing quantitative relationships and state equations.
-3. Critically analyze industrial trade-offs, operational constraints, and failure modes.
+            f"""### Foundations and Scope of {subtopic}
+This treatise establishes the rigorous theoretical framework and physical principles governing {subtopic}. Students and academic researchers will examine the underlying postulates, formulate the relevant continuous differential state relationships, and evaluate the physical consequences that emerge from boundary constraints. Modern engineering applications rely directly on these foundational dynamics to achieve stable, high-efficiency system performance across diverse operational regimes.
 
-### 1. Introduction and Historical Context
-The development of {subtopic} represents a foundational milestone in contemporary technical systems. Historically developed to address operational inefficiencies, early architectures prioritized basic functionality over thermodynamic or computational efficiency. Modern methodologies integrate rigorous closed-loop optimization to achieve optimal performance metrics.
+### 1. Theoretical Framework and Physical Mechanisms
+The development of {subtopic} represents a cornerstone in contemporary physics and engineering analysis. Historically formulated to resolve fundamental limitations in classical continuum models, modern theory treats the phenomenon through unified differential state representations. By examining conservation symmetries and boundary conditions, investigators can establish direct analytical links between microscopic particle interactions and macroscopic observable behaviors.
 
-### 2. Theoretical Foundations and Analytical Formulation
-At its core, {subtopic} operates under established physical and empirical principles. The dynamic behavior can be modeled using the generalized governing equation:
+### 2. Analytical Formulation and Governing Equations
+The dynamic equilibrium of {subtopic} is captured quantitatively by the generalized conservation field relationship:
 
 $$\\frac{{d\\Psi}}{{dt}} + \\nabla \\cdot (\\mathbf{{v}} \\Psi) = \\kappa \\nabla^2 \\Psi + \\dot{{S}}_{{gen}}$$
 
-Where:
-- $\\Psi$ represents the state variable of the system.
-- $\\mathbf{{v}}$ denotes the convective velocity field vector.
-- $\\kappa$ is the effective transport diffusivity coefficient.
-- $\\dot{{S}}_{{gen}}$ is the net volumetric internal generation rate.
+In this governing differential equation, the scalar field function $\\Psi$ characterizes the continuous physical state or probability amplitude across the active coordinate domain. The vector $\\mathbf{{v}}$ denotes the convective transport velocity field, while $\\kappa$ specifies the effective transport diffusivity governing dissipation. Volumetric source contributions and internal thermodynamic transformations are accounted for by the net generation rate term $\\dot{{S}}_{{gen}}$.
+
+Under steady-state conditions with uniform spatial gradients, the convective and time-dependent variations vanish. This reduction simplifies the system to an ordinary second-order differential formulation where characteristic eigenvalues correspond directly to discrete admissible physical states.
 
 ### 3. Comparison of Core Architectures
 The table below contrasts standard configurations used across modern academic and commercial implementations:
@@ -53,36 +49,42 @@ The table below contrasts standard configurations used across modern academic an
 | Temperature Range | 60°C - 80°C | 120°C - 180°C | 600°C - 800°C |
 | Response Latency | < 5 ms | 25 ms | > 100 ms |
 | Capital Cost Index | Moderate | High | Premium |
-| Durability Lifecycle | 15,000 Hours | 40,000 Hours | 80,000 Hours |"""
+| Durability Lifecycle | 15,000 Hours | 40,000 Hours | 80,000 Hours |
+
+### 4. Key Engineering Characteristics and Trade-offs
+While the fundamental mathematical solutions describe ideal continuous behavior, practical implementations exhibit distinct operational characteristics:
+- **Boundary Constraint Sensitivity:** Localized geometric perturbations shift the fundamental eigenvalue spectrum.
+- **Thermodynamic Dissipation:** Systems relax toward minimal entropy production in the absence of external driving potentials.
+- **Operational Scalability:** Modular configurations support high-density integration without compromising thermal dissipation.
+
+### 5. Summary and Physical Observations
+In summary, the physical behavior of {subtopic} illustrates how microscopic conservation symmetries dictate macroscopic observables. Modern engineering designs leverage these mathematical relationships to optimize stability, minimize dissipative losses, and ensure reliable performance across dynamic operational environments."""
         ]
 
         if include_num:
             content_parts.append(f"""
-### 4. Worked Solved Numerical Problem
+### 6. Worked Solved Numerical Problem
 **Problem Statement:** Consider a reference installation of {subtopic} operating under nominal boundary conditions with an input flux of $2.5\\text{{ kg/s}}$ and an active area of $14.2\\text{{ m}}^2$. Calculate the net specific flux and resultant dissipation factor.
 
-- **Given:**
-  - Influx rate $\\dot{{m}} = 2.5\\text{{ kg/s}}$
-  - Cross-sectional surface area $A = 14.2\\text{{ m}}^2$
-- **Formula:**
-  $$J = \\frac{{\\dot{{m}}}}{{A}}$$
-- **Substitution:**
-  $$J = \\frac{{2.5}}{{14.2}}$$
-- **Calculation:**
-  $$J = 0.176056\\dots$$
-- **Answer:**
-  $$J = 0.1761$$
-- **Unit:**
-  $$\\text{{kg}}/(m^2\\cdot\\text{{s}})$$""")
+**Given Data:**
+- Influx rate $\\dot{{m}} = 2.5\\text{{ kg/s}}$
+- Cross-sectional surface area $A = 14.2\\text{{ m}}^2$
 
-        content_parts.append(f"""
-### 5. Summary and Key Takeaways
-- {subtopic} demonstrates non-linear dependencies across boundary operational regimes.
-- Architectural selection dictates thermal management, longevity, and overall system scalability.""")
+**Governing Formula:**
+$$J = \\frac{{\\dot{{m}}}}{{A}}$$
+
+**Substitution:**
+$$J = \\frac{{2.5}}{{14.2}}$$
+
+**Calculation Steps:**
+$$J = 0.176056\\dots$$
+
+**Final Answer:**
+$$J = 0.1761\\text{{ kg}}/(m^2\\cdot\\text{{s}})$$""")
 
         if include_qa:
             content_parts.append("""
-### 6. Review Questions and Academic Exercises
+### 7. Review Questions and Academic Exercises
 1. *Analytical*: Derive the steady-state solution for $\\Psi(x)$ assuming 1D planar symmetry and zero generation.
 2. *Conceptual*: Contrast the mechanical failure modes between Configuration Alpha and Beta under cyclic loading.""")
 
@@ -135,34 +137,44 @@ The table below contrasts standard configurations used across modern academic an
                 ]
             }
 
-        # Diagram planning
+        # Diagram planning — Content-driven selection based on genuine visual necessity
         if "diagram" in prompt_lower or "illustration" in prompt_lower:
-            topic_match = re.search(r"(?:topic|subtopic|title):\s*([^\n\r]+)", prompt, re.I)
-            subtopic = topic_match.group(1).strip() if topic_match else "Governing Physical Phenomenon"
+            subtopic_match = re.search(r"(?:subtopic|section):\s*([^\n\r]+)", prompt, re.I)
+            if not subtopic_match:
+                subtopic_match = re.search(r"(?:topic|title):\s*([^\n\r]+)", prompt, re.I)
+            subtopic = subtopic_match.group(1).strip() if subtopic_match else "Governing Physical Phenomenon"
             subtopic_lower = subtopic.lower()
 
-            skip_words = ["introduction", "overview", "history", "operators", "summary", "conclusion"]
-            if any(sw in subtopic_lower for sw in skip_words) and not any(kw in subtopic_lower for kw in ["ruby", "he-ne", "fiber structure"]):
+            # Skip non-visual, abstract, overview, or purely mathematical sections
+            skip_words = ["introduction", "overview", "history", "operators", "summary", "conclusion", "postulate", "axiom", "definition", "limitations"]
+            if any(sw in subtopic_lower for sw in skip_words) and not any(kw in subtopic_lower for kw in ["ruby", "he-ne", "fiber structure", "box", "well"]):
                 needs_diagram = False
+                diag_type = "none"
             else:
-                diagram_keywords = [
-                    "matter wave", "de broglie", "uncertainty", "box", "well", "potential", "schrödinger", "schrodinger",
-                    "young", "double slit", "slit", "interference", "thin film", "newton", "ring", "diffraction", "grating", "resolving power",
-                    "stimulated emission", "emission", "population inversion", "metastable", "energy level", "ruby", "he-ne", "semiconductor laser", "laser",
-                    "optical fiber", "fiber", "internal reflection", "acceptance", "numerical aperture", "step-index", "graded-index", "dispersion",
-                    "energy band", "band", "intrinsic", "extrinsic", "n-type", "p-type", "fermi", "hall effect"
-                ]
-                needs_diagram = any(kw in subtopic_lower for kw in diagram_keywords)
+                # Rigorous check: Does a visual materially improve understanding?
+                visual_candidates = {
+                    "energy-level diagram": ["box", "well", "infinite potential", "potential well", "energy band", "band gap", "three-level", "four-level"],
+                    "apparatus diagram": ["young", "double slit", "newton", "ring", "diffraction grating", "single slit", "interferometer", "hall effect", "ruby laser", "he-ne laser"],
+                    "geometric illustration": ["optical fiber", "fiber structure", "total internal reflection", "acceptance angle", "acceptance cone", "numerical aperture", "step-index", "graded-index"],
+                    "graph": ["polarization characteristic", "fringe intensity", "resonance curve", "dispersion curve"]
+                }
+                needs_diagram = False
+                diag_type = "scientific schematic"
+                for v_type, keywords in visual_candidates.items():
+                    if any(kw in subtopic_lower for kw in keywords):
+                        needs_diagram = True
+                        diag_type = v_type
+                        break
 
             return {
                 "needs_diagram": needs_diagram,
-                "modality": "chart" if any(w in subtopic_lower for w in ["characteristic", "plot", "distribution", "response", "band", "spectrum"]) else "ai_illustration",
-                "diagram_type": "Scientific Schematic",
-                "caption": f"Figure — Technical Schematic and Operational Characteristics of {subtopic}",
-                "description": f"Technical illustration showing the operational behavior, potential distribution, and wave profiles of {subtopic}",
-                "ai_prompt": f"Clean monochrome academic textbook diagram showing {subtopic} with boundary conditions",
+                "modality": "chart" if diag_type == "graph" else "ai_illustration",
+                "diagram_type": diag_type,
+                "caption": f"Figure — {diag_type.title()}: Schematic of {subtopic}",
+                "description": f"Publication-grade {diag_type} illustrating the physical geometry, coordinate constraints, and boundary behavior of {subtopic}",
+                "ai_prompt": f"Clean monochrome textbook {diag_type} showing {subtopic} with labeled coordinate axes and boundary conditions on pure white background",
                 "chart_code": "",
-                "labels": ["Boundary Condition", "Eigenmode Distribution", "Equilibrium State"]
+                "labels": ["Boundary Interface", "Eigenmode Waveprofile", "Ground State"]
             }
 
         # Review agent

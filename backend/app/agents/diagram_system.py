@@ -58,30 +58,37 @@ class DiagramPlanner:
         except Exception as e:
             logger.warning(f"Diagram planning failed: {e}")
 
-        # Deterministic diagram plan: selectively generate for visual and physical phenomena
+        # Deterministic diagram plan: content-driven selection based on genuine visual necessity
         sub_lower = subtopic_title.lower()
-        skip_words = ["introduction", "overview", "history", "operators", "summary", "conclusion"]
-        if any(sw in sub_lower for sw in skip_words) and not any(kw in sub_lower for kw in ["ruby", "he-ne", "fiber structure"]):
+        skip_words = ["introduction", "overview", "history", "operators", "summary", "conclusion", "postulate", "axiom", "definition", "limitations"]
+        if any(sw in sub_lower for sw in skip_words) and not any(kw in sub_lower for kw in ["ruby", "he-ne", "fiber structure", "box", "well"]):
             has_schematic_need = False
+            diag_type = "none"
         else:
-            diagram_keywords = [
-                "matter wave", "de broglie", "uncertainty", "box", "well", "potential", "schrödinger", "schrodinger",
-                "young", "double slit", "slit", "interference", "thin film", "newton", "ring", "diffraction", "grating", "resolving power",
-                "stimulated emission", "emission", "population inversion", "metastable", "energy level", "ruby", "he-ne", "semiconductor laser", "laser",
-                "optical fiber", "fiber", "internal reflection", "acceptance", "numerical aperture", "step-index", "graded-index", "dispersion",
-                "energy band", "band", "intrinsic", "extrinsic", "n-type", "p-type", "fermi", "hall effect"
-            ]
-            has_schematic_need = any(kw in sub_lower for kw in diagram_keywords)
+            visual_candidates = {
+                "energy-level diagram": ["box", "well", "infinite potential", "potential well", "energy band", "band gap", "three-level", "four-level"],
+                "apparatus diagram": ["young", "double slit", "newton", "ring", "diffraction grating", "single slit", "interferometer", "hall effect", "ruby laser", "he-ne laser"],
+                "geometric illustration": ["optical fiber", "fiber structure", "total internal reflection", "acceptance angle", "acceptance cone", "numerical aperture", "step-index", "graded-index"],
+                "graph": ["polarization characteristic", "fringe intensity", "resonance curve", "dispersion curve"]
+            }
+            has_schematic_need = False
+            diag_type = "scientific schematic"
+            for v_type, keywords in visual_candidates.items():
+                if any(kw in sub_lower for kw in keywords):
+                    has_schematic_need = True
+                    diag_type = v_type
+                    break
 
         return {
             "needs_diagram": has_schematic_need,
-            "modality": "chart" if any(w in sub_lower for w in ["characteristic", "plot", "distribution", "response", "band", "spectrum"]) else "ai_illustration",
-            "caption": caption_default,
-            "description": f"Schematic illustration of {subtopic_title} under boundary constraints.",
+            "modality": "chart" if diag_type == "graph" else "ai_illustration",
+            "diagram_type": diag_type,
+            "caption": f"Figure {chapter_idx}.{figure_idx} — {diag_type.title()}: {subtopic_title}",
+            "description": f"Publication-grade {diag_type} illustrating physical constraints and boundary behavior of {subtopic_title}.",
             "ai_prompt": DiagramPromptAgent.create_textbook_diagram_prompt(
                 topic=subtopic_title,
                 subject=book_title,
-                concept_description=f"Schematic diagram of {subtopic_title}"
+                concept_description=f"{diag_type} showing {subtopic_title}"
             )
         }
 
@@ -115,7 +122,13 @@ class DiagramGenerator:
                     "success": True,
                     "path": chart_path,
                     "caption": caption,
-                    "modality": "chart"
+                    "modality": "chart",
+                    "provenance": {
+                        "asset_id": file_id,
+                        "provider": "matplotlib",
+                        "model": "matplotlib-vector-graph-engine",
+                        "generation_mode": "deterministic"
+                    }
                 }
 
         # 2. AI Illustration (Imagen / Gemini Provider with validation & fallback)

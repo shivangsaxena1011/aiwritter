@@ -6,6 +6,8 @@ DOCX export with Times New Roman 12pt / 1.5 spacing / OMML math, and programmati
 """
 
 import os
+import json
+import time
 import uuid
 import logging
 from datetime import datetime, timezone
@@ -160,7 +162,7 @@ class BookGenerationOrchestrator:
                 self._log_event("stage", "🔍 SyllabusAnalysisAgent: Parsing and decomposing syllabus hierarchy...", 6.0)
                 try:
                     analysis = await self.syllabus_agent.analyze_syllabus(
-                        syllabus_text=meta["raw_syllabus"],
+                        raw_text=meta["raw_syllabus"],
                         subject=subject,
                         academic_level=book.academic_level,
                         include_numericals=include_numericals,
@@ -197,6 +199,30 @@ class BookGenerationOrchestrator:
             compiled_assets: List[Dict[str, Any]] = []
             audits_summary: List[Dict[str, Any]] = []
             all_sources: List[Any] = []
+
+            # Execution Telemetry & Timing Tracking
+            t_pipeline_start = time.time()
+            timing_stats = {
+                "research_time": 0.0,
+                "content_generation_time": 0.0,
+                "review_time": 0.0,
+                "image_generation_time": 0.0,
+                "document_export_time": 0.0,
+                "total_time": 0.0
+            }
+            is_real_ai = "gemini" in type(self.ai).__name__.lower()
+            call_counters = {
+                "text_provider": type(self.ai).__name__,
+                "text_model": getattr(self.ai, "model_name", getattr(settings, "effective_text_model", "mock")),
+                "provider_mode": "REAL PROVIDER" if is_real_ai else "MOCK PROVIDER",
+                "text_generation_calls": 0,
+                "research_calls": 0,
+                "review_calls": 0,
+                "image_calls": 0,
+                "mock_calls": 0,
+                "fallback_calls": 0
+            }
+            research_traceability: List[Dict[str, Any]] = []
 
             job.status = "GENERATING"
             self.db.commit()
@@ -261,11 +287,14 @@ class BookGenerationOrchestrator:
 
                     # Stage 3: Educational Web Research per Topic
                     self._log_event("log", f"🔬 Grounding research for: {topic.title}...")
+                    t_res_0 = time.time()
                     research_res = await self.research_agent.research_topic(
                         topic=topic.title,
                         subject=subject,
                         depth=research_depth
                     )
+                    timing_stats["research_time"] += (time.time() - t_res_0)
+                    call_counters["research_calls"] += 1
                     all_sources.extend(research_res.sources)
 
                     # Persist research sources in database
@@ -315,6 +344,7 @@ class BookGenerationOrchestrator:
                             topic_is_partial = False
                             for attempt in range(write_retries):
                                 try:
+                                    t_write_0 = time.time()
                                     content = await self.writer_agent.write_section(
                                         book_title=book.title,
                                         subject=subject,
@@ -329,6 +359,10 @@ class BookGenerationOrchestrator:
                                         include_questions=include_questions,
                                         include_examples=include_examples
                                     )
+                                    timing_stats["content_generation_time"] += (time.time() - t_write_0)
+                                    call_counters["text_generation_calls"] += 1
+                                    if not is_real_ai:
+                                        call_counters["mock_calls"] += 1
                                     if content and len(content.split()) >= 150:
                                         break
                                 except Exception as write_err:
@@ -336,11 +370,14 @@ class BookGenerationOrchestrator:
                                     if attempt == write_retries - 1:
                                         failed_subtopics += 1
                                         topic_is_partial = True
+                                        call_counters["fallback_calls"] += 1
                                         self._log_event("warning", f"⚠️ Section {subtopic.title} marked partial after retry.")
+                                        t_write_0 = time.time()
                                         content = self.writer_agent._generate_deterministic_content(
                                             book.title, subject, unit.title, topic.title, subtopic.title,
                                             requires_derivation, requires_numericals, include_questions
                                         )
+                                        timing_stats["content_generation_time"] += (time.time() - t_write_0)
 
                             # Stage 7: Derivation Engine Integration
                             if requires_derivation and any(kw in subtopic.title.lower() for kw in ["equation", "derivation", "proof", "formulation", "model", "box", "well", "wave", "hypothesis", "relativity"]):
@@ -362,18 +399,22 @@ class BookGenerationOrchestrator:
                             word_count = len(content.split())
 
                             # Stage 11: Content Review & Quality Audit
+                            t_rev_0 = time.time()
                             review_res = await self.review_agent.review_section(
                                 book_title=book.title,
                                 subtopic_title=subtopic.title,
                                 content=content,
                                 target_word_count=profile["target_words"]
                             )
+                            timing_stats["review_time"] += (time.time() - t_rev_0)
+                            call_counters["review_calls"] += 1
                             audits_summary.append(review_res)
 
                             # Auto-rewrite loop if quality is below threshold up to max retries
                             retries_left = settings.MAX_CONTENT_REVIEW_RETRIES
                             while review_res.get("rewrite_required") and retries_left > 0:
                                 self._log_event("warning", f"⚠️ Refactoring section for academic rigor (attempt {settings.MAX_CONTENT_REVIEW_RETRIES - retries_left + 1}): {subtopic.title}")
+                                t_write_0 = time.time()
                                 content = await self.writer_agent.write_section(
                                     book_title=book.title,
                                     subject=subject,
@@ -388,14 +429,32 @@ class BookGenerationOrchestrator:
                                     include_questions=include_questions,
                                     include_examples=include_examples
                                 )
+                                timing_stats["content_generation_time"] += (time.time() - t_write_0)
+                                call_counters["text_generation_calls"] += 1
+                                if not is_real_ai:
+                                    call_counters["mock_calls"] += 1
                                 word_count = len(content.split())
+                                t_rev_0 = time.time()
                                 review_res = await self.review_agent.review_section(
                                     book_title=book.title,
                                     subtopic_title=subtopic.title,
                                     content=content,
                                     target_word_count=profile["target_words"]
                                 )
+                                timing_stats["review_time"] += (time.time() - t_rev_0)
+                                call_counters["review_calls"] += 1
                                 retries_left -= 1
+
+                            # Record research traceability for this section
+                            research_traceability.append({
+                                "chapter": unit.title,
+                                "topic": topic.title,
+                                "subtopic": subtopic.title,
+                                "sources_count": len(research_res.sources),
+                                "sources_sample": [s.title for s in research_res.sources[:3]],
+                                "notes_length": len(research_res.research_notes),
+                                "word_count": word_count
+                            })
 
                             # Stage 12: Fact Check & Consistency Audit
                             fact_check = await self.fact_check_agent.verify_section(
@@ -462,10 +521,17 @@ class BookGenerationOrchestrator:
                             )
 
                             if diag_plan.get("needs_diagram"):
+                                t_img_0 = time.time()
                                 output_dir = os.path.join(settings.STORAGE_LOCAL_DIR, "assets", book.id)
                                 asset_res = await self.diagram_generator.generate_asset(
                                     diag_plan, output_dir=output_dir, topic_title=subtopic.title
                                 )
+                                timing_stats["image_generation_time"] += (time.time() - t_img_0)
+                                call_counters["image_calls"] += 1
+                                prov = asset_res.get("provenance", {})
+                                if prov.get("generation_mode") == "fallback":
+                                    call_counters["fallback_calls"] += 1
+
                                 img_path = asset_res.get("path")
                                 img_caption = asset_res.get("caption") or f"Figure {u_idx}.{figure_counter} — Technical Diagram of {subtopic.title}"
                                 placeholder_box = asset_res.get("placeholder")
@@ -479,7 +545,10 @@ class BookGenerationOrchestrator:
                                         type=asset_res.get("modality", "image_png"),
                                         storage_key=os.path.basename(img_path),
                                         url=f"/api/v1/files/{os.path.basename(img_path)}",
-                                        asset_metadata={"caption": img_caption}
+                                        asset_metadata={
+                                            "caption": img_caption,
+                                            "provenance": prov
+                                        }
                                     )
                                     self.db.add(asset_record)
                                     self.db.commit()
@@ -547,6 +616,7 @@ class BookGenerationOrchestrator:
             out_filename = f"{safe_title}_{uuid.uuid4().hex[:6]}.docx"
             out_filepath = os.path.join(settings.STORAGE_LOCAL_DIR, out_filename)
 
+            t_exp_0 = time.time()
             self.docx_exporter.export(
                 book_title=book.title,
                 subtitle=book.subtitle,
@@ -558,6 +628,8 @@ class BookGenerationOrchestrator:
                 output_path=out_filepath,
                 quality_report=None
             )
+            timing_stats["document_export_time"] = time.time() - t_exp_0
+            timing_stats["total_time"] = time.time() - t_pipeline_start
 
             # Stage 14: Document Validation & Quality Reports
             job.status = "REVIEWING"
@@ -570,6 +642,21 @@ class BookGenerationOrchestrator:
                 expected_topics=total_subtopics,
                 include_diagrams=include_diagrams
             )
+
+            # Compile and attach telemetry
+            telemetry = {
+                "timings": {k: round(v, 2) for k, v in timing_stats.items()},
+                "calls": call_counters,
+                "research_traceability": research_traceability
+            }
+            doc_quality["telemetry"] = telemetry
+
+            telemetry_path = out_filepath.replace(".docx", "_telemetry.json")
+            try:
+                with open(telemetry_path, "w", encoding="utf-8") as f_tel:
+                    json.dump(telemetry, f_tel, indent=2)
+            except Exception as e_tel:
+                logger.warning(f"Failed to write telemetry: {e_tel}")
 
             coverage_report_path = out_filepath.replace(".docx", "_syllabus_coverage.json")
             coverage_report = DocumentValidationAgent.generate_syllabus_coverage_report(
