@@ -95,19 +95,21 @@ class ResearchAgent(BaseAgent):
             "source_count_checked": len(sources),
             "verbatim_matches_found": len(verbatim_matches),
             "verdict": "High Originality (Original Academic Synthesis)" if originality_score >= 90.0 else "Acceptable Synthesis",
+            "disclaimer": "Heuristic 6-gram similarity assessment; does not claim absolute plagiarism freedom.",
             "report_name": "Originality / Source Similarity Report"
         }
 
     def get_bibliography(self) -> List[ResearchSourceData]:
-        return list(self._bibliography)
+        return sorted(self._bibliography, key=lambda s: s.tier)
 
     def generate_bibliography_markdown(self, citation_style: str = "IEEE") -> str:
-        """Formats collected sources into professional academic references."""
+        """Formats collected sources into professional academic references sorted by authority tier."""
         if not self._bibliography:
             return ""
 
+        sorted_bib = sorted(self._bibliography, key=lambda s: (s.tier, s.title))
         lines = ["# References & Academic Bibliography\n"]
-        for idx, s in enumerate(self._bibliography, start=1):
+        for idx, s in enumerate(sorted_bib, start=1):
             author = s.author or "Academic Research Group"
             pub = s.publisher or "Academic Press"
             year = s.publication_date or "n.d."

@@ -213,6 +213,17 @@ Return JSON:
                             issued = item.get("issued", {}).get("date-parts", [["2022"]])
                             pub_year = str(issued[0][0]) if issued and issued[0] else "2022"
 
+                            # Source Quality Hierarchy classification
+                            pub_lower = t_publisher.lower()
+                            if any(k in pub_lower for k in ["university", "cambridge", "oxford", "mit", "stanford", "nist", "standard", "cern", "iso"]):
+                                s_tier = 1
+                                s_tier_name = "Government / University / Official Standards"
+                                s_type = "university_standard"
+                            else:
+                                s_tier = 2
+                                s_tier_name = "Peer-reviewed journals / research papers"
+                                s_type = "peer_reviewed_paper"
+
                             sources.append(ResearchSourceData(
                                 title=t_title,
                                 url=t_url,
@@ -220,18 +231,20 @@ Return JSON:
                                 publisher=t_publisher,
                                 publication_date=pub_year,
                                 accessed_date=now_str,
-                                source_type="academic_monograph",
-                                relevance="Primary academic reference & peer-reviewed treatise",
+                                source_type=s_type,
+                                tier=s_tier,
+                                tier_name=s_tier_name,
+                                relevance=f"Primary Tier {s_tier} academic reference & peer-reviewed treatise",
                                 key_points=[
                                     f"Peer-reviewed analytical formulation of {topic}.",
-                                    f"Published via {t_publisher} under official DOI indexing.",
+                                    f"Published via {t_publisher} under official DOI indexing ({s_tier_name}).",
                                     f"Authoritative foundational research grounding for {subject}."
                                 ]
                             ))
                 except Exception as cr_err:
                     logger.debug(f"CrossRef live search query failed: {cr_err}")
 
-                # 2. Query Wikipedia API for encyclopedic concept overview
+                # 2. Query Wikipedia API for encyclopedic concept overview (Tier 5: secondary reference only)
                 try:
                     wiki_url = "https://en.wikipedia.org/w/api.php"
                     wiki_resp = await client.get(wiki_url, params={
@@ -260,7 +273,9 @@ Return JSON:
                                 publication_date=now_str[:4],
                                 accessed_date=now_str,
                                 source_type="educational_encyclopedia",
-                                relevance="Consensus educational conceptual overview",
+                                tier=5,
+                                tier_name="Encyclopedic references",
+                                relevance="Secondary orientation and encyclopedic conceptual overview (Tier 5)",
                                 key_points=[
                                     f"Foundational definition and mathematical terminology for {w_title}.",
                                     f"Historical development and key experimental validations.",
@@ -272,6 +287,9 @@ Return JSON:
 
         except Exception as e:
             logger.warning(f"External web search network request failed: {e}")
+
+        # Prioritize higher-tier sources (Tier 1 & Tier 2 before Tier 5)
+        sources.sort(key=lambda s: s.tier)
 
         if sources:
             if not notes:
@@ -295,7 +313,7 @@ Return JSON:
     def _format_sources_for_fencing(self, sources: List[ResearchSourceData]) -> str:
         formatted = []
         for s in sources:
-            formatted.append(f"- Title: {s.title}\n  URL: {s.url}\n  Publisher: {s.publisher}\n  Author: {s.author}")
+            formatted.append(f"- [Tier {s.tier} — {s.tier_name}] Title: {s.title}\n  URL: {s.url}\n  Publisher: {s.publisher}\n  Author: {s.author}")
         return "\n".join(formatted)
 
     def _deterministic_research(self, topic: str, subject: str) -> ResearchResult:
@@ -310,7 +328,9 @@ Return JSON:
                 publication_date="2023",
                 accessed_date=now_str,
                 source_type="university",
-                relevance="Primary foundational course reference",
+                tier=1,
+                tier_name="Government / University / Official Standards",
+                relevance="Primary Tier 1 foundational course reference",
                 key_points=[
                     f"Core theoretical axioms and governing state relationships of {safe_topic}.",
                     "Rigorous boundary conditions and physical interpretation.",
@@ -325,7 +345,9 @@ Return JSON:
                 publication_date="2022",
                 accessed_date=now_str,
                 source_type="standard",
-                relevance="SI unit consistency and empirical constants",
+                tier=1,
+                tier_name="Government / University / Official Standards",
+                relevance="SI unit consistency and empirical constants (Tier 1 Standards)",
                 key_points=[
                     "Exact physical constants and dimensional consistency rules.",
                     "Recognized academic nomenclature and mathematical operator standards."

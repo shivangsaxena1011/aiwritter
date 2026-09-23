@@ -139,11 +139,26 @@ The table below contrasts standard configurations used across modern academic an
         if "diagram" in prompt_lower or "illustration" in prompt_lower:
             topic_match = re.search(r"(?:topic|subtopic|title):\s*([^\n\r]+)", prompt, re.I)
             subtopic = topic_match.group(1).strip() if topic_match else "Governing Physical Phenomenon"
+            subtopic_lower = subtopic.lower()
+
+            skip_words = ["introduction", "overview", "history", "operators", "summary", "conclusion"]
+            if any(sw in subtopic_lower for sw in skip_words) and not any(kw in subtopic_lower for kw in ["ruby", "he-ne", "fiber structure"]):
+                needs_diagram = False
+            else:
+                diagram_keywords = [
+                    "matter wave", "de broglie", "uncertainty", "box", "well", "potential", "schrödinger", "schrodinger",
+                    "young", "double slit", "slit", "interference", "thin film", "newton", "ring", "diffraction", "grating", "resolving power",
+                    "stimulated emission", "emission", "population inversion", "metastable", "energy level", "ruby", "he-ne", "semiconductor laser", "laser",
+                    "optical fiber", "fiber", "internal reflection", "acceptance", "numerical aperture", "step-index", "graded-index", "dispersion",
+                    "energy band", "band", "intrinsic", "extrinsic", "n-type", "p-type", "fermi", "hall effect"
+                ]
+                needs_diagram = any(kw in subtopic_lower for kw in diagram_keywords)
+
             return {
-                "needs_diagram": True,
-                "modality": "chart",
-                "diagram_type": "Scientific Graph",
-                "caption": f"Figure 1.1 — Technical Schematic and Operational Characteristics of {subtopic}",
+                "needs_diagram": needs_diagram,
+                "modality": "chart" if any(w in subtopic_lower for w in ["characteristic", "plot", "distribution", "response", "band", "spectrum"]) else "ai_illustration",
+                "diagram_type": "Scientific Schematic",
+                "caption": f"Figure — Technical Schematic and Operational Characteristics of {subtopic}",
                 "description": f"Technical illustration showing the operational behavior, potential distribution, and wave profiles of {subtopic}",
                 "ai_prompt": f"Clean monochrome academic textbook diagram showing {subtopic} with boundary conditions",
                 "chart_code": "",
@@ -197,17 +212,21 @@ The table below contrasts standard configurations used across modern academic an
         output_path: str
     ) -> Dict[str, Any]:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        img = Image.new("RGB", (800, 450), color=(18, 24, 38))
+        # Requirement 7: Black and white, grayscale, white background, high contrast, clean, technical
+        img = Image.new("RGB", (800, 450), color=(255, 255, 255))
         draw = ImageDraw.Draw(img)
-        # Draw mock technical schematic
-        draw.rectangle([50, 50, 750, 400], outline=(79, 140, 255), width=3)
-        draw.rectangle([80, 80, 280, 370], fill=(26, 36, 56), outline=(168, 85, 247), width=2)
-        draw.rectangle([520, 80, 720, 370], fill=(26, 36, 56), outline=(34, 197, 94), width=2)
-        draw.line([(280, 225), (520, 225)], fill=(79, 140, 255), width=3)
-        draw.text((320, 200), "Electrolyte Layer", fill=(240, 240, 240))
-        draw.text((120, 215), "Anode (-)", fill=(168, 85, 247))
-        draw.text((560, 215), "Cathode (+)", fill=(34, 197, 94))
-        draw.text((60, 20), f"Academic Diagram: {prompt[:45]}...", fill=(200, 200, 200))
+        # Draw high-contrast monochrome technical schematic
+        draw.rectangle([50, 50, 750, 400], outline=(15, 23, 42), width=3)
+        draw.rectangle([80, 80, 280, 370], fill=(248, 250, 252), outline=(71, 85, 105), width=2)
+        draw.rectangle([520, 80, 720, 370], fill=(248, 250, 252), outline=(71, 85, 105), width=2)
+        draw.line([(280, 225), (520, 225)], fill=(15, 23, 42), width=2)
+        # Coordinate axes
+        draw.line([(60, 390), (740, 390)], fill=(15, 23, 42), width=2)
+        draw.line([(60, 60), (60, 390)], fill=(15, 23, 42), width=2)
+        draw.text((310, 205), "Boundary Flux Interface", fill=(15, 23, 42))
+        draw.text((120, 215), "Potential State V_1", fill=(51, 65, 85))
+        draw.text((560, 215), "Potential State V_2", fill=(51, 65, 85))
+        draw.text((60, 25), f"Technical Schematic: {prompt[:50]}...", fill=(15, 23, 42))
         img.save(output_path, "PNG")
 
         return {

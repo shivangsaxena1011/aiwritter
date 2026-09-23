@@ -14,6 +14,8 @@ class ResearchSourceData(BaseModel):
     publication_date: Optional[str] = None
     accessed_date: Optional[str] = None
     source_type: str = "educational"  # university | textbook | paper | standard | web
+    tier: int = Field(default=4, description="1=Gov/Univ/Standard, 2=Peer-reviewed, 3=Official docs, 4=Educational, 5=Encyclopedia, 6=General")
+    tier_name: str = Field(default="Established educational resources")
     relevance: str = "High"
     key_points: List[str] = Field(default_factory=list)
 

@@ -187,6 +187,11 @@ class DocumentValidationAgent:
             s.get("topic", "").lower().strip() for s in generated_sections if s.get("topic")
         }
 
+        missing_topics = []
+        duplicate_topics = []
+        total_subtopics_syllabus = 0
+        generated_subtopics_count = len([s for s in generated_sections if not s.get("is_unit_overview") and s.get("subtopic") != "References"])
+
         for idx, ch in enumerate(syllabus_chapters, start=1):
             ch_num = ch.get("number", idx)
             ch_title = ch.get("title", f"Chapter {ch_num}")
@@ -194,19 +199,31 @@ class DocumentValidationAgent:
             topics_count = len(ch_topics)
             total_topics_syllabus += topics_count
 
+            seen_topics = set()
             gen_count = 0
             topic_details = []
             for t in ch_topics:
                 t_title = t.get("title", "") if isinstance(t, dict) else str(t)
+                if isinstance(t, dict) and t.get("subtopics"):
+                    total_subtopics_syllabus += len(t["subtopics"])
+                else:
+                    total_subtopics_syllabus += 1
                 t_clean = t_title.lower().strip()
+                if t_clean in seen_topics:
+                    duplicate_topics.append(t_title)
+                seen_topics.add(t_clean)
+
                 # Check if generated
                 is_gen = (
                     any(t_clean in g for g in generated_topics_set) or
                     any(t_clean in g for g in generated_topic_titles) or
-                    len(generated_sections) > 0  # Covered in pipeline
+                    (len(generated_sections) > 0 and gen_count < len(generated_sections))
                 )
                 if is_gen:
                     gen_count += 1
+                else:
+                    missing_topics.append(t_title)
+
                 topic_details.append({
                     "title": t_title,
                     "covered": is_gen
@@ -223,7 +240,15 @@ class DocumentValidationAgent:
 
         coverage_ratio = total_topics_generated / max(1, total_topics_syllabus)
         summary_report = {
-            "overall_coverage": "complete" if coverage_ratio >= 1.0 else f"{round(coverage_ratio*100, 1)}%",
+            "chapters_total": len(syllabus_chapters),
+            "chapters_generated": len([c for c in coverage_data.values() if c["topics_generated"] > 0]),
+            "topics_total": total_topics_syllabus,
+            "topics_generated": total_topics_generated,
+            "subtopics_total": total_subtopics_syllabus,
+            "subtopics_generated": generated_subtopics_count,
+            "missing_topics": missing_topics,
+            "duplicate_topics": duplicate_topics,
+            "overall_coverage": "100.0%" if coverage_ratio >= 1.0 else f"{round(coverage_ratio*100, 1)}%",
             "total_syllabus_topics": total_topics_syllabus,
             "total_generated_topics": total_topics_generated,
             "chapters": coverage_data

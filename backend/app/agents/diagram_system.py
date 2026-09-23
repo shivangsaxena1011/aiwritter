@@ -58,11 +58,24 @@ class DiagramPlanner:
         except Exception as e:
             logger.warning(f"Diagram planning failed: {e}")
 
-        # Deterministic diagram plan if section has formulas/schematics
-        has_schematic_need = any(w in subtopic_title.lower() for w in ["wave", "particle", "box", "well", "circuit", "cell", "system", "structure", "flux"])
+        # Deterministic diagram plan: selectively generate for visual and physical phenomena
+        sub_lower = subtopic_title.lower()
+        skip_words = ["introduction", "overview", "history", "operators", "summary", "conclusion"]
+        if any(sw in sub_lower for sw in skip_words) and not any(kw in sub_lower for kw in ["ruby", "he-ne", "fiber structure"]):
+            has_schematic_need = False
+        else:
+            diagram_keywords = [
+                "matter wave", "de broglie", "uncertainty", "box", "well", "potential", "schrödinger", "schrodinger",
+                "young", "double slit", "slit", "interference", "thin film", "newton", "ring", "diffraction", "grating", "resolving power",
+                "stimulated emission", "emission", "population inversion", "metastable", "energy level", "ruby", "he-ne", "semiconductor laser", "laser",
+                "optical fiber", "fiber", "internal reflection", "acceptance", "numerical aperture", "step-index", "graded-index", "dispersion",
+                "energy band", "band", "intrinsic", "extrinsic", "n-type", "p-type", "fermi", "hall effect"
+            ]
+            has_schematic_need = any(kw in sub_lower for kw in diagram_keywords)
+
         return {
             "needs_diagram": has_schematic_need,
-            "modality": "chart" if any(w in subtopic_title.lower() for w in ["characteristic", "plot", "distribution", "response"]) else "ai_illustration",
+            "modality": "chart" if any(w in sub_lower for w in ["characteristic", "plot", "distribution", "response", "band", "spectrum"]) else "ai_illustration",
             "caption": caption_default,
             "description": f"Schematic illustration of {subtopic_title} under boundary constraints.",
             "ai_prompt": DiagramPromptAgent.create_textbook_diagram_prompt(

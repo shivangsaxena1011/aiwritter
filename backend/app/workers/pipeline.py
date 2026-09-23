@@ -309,26 +309,38 @@ class BookGenerationOrchestrator:
                         else:
                             self._log_event("log", f"✍️ Writing Treatise {u_idx}.{t_idx}.{s_idx}: {subtopic.title}...")
 
-                            # Stage 6: Paragraph-First Content Writing
-                            try:
-                                content = await self.writer_agent.write_section(
-                                    book_title=book.title,
-                                    subject=subject,
-                                    unit_title=unit.title,
-                                    topic_title=topic.title,
-                                    subtopic_title=subtopic.title,
-                                    context_manager=context_mgr,
-                                    writing_depth=writing_depth,
-                                    research_notes=research_res.research_notes,
-                                    requires_derivation=requires_derivation,
-                                    include_numericals=requires_numericals,
-                                    include_questions=include_questions,
-                                    include_examples=include_examples
-                                )
-                            except Exception as write_err:
-                                logger.error(f"Error drafting {subtopic.title}: {write_err}")
-                                failed_subtopics += 1
-                                content = f"### {subtopic.title}\n\nThis section covers foundational principles and analytical dynamics."
+                            # Stage 6: Paragraph-First Content Writing with failure recovery (retry -> partial -> continue)
+                            write_retries = 2
+                            content = None
+                            topic_is_partial = False
+                            for attempt in range(write_retries):
+                                try:
+                                    content = await self.writer_agent.write_section(
+                                        book_title=book.title,
+                                        subject=subject,
+                                        unit_title=unit.title,
+                                        topic_title=topic.title,
+                                        subtopic_title=subtopic.title,
+                                        context_manager=context_mgr,
+                                        writing_depth=writing_depth,
+                                        research_notes=research_res.research_notes,
+                                        requires_derivation=requires_derivation,
+                                        include_numericals=requires_numericals,
+                                        include_questions=include_questions,
+                                        include_examples=include_examples
+                                    )
+                                    if content and len(content.split()) >= 150:
+                                        break
+                                except Exception as write_err:
+                                    logger.warning(f"Drafting attempt {attempt+1} failed for {subtopic.title}: {write_err}")
+                                    if attempt == write_retries - 1:
+                                        failed_subtopics += 1
+                                        topic_is_partial = True
+                                        self._log_event("warning", f"⚠️ Section {subtopic.title} marked partial after retry.")
+                                        content = self.writer_agent._generate_deterministic_content(
+                                            book.title, subject, unit.title, topic.title, subtopic.title,
+                                            requires_derivation, requires_numericals, include_questions
+                                        )
 
                             # Stage 7: Derivation Engine Integration
                             if requires_derivation and any(kw in subtopic.title.lower() for kw in ["equation", "derivation", "proof", "formulation", "model", "box", "well", "wave", "hypothesis", "relativity"]):
@@ -404,9 +416,9 @@ class BookGenerationOrchestrator:
                                 topic_id=topic.id,
                                 subtopic_id=subtopic.id,
                                 content=content,
-                                status="reviewed",
+                                status="partial" if topic_is_partial else "reviewed",
                                 word_count=word_count,
-                                review_status="approved",
+                                review_status="needs_review" if topic_is_partial else "approved",
                                 quality_score=review_res.get("overall_score", 88.0)
                             )
                             self.db.add(gen_sec)
@@ -417,7 +429,7 @@ class BookGenerationOrchestrator:
                                 book_id=book.id,
                                 section_id=gen_sec.id,
                                 agent="ContentReviewAgent",
-                                status="approved",
+                                status="partial" if topic_is_partial else "approved",
                                 quality_score=review_res.get("overall_score", 88.0),
                                 fact_check_status=fact_check.get("verdict", "verified"),
                                 originality_score=orig_report.get("originality_score", 98.0),
@@ -426,7 +438,7 @@ class BookGenerationOrchestrator:
                             )
                             self.db.add(rev_row)
 
-                            subtopic.status = "completed"
+                            subtopic.status = "partial" if topic_is_partial else "completed"
                             self.db.commit()
 
                         # Update context memory
