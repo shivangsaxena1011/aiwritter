@@ -95,9 +95,9 @@ class AcademicContentQualityAgent(BaseAgent):
         # Topic replacement vulnerability test:
         # Check frequency of abstract nouns ("dynamics", "paradigm", "regime", "framework", "behavior") vs concrete nouns
         abstract_count = len(re.findall(r"\b(paradigm|framework|dynamics|regimes|cornerstone|imperative|foundational|treatise)\b", content_lower))
-        abstract_density = min(0.5, abstract_count / (total_words / 100.0)) if total_words > 0 else 0.0
+        abstract_density = min(0.2, (abstract_count / (total_words / 100.0)) * 0.04) if total_words > 0 else 0.0
 
-        genericity = min(1.0, penalty + abstract_density * 0.5)
+        genericity = min(1.0, penalty + abstract_density)
         return round(genericity, 3)
 
     def compute_topic_alignment_score(self, content: str, topic_title: str, subject: str = "Engineering Physics") -> float:

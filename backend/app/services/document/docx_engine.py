@@ -31,7 +31,8 @@ class DOCXExporter(DocumentExporter):
         sections: List[Dict[str, Any]],
         assets: List[Dict[str, Any]],
         output_path: str,
-        quality_report: Optional[Dict[str, Any]] = None
+        quality_report: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None
     ) -> str:
         # Load master template if available to preserve margins and styles
         if os.path.exists(TEMPLATE_PATH):
@@ -50,7 +51,7 @@ class DOCXExporter(DocumentExporter):
         self._build_cover_page(doc, book_title, subtitle, author, academic_level)
 
         # 2. Front Matter (Preface & Structure)
-        self._build_front_matter(doc, book_title, academic_level, toc_data)
+        self._build_front_matter(doc, book_title, academic_level, toc_data, config=config)
 
         # 3. Main Academic Content
         self._build_body_content(doc, toc_data, sections)
@@ -84,7 +85,8 @@ class DOCXExporter(DocumentExporter):
             toc_data=toc_data,
             sections=sections,
             assets=assets or [],
-            output_path=output_path
+            output_path=output_path,
+            config=metadata.get("config", {})
         )
 
     def _configure_document_styles(self, doc: Document):
@@ -159,16 +161,34 @@ class DOCXExporter(DocumentExporter):
 
         doc.add_page_break()
 
-    def _build_front_matter(self, doc: Document, title: str, level: Optional[str], toc_data: Dict[str, Any]):
-        """Generates preface, scope, and structured table of contents."""
+    def _build_front_matter(self, doc: Document, title: str, level: Optional[str], toc_data: Dict[str, Any], config: Optional[Dict[str, Any]] = None):
+        """Generates preface, scope, and structured table of contents dynamically based on active configuration."""
         pref_h = doc.add_heading("Preface", level=1)
         pref_h.paragraph_format.space_before = Pt(12)
         pref_h.paragraph_format.space_after = Pt(12)
 
+        cfg = config or {}
+        include_numericals = cfg.get("include_numericals", False)
+        include_questions = cfg.get("include_questions", False)
+        include_references = cfg.get("include_references", True)
+        include_diagrams = cfg.get("include_diagrams", True)
+
+        features = ["theoretical foundational principles", "analytical derivations"]
+        if include_numericals:
+            features.append("worked numerical problem solutions")
+        if include_questions:
+            features.append("academic review questions")
+        if include_diagrams:
+            features.append("technical schematics and diagrams")
+        if include_references:
+            features.append("research-grounded citations")
+
+        feat_str = ", ".join(features[:-1]) + ", and " + features[-1] if len(features) > 1 else features[0]
+
         pref_p = doc.add_paragraph(
-            f"This academic treatise, '{title}', is designed as an exhaustive reference text for {level or 'university studies'}. "
-            "It bridges theoretical foundational principles with practical empirical formulations, numerical derivations, and architectural case studies. "
-            "Each unit proceeds systematically from core principles to advanced implementations, reinforced with peer-reviewed assessment exercises."
+            f"This academic textbook, '{title}', is developed as a systematic study text for {level or 'undergraduate engineering programs'}. "
+            f"It develops core subject matter through {feat_str}. "
+            "Each unit proceeds logically from foundational principles to physical interpretations and contemporary engineering applications."
         )
         pref_p.paragraph_format.line_spacing = 1.15
         pref_p.paragraph_format.space_after = Pt(18)

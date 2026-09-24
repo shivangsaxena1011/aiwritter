@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class DiagramPlanner:
     def __init__(self, ai_provider: AIProvider):
         self.ai = ai_provider
+        self.illustrated_topics: set = set()
 
     async def plan_diagram(
         self,
@@ -25,9 +26,21 @@ class DiagramPlanner:
         subtopic_title: str,
         section_content: str,
         chapter_idx: int = 1,
-        figure_idx: int = 1
+        figure_idx: int = 1,
+        parent_topic: Optional[str] = None,
+        blueprint_diagram_required: Optional[bool] = None
     ) -> Dict[str, Any]:
         """Evaluates whether this section benefits from visual diagrams with chapter-aware captions."""
+        effective_parent = (parent_topic or subtopic_title).lower().strip()
+
+        # If blueprint explicitly disables diagram for this section, do not create one
+        if blueprint_diagram_required is False:
+            return {"needs_diagram": False, "reason": "Blueprint specifies no diagram required for this section"}
+
+        # Prevent duplicate diagrams for the same parent topic (e.g. 1 diagram per topic maximum)
+        if effective_parent in self.illustrated_topics:
+            return {"needs_diagram": False, "reason": f"Topic '{effective_parent}' is already visually illustrated"}
+
         excerpt = section_content[:2000]
         prompt = prompt_service.get_prompt(
             "diagram_planner.txt",
@@ -54,6 +67,7 @@ class DiagramPlanner:
                         concept_description=res.get("description", ""),
                         diagram_type=res.get("modality", "schematic")
                     )
+                self.illustrated_topics.add(effective_parent)
                 return res
         except Exception as e:
             logger.warning(f"Diagram planning failed: {e}")
@@ -67,7 +81,7 @@ class DiagramPlanner:
         else:
             visual_candidates = {
                 "energy-level diagram": ["box", "well", "infinite potential", "potential well", "energy band", "band gap", "three-level", "four-level"],
-                "apparatus diagram": ["young", "double slit", "newton", "ring", "diffraction grating", "single slit", "interferometer", "hall effect", "ruby laser", "he-ne laser"],
+                "apparatus diagram": ["young", "double slit", "newton", "ring", "diffraction grating", "single slit", "interferometer", "hall effect", "ruby laser", "he-ne laser", "davisson", "germer"],
                 "geometric illustration": ["optical fiber", "fiber structure", "total internal reflection", "acceptance angle", "acceptance cone", "numerical aperture", "step-index", "graded-index"],
                 "graph": ["polarization characteristic", "fringe intensity", "resonance curve", "dispersion curve"]
             }
@@ -78,6 +92,9 @@ class DiagramPlanner:
                     has_schematic_need = True
                     diag_type = v_type
                     break
+
+        if has_schematic_need:
+            self.illustrated_topics.add(effective_parent)
 
         return {
             "needs_diagram": has_schematic_need,

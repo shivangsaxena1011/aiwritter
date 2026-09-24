@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-09-24T12:04:51Z",
+  "architecture_version": "Content Orchestration 2.0",
+  "book_id": "8bdf25ff-e7ae-474a-8b40-494b1ce1902e",
+  "title": "Engineering Physics \u2014 Modern Textbook",
+  "chapter": "Chapter 1: Quantum Mechanics (12 Topics)",
+  "duration_seconds": 40.02,
+  "metrics": {
+    "total_words": 9932,
+    "total_paragraphs": 575,
+    "connected_paragraphs": 270,
+    "bullet_items": 81,
+    "heading_paragraphs": 224,
+    "paragraph_to_bullet_ratio": 3.33,
+    "omml_equations_count": 340,
+    "word_tables_count": 28,
+    "drawing_elements_count": 8,
+    "genericity_score": 0.012,
+    "topic_alignment_score": 0.8
+  },
+  "orchestration_telemetry": {
+    "repetition_detector": {
+      "total_registered_paragraphs": 99,
+      "exact_duplicates_detected": 239,
+      "near_duplicates_detected": 4,
+      "conceptual_duplicates_detected": 2,
+      "exact_duplicate_rate": 2.4141,
+      "near_duplicate_rate": 0.0404,
+      "conceptual_duplicate_rate": 0.0202
+    },
+    "contamination_detector": {
+      "total_inspections": 554,
+      "cleaned_paragraphs": 0
+    },
+    "table_planner": {
+      "total_evaluated": 31,
+      "accepted_tables": 14,
+      "rejected_tables": 17,
+      "acceptance_rate": 0.452
+    },
+    "adversarial_review": {
+      "passed": true,
+      "publication_ready": true,
+      "critical_count": 0,
+      "error_count": 0,
+      "warning_count": 0,
+      "info_count": 0,
+      "issues": []
+    }
+  },
+  "flags_compliance": {
+    "research": "ON (Verified)",
+    "include_numericals": false,
+    "numericals_omitted_from_content": true,
+    "include_questions": false,
+    "qa_omitted_from_content": true,
+    "front_matter_preface_accurate": true,
+    "include_diagrams": true,
+    "diagram_deduplication_enforced": true
+  },
+  "banned_checks": {
+    "This treatise establishes": true,
+    "Configuration Alpha": true,
+    "Configuration Beta": true,
+    "42% - 48%": true,
+    "Generic diffusion \\dot{S}_{gen}": true,
+    "General Transport and Conservation Equations": true
+  },
+  "physics_checks": {
+    "de Broglie wavelength formula": true,
+    "Davisson-Germer electron diffraction": true,
+    "G. P. Thomson transmission diffraction": true,
+    "Heisenberg uncertainty principle": true,
+    "Phase and Group velocity relation": true,
+    "Time-dependent and independent Schr\u00f6dinger": true,
+    "Particle in a 1D Box eigenvalues": true,
+    "Quantum mechanical applications (TEM, STM)": true
+  },
+  "publication_ready": true
+}

@@ -520,34 +520,14 @@ Return JSON:
             }
 
         else:
-            # Generic technical derivation
-            md_content = f"""### Analytical Formulation and Derivation: {equation_name}
-
-To rigorously establish the governing state relationship for {topic}, we begin from the continuous conservation equation:
-
-$$\\frac{{\\partial \\Phi}}{{\\partial t}} + \\nabla \\cdot (\\mathbf{{v}} \\Phi) = \\mathcal{{D}} \\nabla^2 \\Phi + \\mathcal{{S}}$$
-
-Under steady-state laminar conditions with homogeneous isotropic transport ($\\mathcal{{D}} = \\text{{const}}$) and negligible internal source terms ($\\mathcal{{S}} = 0$), the divergence balance reduces to:
-
-$$\\nabla^2 \\Phi = 0$$
-
-Applying the orthogonal boundary conditions on the closed domain $\\Omega$ with surface boundary $\\partial \\Omega$:
-
-$$\\Phi(\\mathbf{{r}})|_{{\\partial \\Omega}} = \\Phi_0$$
-
-Integrating across the characteristic dimension yields the final governing relationship:
-
-$$\\Phi(r) = \\Phi_0 \\left(1 - \\frac{{r}}{{R}}\\right)$$
-
-**Physical Interpretation:** The derived linear profile reflects steady diffusive equilibrium across the boundary layer, confirming that gradient transport remains constant throughout the active domain.
-"""
+            # If a topic does not require a derivation or is not mathematical, do not invent one
             return {
-                "equation_title": f"Analytical Derivation: {equation_name}",
-                "starting_principles": "Generalized Transport Continuity Equation",
+                "equation_title": f"No Derivation Required: {equation_name}",
+                "starting_principles": "N/A",
                 "steps": [],
                 "final_result": {
-                    "latex_equation": "\\nabla^2 \\Phi = 0",
-                    "physical_interpretation": "Equilibrium diffusive balance under steady boundary constraints."
+                    "latex_equation": "",
+                    "physical_interpretation": "This topic is conceptual or definitional; no analytical derivation is required."
                 },
-                "markdown_content": md_content
+                "markdown_content": ""
             }

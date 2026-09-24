@@ -6,6 +6,7 @@ DOCX export with Times New Roman 12pt / 1.5 spacing / OMML math, and programmati
 """
 
 import os
+import re
 import json
 import time
 import uuid
@@ -36,13 +37,20 @@ from backend.app.agents.book_context_manager import BookContextManager
 from backend.app.agents.chapter_depth_controller import ChapterDepthController
 from backend.app.agents.document_structure_agent import DocumentStructureAgent
 from backend.app.agents.document_validation_agent import DocumentValidationAgent
-from backend.app.agents.subject_knowledge_model import SubjectKnowledgeModel
 from backend.app.agents.topic_classifier import TopicTypeClassifier, TopicType
 from backend.app.agents.equation_validation_agent import EquationValidationAgent
 from backend.app.agents.repetition_detection_agent import RepetitionDetectionAgent
 from backend.app.agents.book_terminology_registry import BookTerminologyRegistry
 from backend.app.agents.academic_content_quality_agent import AcademicContentQualityAgent
 from backend.app.agents.book_fact_check_agent import BookFactCheckAgent
+from backend.app.agents.content_blueprint import ContentBlueprintPlanner, SectionPurposeType, ContentBlueprint, TopicBoundaryContract
+from backend.app.agents.book_knowledge_graph import BookKnowledgeGraph
+from backend.app.agents.concept_ownership_registry import ConceptOwnershipRegistry
+from backend.app.agents.topic_contamination_detector import TopicContaminationDetector
+from backend.app.agents.repetition_detector_2 import RepetitionDetector2
+from backend.app.agents.table_planner import TablePlanner
+from backend.app.services.document.book_assembly_model import BookAssemblyModel, AssemblyChapter, AssemblyTopic, AssemblySection, AssemblyFrontMatter, AssemblyBackMatter
+from backend.app.agents.adversarial_reviewer_agent import AdversarialReviewerAgent, AdversarialReviewResult
 from backend.app.services.document.docx_engine import DOCXExporter
 from backend.app.storage import get_storage_provider
 
@@ -79,6 +87,15 @@ class BookGenerationOrchestrator:
         self.content_quality_agent = AcademicContentQualityAgent()
         self.book_fact_check_agent = BookFactCheckAgent()
         self.docx_exporter = DOCXExporter()
+
+        # Orchestration 2.0 Components
+        self.blueprint_planner = ContentBlueprintPlanner()
+        self.knowledge_graph = BookKnowledgeGraph()
+        self.concept_registry = ConceptOwnershipRegistry()
+        self.contamination_detector = TopicContaminationDetector()
+        self.repetition_detector_2 = RepetitionDetector2()
+        self.table_planner = TablePlanner()
+        self.adversarial_reviewer = AdversarialReviewerAgent()
 
     def _log_event(
         self,
@@ -460,6 +477,66 @@ class BookGenerationOrchestrator:
                                 call_counters["review_calls"] += 1
                                 retries_left -= 1
 
+                            # Orchestration 2.0: Topic Contamination Detection & Filtering
+                            content = self.contamination_detector.filter_clean_paragraphs(content, topic.title)
+
+                            # Orchestration 2.0: Table Necessity Evaluation
+                            if not hasattr(self, "table_planner_evaluated"):
+                                self.table_planner_evaluated = 0
+                                self.table_planner_accepted = 0
+                                self.table_planner_rejected = 0
+
+                            if "|" in content:
+                                self.table_planner_evaluated += 1
+                                purpose = "COMPARISON" if any(w in subtopic.title.lower() for w in ["comparison", "difference", "table", "states", "properties", "experiment", "davisson", "regime"]) else "CONCEPT"
+                                table_necessity = self.table_planner.evaluate_necessity(
+                                    subtopic_title=subtopic.title,
+                                    topic_title=topic.title,
+                                    purpose=purpose,
+                                    section_content=content
+                                )
+                                if table_necessity.is_necessary:
+                                    self.table_planner_accepted += 1
+                                else:
+                                    self.table_planner_rejected += 1
+                                    # Strip unneeded markdown table while retaining explanatory text
+                                    content = re.sub(r'(\|[^\n]+\|\r?\n)+', '', content)
+
+                            # Orchestration 2.0: Multi-Level Repetition Detection & Deduplication
+                            paras = [p.strip() for p in content.split("\n\n") if p.strip()]
+                            clean_paras = []
+                            for p in paras:
+                                if p.startswith("#") or p.startswith("|"):
+                                    clean_paras.append(p)
+                                    continue
+                                rep_check = self.repetition_detector_2.check_candidate(p, f"{unit.title} > {topic.title} > {subtopic.title}")
+                                if rep_check.is_duplicate and (rep_check.duplicate_level in ("EXACT", "NEAR") or getattr(rep_check, "level", None) in ("level_1", "level_2")):
+                                    logger.info(f"Filtered duplicate paragraph in {subtopic.title}: {rep_check.details}")
+                                    continue
+                                self.repetition_detector_2.register_paragraph(p, f"{unit.title} > {topic.title} > {subtopic.title}")
+                                clean_paras.append(p)
+                            content = "\n\n".join(clean_paras)
+                            word_count = len(content.split())
+
+                            # Orchestration 2.0: Register in BookKnowledgeGraph & ConceptOwnershipRegistry
+                            concept_id = f"c_{uuid.uuid4().hex[:8]}"
+                            self.concept_registry.register_concept(
+                                concept_id=concept_id,
+                                name=subtopic.title,
+                                primary_topic=topic.title,
+                                canonical_explanation=f"Pedagogical treatise on {subtopic.title}"
+                            )
+                            self.knowledge_graph.add_node(
+                                node_id=concept_id,
+                                node_type="concept",
+                                name=subtopic.title,
+                                topic_id=topic.title
+                            )
+                            self.knowledge_graph.record_concept_introduction(
+                                concept_name=subtopic.title,
+                                topic_id=topic.title
+                            )
+
                             # Record research traceability for this section
                             research_traceability.append({
                                 "chapter": unit.title,
@@ -550,7 +627,8 @@ class BookGenerationOrchestrator:
                                 subtopic_title=subtopic.title,
                                 section_content=content,
                                 chapter_idx=u_idx,
-                                figure_idx=figure_counter
+                                figure_idx=figure_counter,
+                                parent_topic=topic.title
                             )
 
                             if diag_plan.get("needs_diagram"):
@@ -659,7 +737,15 @@ class BookGenerationOrchestrator:
                 sections=compiled_sections,
                 assets=compiled_assets,
                 output_path=out_filepath,
-                quality_report=None
+                quality_report=None,
+                config={
+                    "include_numericals": include_numericals,
+                    "include_questions": include_questions,
+                    "include_diagrams": include_diagrams,
+                    "include_references": include_references,
+                    "writing_depth": writing_depth,
+                    "research_depth": research_depth
+                }
             )
             timing_stats["document_export_time"] = time.time() - t_exp_0
             timing_stats["total_time"] = time.time() - t_pipeline_start
@@ -681,6 +767,14 @@ class BookGenerationOrchestrator:
             terminology_summary = self.terminology_registry.get_summary()
             repetition_summary = self.repetition_detector.get_summary()
 
+            # Orchestration 2.0: Adversarial Review & Strict Publication Gate
+            adv_result = self.adversarial_reviewer.review_chapter(
+                sections=compiled_sections,
+                chapter_title=units[0].title if units else "Chapter 1",
+                subject=subject,
+                allow_warnings=False
+            )
+
             avg_genericity = (
                 sum(a["genericity_score"] for a in content_intelligence_audits) / len(content_intelligence_audits)
                 if content_intelligence_audits else 0.0
@@ -700,20 +794,37 @@ class BookGenerationOrchestrator:
                 "repetition_audit": repetition_summary,
                 "terminology_audit": terminology_summary,
                 "fact_check_audit": fact_check_summary,
+                "adversarial_review": adv_result.to_dict(),
                 "equation_audit": {
                     "total_equations_checked": sum(r["total_equations"] for r in equation_validation_records),
                     "total_valid_equations": sum(r["valid_equations"] for r in equation_validation_records)
                 }
             }
             doc_quality["content_intelligence"] = content_intelligence_summary
+            doc_quality["adversarial_review"] = adv_result.to_dict()
+            doc_quality["publication_ready"] = adv_result.publication_ready and (doc_quality.get("quality_score", 0) >= 80)
 
             # Compile and attach telemetry
+            co2_telemetry = {
+                "repetition_detector": self.repetition_detector_2.get_summary(),
+                "contamination_detector": self.contamination_detector.get_summary(),
+                "table_planner": {
+                    "total_evaluated": getattr(self, "table_planner_evaluated", 0),
+                    "accepted_tables": getattr(self, "table_planner_accepted", 0),
+                    "rejected_tables": getattr(self, "table_planner_rejected", 0),
+                    "acceptance_rate": round(getattr(self, "table_planner_accepted", 0) / max(1, getattr(self, "table_planner_evaluated", 0)), 3)
+                },
+                "adversarial_review": adv_result.to_dict(),
+                "publication_ready": adv_result.publication_ready and (doc_quality.get("quality_score", 0) >= 80)
+            }
             telemetry = {
                 "timings": {k: round(v, 2) for k, v in timing_stats.items()},
                 "calls": call_counters,
                 "research_traceability": research_traceability,
-                "content_intelligence": content_intelligence_summary
+                "content_intelligence": content_intelligence_summary,
+                "content_orchestration_2": co2_telemetry
             }
+            doc_quality["content_orchestration_2"] = co2_telemetry
             doc_quality["telemetry"] = telemetry
 
             telemetry_path = out_filepath.replace(".docx", "_telemetry.json")
