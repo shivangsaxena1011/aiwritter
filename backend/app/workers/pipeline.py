@@ -52,6 +52,8 @@ from backend.app.agents.table_planner import TablePlanner
 from backend.app.services.document.book_assembly_model import BookAssemblyModel, AssemblyChapter, AssemblyTopic, AssemblySection, AssemblyFrontMatter, AssemblyBackMatter
 from backend.app.agents.adversarial_reviewer_agent import AdversarialReviewerAgent, AdversarialReviewResult
 from backend.app.services.document.docx_engine import DOCXExporter
+from backend.app.services.document.artifact_integrity import CountManifest
+from backend.app.services.document.final_docx_auditor import FinalDocxAuditor
 from backend.app.storage import get_storage_provider
 
 logger = logging.getLogger(__name__)
@@ -722,38 +724,86 @@ class BookGenerationOrchestrator:
                 ]
             }
 
-            # Export DOCX
+            # Build Canonical BookAssemblyModel (Content Orchestration 2.1)
+            pipeline_config = {
+                "include_numericals": include_numericals,
+                "include_questions": include_questions,
+                "include_diagrams": include_diagrams,
+                "include_references": include_references,
+                "writing_depth": writing_depth,
+                "research_depth": research_depth
+            }
+
+            assembly_chapters = []
+            for u in units:
+                ch_intro = f"Comprehensive academic treatise and pedagogical framework on {u.title}."
+                assembly_topics = []
+                for t in u.topics:
+                    assembly_sections = []
+                    for cs in compiled_sections:
+                        if cs.get("unit") == u.title and cs.get("topic") == t.title and not cs.get("is_unit_overview"):
+                            sec_id = f"sec_{u.id}_{t.id}_{len(assembly_sections) + 1}_{uuid.uuid4().hex[:4]}"
+                            asec = AssemblySection(
+                                section_id=sec_id,
+                                title=cs.get("subtopic", ""),
+                                purpose=f"Pedagogical study of {cs.get('subtopic')}",
+                                content=cs.get("content", ""),
+                                word_count=cs.get("word_count", 0),
+                                image_path=cs.get("image_path"),
+                                image_caption=cs.get("image_caption"),
+                                table_markdown=cs.get("table_markdown"),
+                                is_first_in_topic=cs.get("is_first_in_topic", False)
+                            )
+                            assembly_sections.append(asec)
+                    atop = AssemblyTopic(
+                        topic_id=f"top_{t.id}",
+                        title=t.title,
+                        position=t.position,
+                        sections=assembly_sections
+                    )
+                    assembly_topics.append(atop)
+                ach = AssemblyChapter(
+                    chapter_id=f"ch_{u.id}",
+                    title=u.title,
+                    position=u.position,
+                    introduction=ch_intro,
+                    topics=assembly_topics
+                )
+                assembly_chapters.append(ach)
+
+            assembly_model = BookAssemblyModel(
+                front_matter=AssemblyFrontMatter(
+                    title=book.title,
+                    subtitle=book.subtitle,
+                    author=book.author,
+                    academic_level=book.academic_level,
+                    toc=toc_dict,
+                    config_summary=pipeline_config
+                ),
+                chapters=assembly_chapters,
+                back_matter=AssemblyBackMatter(
+                    bibliography=bib_md if (include_references and all_sources) else None
+                )
+            )
+
+            # Export DOCX directly and exclusively from BookAssemblyModel
             safe_title = "".join(c for c in book.title if c.isalnum() or c in (" ", "_", "-")).replace(" ", "_")
             out_filename = f"{safe_title}_{uuid.uuid4().hex[:6]}.docx"
             out_filepath = os.path.join(settings.STORAGE_LOCAL_DIR, out_filename)
 
             t_exp_0 = time.time()
-            self.docx_exporter.export(
-                book_title=book.title,
-                subtitle=book.subtitle,
-                author=book.author,
-                academic_level=book.academic_level,
-                toc_data=toc_dict,
-                sections=compiled_sections,
-                assets=compiled_assets,
+            self.docx_exporter.export_assembly_model(
+                assembly_model=assembly_model,
                 output_path=out_filepath,
-                quality_report=None,
-                config={
-                    "include_numericals": include_numericals,
-                    "include_questions": include_questions,
-                    "include_diagrams": include_diagrams,
-                    "include_references": include_references,
-                    "writing_depth": writing_depth,
-                    "research_depth": research_depth
-                }
+                config=pipeline_config
             )
             timing_stats["document_export_time"] = time.time() - t_exp_0
             timing_stats["total_time"] = time.time() - t_pipeline_start
 
-            # Stage 14: Document Validation & Quality Reports
+            # Stage 14: Final Reopened DOCX Audit & Quality Gate
             job.status = "REVIEWING"
-            job.current_stage = "Stage 14: Document Validation & Quality Scoring"
-            self._log_event("stage", "🔍 Programmatically verifying document quality...", 95.0)
+            job.current_stage = "Stage 14: Final Reopened DOCX Audit & Semantic Verification"
+            self._log_event("stage", "🔍 Programmatically auditing final rendered DOCX artifact...", 95.0)
 
             doc_quality = DocumentValidationAgent.validate_docx(
                 docx_path=out_filepath,
@@ -767,7 +817,22 @@ class BookGenerationOrchestrator:
             terminology_summary = self.terminology_registry.get_summary()
             repetition_summary = self.repetition_detector.get_summary()
 
-            # Orchestration 2.0: Adversarial Review & Strict Publication Gate
+            # Final DOCX Authoritative Audit (Content Orchestration 2.1)
+            docx_auditor = FinalDocxAuditor(subject=subject)
+            planned_manifest = CountManifest(
+                chapters=len(units),
+                topics=sum(len(u.topics) for u in units),
+                sections=total_subtopics,
+                tables=getattr(self, "table_planner_accepted", 0),
+                figures=len(compiled_assets)
+            )
+            final_docx_report = docx_auditor.audit(
+                docx_path=out_filepath,
+                planned_manifest=planned_manifest,
+                assembly_model=assembly_model
+            )
+
+            # In-memory adversarial review for legacy reference
             adv_result = self.adversarial_reviewer.review_chapter(
                 sections=compiled_sections,
                 chapter_title=units[0].title if units else "Chapter 1",
@@ -795,6 +860,7 @@ class BookGenerationOrchestrator:
                 "terminology_audit": terminology_summary,
                 "fact_check_audit": fact_check_summary,
                 "adversarial_review": adv_result.to_dict(),
+                "final_docx_audit": final_docx_report,
                 "equation_audit": {
                     "total_equations_checked": sum(r["total_equations"] for r in equation_validation_records),
                     "total_valid_equations": sum(r["valid_equations"] for r in equation_validation_records)
@@ -802,7 +868,12 @@ class BookGenerationOrchestrator:
             }
             doc_quality["content_intelligence"] = content_intelligence_summary
             doc_quality["adversarial_review"] = adv_result.to_dict()
-            doc_quality["publication_ready"] = adv_result.publication_ready and (doc_quality.get("quality_score", 0) >= 80)
+            doc_quality["final_docx_audit"] = final_docx_report
+            # Hard Rule: publication_ready is strictly gated on final reopened DOCX passing!
+            doc_quality["publication_ready"] = (
+                final_docx_report["publication_ready"] and
+                (doc_quality.get("quality_score", 0) >= 80)
+            )
 
             # Compile and attach telemetry
             co2_telemetry = {
@@ -814,8 +885,9 @@ class BookGenerationOrchestrator:
                     "rejected_tables": getattr(self, "table_planner_rejected", 0),
                     "acceptance_rate": round(getattr(self, "table_planner_accepted", 0) / max(1, getattr(self, "table_planner_evaluated", 0)), 3)
                 },
+                "final_docx_audit": final_docx_report,
                 "adversarial_review": adv_result.to_dict(),
-                "publication_ready": adv_result.publication_ready and (doc_quality.get("quality_score", 0) >= 80)
+                "publication_ready": doc_quality["publication_ready"]
             }
             telemetry = {
                 "timings": {k: round(v, 2) for k, v in timing_stats.items()},

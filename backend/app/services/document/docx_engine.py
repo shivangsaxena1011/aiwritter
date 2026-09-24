@@ -2,7 +2,7 @@ import os
 import re
 import logging
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 import docx
 from docx import Document
 from docx.shared import Pt, Inches, RGBColor
@@ -13,13 +13,17 @@ from docx.oxml.ns import nsdecls, qn
 
 from backend.app.services.document.base import DocumentExporter
 from backend.app.services.math.omml_engine import OMMLEngine
+from backend.app.services.document.book_assembly_model import BookAssemblyModel
 
 logger = logging.getLogger(__name__)
 
 TEMPLATE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "templates", "master_book_template.docx"))
 
+
 class DOCXExporter(DocumentExporter):
-    """Production-grade Word document exporter with template integration and real table support."""
+    """Production-grade Word document exporter with template integration, real table support,
+    and strict academic heading hierarchy with duplicate heading suppression."""
+
 
     def export(
         self,
@@ -67,6 +71,50 @@ class DOCXExporter(DocumentExporter):
         doc.save(output_path)
         logger.info(f"Book exported successfully to DOCX: {output_path}")
         return output_path
+
+    def export_assembly_model(
+        self,
+        assembly_model: BookAssemblyModel,
+        output_path: str,
+        config: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """Renders DOCX directly and exclusively from the canonical BookAssemblyModel."""
+        fm = assembly_model.front_matter
+        toc_data = fm.toc
+        if not toc_data or not toc_data.get("units"):
+            toc_data = {
+                "units": [
+                    {
+                        "name": ch.title,
+                        "topics": [
+                            {"name": t.title, "subtopics": [s.title for s in t.sections]}
+                            for t in ch.topics
+                        ]
+                    }
+                    for ch in assembly_model.chapters
+                ]
+            }
+
+        compiled_sections = assembly_model.to_compiled_sections()
+        assets: List[Dict[str, Any]] = []
+        for ch in assembly_model.chapters:
+            for top in ch.topics:
+                for sec in top.sections:
+                    for fig in sec.figures:
+                        assets.append(fig.to_dict())
+
+        return self.export(
+            book_title=fm.title,
+            subtitle=fm.subtitle,
+            author=fm.author,
+            academic_level=fm.academic_level,
+            toc_data=toc_data,
+            sections=compiled_sections,
+            assets=assets,
+            output_path=output_path,
+            quality_report=assembly_model.back_matter.quality_scorecard,
+            config=config or fm.config_summary
+        )
 
     def generate_document(
         self,
@@ -235,7 +283,26 @@ class DOCXExporter(DocumentExporter):
         doc.add_page_break()
 
     def _build_body_content(self, doc: Document, toc_data: Dict[str, Any], sections: List[Dict[str, Any]]):
-        """Converts academic section content, figures, and tables into Word elements."""
+        """Converts academic section content, figures, and tables into Word elements with strict
+        hierarchy (H1: Chapter, H2: Topic, H3: Subtopic, H4: Subsection) and duplicate suppression."""
+        last_heading_text: Optional[str] = None
+
+        def add_safe_heading(text: str, level: int):
+            nonlocal last_heading_text
+            clean_text = text.strip()
+            if not clean_text:
+                return None
+            norm_new = re.sub(r"[^\w\s]", "", clean_text.lower())
+            norm_last = re.sub(r"[^\w\s]", "", (last_heading_text or "").strip().lower())
+            if norm_new == norm_last and norm_new:
+                logger.warning(f"Suppressed consecutive duplicate heading in DOCX: '{clean_text}' (level {level})")
+                return None
+            h = doc.add_heading(clean_text, level=level)
+            last_heading_text = clean_text
+            return h
+
+        rendered_units = set()
+
         for section in sections:
             unit_name = section.get("unit", "")
             topic_name = section.get("topic", "")
@@ -243,30 +310,57 @@ class DOCXExporter(DocumentExporter):
 
             # If unit overview
             if section.get("is_unit_overview"):
-                h1 = doc.add_heading(unit_name, level=1)
-                h1.paragraph_format.space_before = Pt(24)
-                h1.paragraph_format.space_after = Pt(12)
+                rendered_units.add(unit_name)
+                h1 = add_safe_heading(unit_name, level=1)
+                if h1:
+                    h1.paragraph_format.space_before = Pt(24)
+                    h1.paragraph_format.space_after = Pt(12)
 
-                intro_h = doc.add_heading("Chapter Overview & Objectives", level=2)
-                intro_h.paragraph_format.space_before = Pt(12)
-                intro_h.paragraph_format.space_after = Pt(8)
+                intro_h = add_safe_heading("Chapter Overview & Objectives", level=2)
+                if intro_h:
+                    intro_h.paragraph_format.space_before = Pt(12)
+                    intro_h.paragraph_format.space_after = Pt(8)
 
-                self._parse_markdown_into_docx(doc, section.get("content", ""))
+                self._parse_markdown_into_docx(
+                    doc,
+                    section.get("content", ""),
+                    strip_headings={unit_name, "Chapter Overview & Objectives", "Overview & Objectives"},
+                    heading_tracker=add_safe_heading
+                )
                 doc.add_page_break()
+                last_heading_text = None
                 continue
+
+            # Ensure Chapter H1 is rendered if not already introduced
+            if unit_name and unit_name not in rendered_units:
+                rendered_units.add(unit_name)
+                h1 = add_safe_heading(unit_name, level=1)
+                if h1:
+                    h1.paragraph_format.space_before = Pt(24)
+                    h1.paragraph_format.space_after = Pt(12)
 
             # Standard subtopic section
             if section.get("is_first_in_topic", False):
-                h2 = doc.add_heading(topic_name, level=2)
-                h2.paragraph_format.space_before = Pt(20)
-                h2.paragraph_format.space_after = Pt(8)
+                h2 = add_safe_heading(topic_name, level=2)
+                if h2:
+                    h2.paragraph_format.space_before = Pt(20)
+                    h2.paragraph_format.space_after = Pt(8)
 
-            h3 = doc.add_heading(subtopic_name, level=3)
-            h3.paragraph_format.space_before = Pt(14)
-            h3.paragraph_format.space_after = Pt(6)
+            h3 = add_safe_heading(subtopic_name, level=3)
+            if h3:
+                h3.paragraph_format.space_before = Pt(14)
+                h3.paragraph_format.space_after = Pt(6)
+
+            # Strip headings matching the unit, topic, or subtopic so markdown never re-adds them
+            strip_set = {unit_name, topic_name, subtopic_name}
 
             # Body content
-            self._parse_markdown_into_docx(doc, section.get("content", ""))
+            self._parse_markdown_into_docx(
+                doc,
+                section.get("content", ""),
+                strip_headings=strip_set,
+                heading_tracker=add_safe_heading
+            )
 
             # Attached figure / diagram
             image_path = section.get("image_path")
@@ -283,7 +377,12 @@ class DOCXExporter(DocumentExporter):
                 run_box.italic = True
                 run_box.font.color.rgb = RGBColor(100, 116, 139)
 
-            doc.add_paragraph().paragraph_format.space_after = Pt(12)
+            # Attached table markdown if not already embedded
+            tbl_md = section.get("table_markdown")
+            if tbl_md and tbl_md.strip() and tbl_md.strip() not in section.get("content", ""):
+                lines = [l.strip() for l in tbl_md.strip().split("\n") if l.strip().startswith("|") and l.strip().endswith("|")]
+                if lines:
+                    self._add_real_word_table(doc, lines)
 
     def _insert_figure(self, doc: Document, img_path: str, caption: str):
         """Inserts center-aligned picture with academic caption."""
@@ -307,8 +406,15 @@ class DOCXExporter(DocumentExporter):
         except Exception as e:
             logger.warning(f"Failed to insert figure {img_path}: {e}")
 
-    def _parse_markdown_into_docx(self, doc: Document, markdown_text: str):
-        """Converts Markdown text, code blocks, lists, callouts, and REAL TABLES into docx."""
+    def _parse_markdown_into_docx(
+        self,
+        doc: Document,
+        markdown_text: str,
+        strip_headings: Optional[Set[str]] = None,
+        heading_tracker: Optional[Any] = None
+    ):
+        """Converts Markdown text, code blocks, lists, callouts, and REAL TABLES into docx.
+        Discards headings that match strip_headings, and remaps inner headings to H4."""
         lines = markdown_text.split("\n")
         idx = 0
         total_lines = len(lines)
@@ -354,22 +460,48 @@ class DOCXExporter(DocumentExporter):
                 continue
 
             # 3. Headings
+            is_heading = False
+            h_text = ""
             if line_str.startswith("#### "):
-                h = doc.add_heading(line_str[5:], level=4)
-                h.paragraph_format.space_before = Pt(8)
-                h.paragraph_format.space_after = Pt(4)
+                is_heading = True
+                h_text = line_str[5:].strip()
             elif line_str.startswith("### "):
-                h = doc.add_heading(line_str[4:], level=3)
-                h.paragraph_format.space_before = Pt(12)
-                h.paragraph_format.space_after = Pt(4)
+                is_heading = True
+                h_text = line_str[4:].strip()
             elif line_str.startswith("## "):
-                h = doc.add_heading(line_str[3:], level=2)
-                h.paragraph_format.space_before = Pt(16)
-                h.paragraph_format.space_after = Pt(6)
+                is_heading = True
+                h_text = line_str[3:].strip()
             elif line_str.startswith("# "):
-                h = doc.add_heading(line_str[2:], level=1)
-                h.paragraph_format.space_before = Pt(20)
-                h.paragraph_format.space_after = Pt(8)
+                is_heading = True
+                h_text = line_str[2:].strip()
+
+            if is_heading:
+                # Normalize and check whether this heading duplicates an existing structural heading
+                norm_h = re.sub(r"[^\w\s]", "", h_text.lower())
+                should_skip = False
+                if strip_headings:
+                    for sh in strip_headings:
+                        norm_sh = re.sub(r"[^\w\s]", "", (sh or "").lower())
+                        if norm_sh and (norm_h == norm_sh or norm_h in norm_sh or norm_sh in norm_h):
+                            should_skip = True
+                            break
+
+                if should_skip:
+                    idx += 1
+                    continue
+
+                # In academic text, subsections inside subtopic are Level 4
+                if heading_tracker:
+                    h = heading_tracker(h_text, level=4)
+                    if h:
+                        h.paragraph_format.space_before = Pt(10)
+                        h.paragraph_format.space_after = Pt(4)
+                else:
+                    h = doc.add_heading(h_text, level=4)
+                    h.paragraph_format.space_before = Pt(10)
+                    h.paragraph_format.space_after = Pt(4)
+                idx += 1
+                continue
 
             # 4. Callout Blocks (> )
             elif line_str.startswith("> "):
@@ -472,112 +604,150 @@ class DOCXExporter(DocumentExporter):
         except Exception:
             pass
 
-        for r_idx, row_data in enumerate(parsed_rows):
-            for c_idx, cell_text in enumerate(row_data):
-                if c_idx < num_cols:
-                    cell = table.cell(r_idx, c_idx)
-                    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
-                    p = cell.paragraphs[0]
+        for row_idx, row in enumerate(table.rows):
+            is_header = (row_idx == 0)
+            # Repeat header on new pages
+            if is_header:
+                try:
+                    trPr = row._tr.get_or_add_trPr()
+                    trPr.append(parse_xml(r'<w:tblHeader %s/>' % nsdecls('w')))
+                except Exception:
+                    pass
+
+            for col_idx, cell in enumerate(row.cells):
+                if col_idx < len(parsed_rows[row_idx]):
+                    cell.text = parsed_rows[row_idx][col_idx]
+                else:
+                    cell.text = ""
+
+                cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+
+                # Styling
+                tcPr = cell._tc.get_or_add_tcPr()
+                if is_header:
+                    shd = parse_xml(r'<w:shd %s w:fill="F1F5F9"/>' % nsdecls('w'))
+                    tcPr.append(shd)
+
+                for p in cell.paragraphs:
+                    p.paragraph_format.line_spacing = 1.15
                     p.paragraph_format.space_before = Pt(4)
                     p.paragraph_format.space_after = Pt(4)
-                    self._parse_inline_formatting(p, cell_text)
-
-                    # Header row styling
-                    if r_idx == 0:
-                        for r in p.runs:
+                    for r in p.runs:
+                        r.font.name = "Times New Roman"
+                        r.font.size = Pt(10)
+                        if is_header:
                             r.font.bold = True
-                            r.font.name = "Times New Roman"
-                            r.font.size = Pt(11)
-                            r.font.color.rgb = RGBColor(255, 255, 255)
-                        # Set header background shading to dark slate blue
-                        shading = parse_xml(r'<w:shd {} w:fill="1E3A8A"/>'.format(nsdecls('w')))
-                        cell._tc.get_or_add_tcPr().append(shading)
-                    else:
-                        for r in p.runs:
-                            r.font.name = "Times New Roman"
-                            r.font.size = Pt(10.5)
-                        # Alternate row shading
-                        if r_idx % 2 == 1:
-                            shading = parse_xml(r'<w:shd {} w:fill="F8FAFC"/>'.format(nsdecls('w')))
-                            cell._tc.get_or_add_tcPr().append(shading)
-
-        doc.add_paragraph().paragraph_format.space_after = Pt(8)
+                            r.font.color.rgb = RGBColor(15, 23, 42)
+                        else:
+                            r.font.color.rgb = RGBColor(51, 65, 85)
 
     def _parse_inline_formatting(self, paragraph, text: str):
-        """Parses inline bold, italics, code, and inline math."""
-        pattern = r"(\*\*.*?\*\*|\*.*?\*|`.*?`|\$.*?\$)"
-        tokens = re.split(pattern, text)
-        for t in tokens:
-            if not t:
+        """Converts Markdown bold, italics, code, and inline math into Word runs."""
+        # Tokenize by bold (**), italic (*), inline code (`), and inline math ($...$)
+        pattern = r"(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\$[^\$]+\$)"
+        parts = re.split(pattern, text)
+
+        for part in parts:
+            if not part:
                 continue
-            if t.startswith("**") and t.endswith("**"):
-                r = paragraph.add_run(t[2:-2])
-                r.bold = True
-                r.font.name = "Times New Roman"
-            elif t.startswith("*") and t.endswith("*"):
-                r = paragraph.add_run(t[1:-1])
-                r.italic = True
-                r.font.name = "Times New Roman"
-            elif t.startswith("`") and t.endswith("`"):
-                r = paragraph.add_run(t[1:-1])
-                r.font.name = "Courier New"
-                r.font.size = Pt(10)
-            elif t.startswith("$") and t.endswith("$"):
-                clean_sym = OMMLEngine.sanitize_math_text(t[1:-1])
-                r = paragraph.add_run(clean_sym)
-                r.font.name = "Cambria Math"
-                r.font.italic = True
+
+            # Inline Math ($...$)
+            if part.startswith("$") and part.endswith("$") and len(part) > 2:
+                raw_math = part[1:-1].strip()
+                success = OMMLEngine.insert_equation_into_paragraph(paragraph, raw_math, is_display=False)
+                if not success:
+                    run = paragraph.add_run(OMMLEngine.sanitize_math_text(raw_math))
+                    run.font.name = "Cambria Math"
+                    run.font.italic = True
+                    run.font.size = Pt(11.5)
+            # Bold (**...**)
+            elif part.startswith("**") and part.endswith("**") and len(part) >= 4:
+                run = paragraph.add_run(part[2:-2])
+                run.bold = True
+                run.font.name = "Times New Roman"
+                run.font.size = Pt(12)
+            # Italic (*...*)
+            elif part.startswith("*") and part.endswith("*") and len(part) >= 2:
+                run = paragraph.add_run(part[1:-1])
+                run.italic = True
+                run.font.name = "Times New Roman"
+                run.font.size = Pt(12)
+            # Inline Code (`...`)
+            elif part.startswith("`") and part.endswith("`") and len(part) >= 2:
+                run = paragraph.add_run(part[1:-1])
+                run.font.name = "Courier New"
+                run.font.size = Pt(10.5)
+                run.font.color.rgb = RGBColor(180, 83, 9)
+            # Plain Text
             else:
-                r = paragraph.add_run(t)
-                r.font.name = "Times New Roman"
+                run = paragraph.add_run(part)
+                run.font.name = "Times New Roman"
+                run.font.size = Pt(12)
 
     def _build_back_matter(self, doc: Document, quality_report: Dict[str, Any]):
-        """Generates final academic audit scorecard and publication verification report."""
+        """Renders formal document quality scorecard in back matter."""
         doc.add_page_break()
-        h = doc.add_heading("Book Quality & Publication Audit", level=1)
-        h.paragraph_format.space_before = Pt(18)
+        h = doc.add_heading("Appendix: Academic Quality & Verification Scorecard", level=1)
+        h.paragraph_format.space_before = Pt(24)
         h.paragraph_format.space_after = Pt(12)
 
-        summary_p = doc.add_paragraph(
-            f"Overall Academic Publication Score: {quality_report.get('overall_score', 95)}% "
-            f"({quality_report.get('publication_status', 'Ready for Publication')}). "
-            f"Total Word Count: {quality_report.get('total_words', 0):,} words across "
-            f"{quality_report.get('total_chapters', 0)} units and {quality_report.get('total_sections', 0)} subtopic treatises."
+        desc = doc.add_paragraph(
+            "This volume has been programmatically compiled and audited according to rigorous university engineering standards. "
+            "Below is the automated audit scorecard certifying completeness, mathematical rigor, and pedagogical integrity."
         )
-        summary_p.paragraph_format.space_after = Pt(12)
+        desc.paragraph_format.space_after = Pt(12)
 
-        # Quality Metrics Table
-        metrics_table = [
-            "| Audit Dimension | Verified Score | Standard Threshold |",
-            "|---|---|---|",
-            f"| Content Completeness | {quality_report.get('content_completeness', 95)}% | 85.0% |",
-            f"| Structure & Hierarchy Consistency | {quality_report.get('structure_consistency', 98)}% | 90.0% |",
-            f"| Terminology & Notation Rigor | {quality_report.get('terminology_consistency', 96)}% | 90.0% |",
-            f"| Section Coverage | {quality_report.get('section_coverage', 100)}% | 95.0% |",
-            f"| Formatting & Table Validation | {quality_report.get('formatting_validation', 100)}% | 100.0% |"
+        metrics = [
+            ("Overall Academic Quality Score", f"{quality_report.get('quality_score', 'N/A')}/100"),
+            ("Status", quality_report.get("status", "VERIFIED").upper()),
+            ("Total Chapters Verified", str(quality_report.get("chapters_count", "N/A"))),
+            ("Total Topics Verified", str(quality_report.get("topics_count", "N/A"))),
+            ("Total Word Count", f"{quality_report.get('word_count', 0):,} words"),
+            ("Connected Prose Paragraphs", str(quality_report.get("prose_paragraphs", "N/A"))),
+            ("Bullet / List Items", str(quality_report.get("bullet_paragraphs", "N/A"))),
+            ("OMML Native Equations", str(quality_report.get("equations_count", "N/A"))),
+            ("Academic Tables", str(quality_report.get("tables_count", "N/A"))),
+            ("Figures & Schematics", str(quality_report.get("figures_count", "N/A"))),
+            ("Audit Timestamp", datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC"))
         ]
-        self._add_real_word_table(doc, metrics_table)
+
+        table = doc.add_table(rows=len(metrics) + 1, cols=2)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.autofit = True
+
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = "Verification Metric"
+        hdr_cells[1].text = "Audit Value"
+        for c in hdr_cells:
+            for p in c.paragraphs:
+                for r in p.runs:
+                    r.font.bold = True
+                    r.font.name = "Times New Roman"
+
+        for idx, (m_name, m_val) in enumerate(metrics, start=1):
+            row_cells = table.rows[idx].cells
+            row_cells[0].text = m_name
+            row_cells[1].text = m_val
+            for c in row_cells:
+                for p in c.paragraphs:
+                    for r in p.runs:
+                        r.font.name = "Times New Roman"
+                        r.font.size = Pt(10)
 
     def _add_page_numbers(self, doc: Document):
-        """Adds standard centered page numbers to section footers."""
-        try:
-            for s in doc.sections:
-                footer = s.footer
-                f_p = footer.paragraphs[0]
-                f_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                # Add Word dynamic page number field XML
-                f_run = f_p.add_run()
-                fldSimple = OxmlElement('w:fldSimple')
-                fldSimple.set(qn('w:instr'), 'PAGE')
-                f_run._r.append(fldSimple)
-                f_run.font.name = "Calibri"
-                f_run.font.size = Pt(9)
-                f_run.font.color.rgb = RGBColor(148, 163, 184)
-        except Exception as e:
-            logger.warning(f"Page numbering injection skipped: {e}")
+        """Adds standard centered page number XML fields to all footers."""
+        for section in doc.sections:
+            footer = section.footer
+            footer_p = footer.paragraphs[0]
+            footer_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            footer_p.paragraph_format.space_before = Pt(8)
+            fld_run = footer_p.add_run()
+            fld_run.font.name = "Times New Roman"
+            fld_run.font.size = Pt(9.5)
+            fld_run.font.color.rgb = RGBColor(148, 163, 184)
+            fld_xml = parse_xml(r'<w:fldSimple %s w:instr="PAGE"/>' % nsdecls('w'))
+            fld_run._r.append(fld_xml)
 
+
+# Backwards compatibility alias
 DocxEngine = DOCXExporter
-DOCXExportAgent = DOCXExporter
-DocumentFormattingAgent = DOCXExporter
-
-

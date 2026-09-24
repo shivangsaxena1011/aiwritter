@@ -30,6 +30,9 @@ class RepetitionDetector2:
     Level 1: Exact duplicate (SHA-256 hash of normalized text)
     Level 2: Near duplicate (Token Jaccard / n-gram similarity >= 0.70)
     Level 3: Conceptual duplicate (Shared set of equations, claims, experiments)
+
+    Mathematically sound duplicate rate tracking:
+    duplicate_rate = duplicates / max(1, total_candidates_evaluated), bounded [0.0, 1.0].
     """
 
     def __init__(self, near_threshold: float = 0.70, min_word_count: int = 15):
@@ -37,9 +40,13 @@ class RepetitionDetector2:
         self.min_word_count = min_word_count
         self.exact_hashes: Dict[str, str] = {}  # hash -> location
         self.stored_paragraphs: List[Dict[str, Any]] = []  # [{tokens, equations, claims, location, text}]
+        self.total_candidates_evaluated = 0
         self.exact_duplicate_count = 0
         self.near_duplicate_count = 0
         self.conceptual_duplicate_count = 0
+        self.unique_duplicate_strings: Set[str] = set()
+        self.duplicate_occurrences = 0
+        self.affected_paragraphs: List[Dict[str, Any]] = []
 
     @staticmethod
     def _normalize(text: str) -> str:
@@ -61,10 +68,20 @@ class RepetitionDetector2:
         if not norm:
             return RepetitionCheckResult(is_duplicate=False)
 
+        self.total_candidates_evaluated += 1
+
         # Level 1: Exact Duplicate Check
         h = hashlib.sha256(norm.encode("utf-8")).hexdigest()
         if h in self.exact_hashes:
             self.exact_duplicate_count += 1
+            self.duplicate_occurrences += 1
+            self.unique_duplicate_strings.add(norm[:100])
+            self.affected_paragraphs.append({
+                "location": location,
+                "level": "EXACT",
+                "matching_location": self.exact_hashes[h],
+                "snippet": paragraph_text[:120]
+            })
             return RepetitionCheckResult(
                 is_duplicate=True,
                 duplicate_level="EXACT",
@@ -92,6 +109,15 @@ class RepetitionDetector2:
 
             if sim >= self.near_threshold:
                 self.near_duplicate_count += 1
+                self.duplicate_occurrences += 1
+                self.unique_duplicate_strings.add(norm[:100])
+                self.affected_paragraphs.append({
+                    "location": location,
+                    "level": "NEAR",
+                    "matching_location": item["location"],
+                    "similarity": round(sim, 3),
+                    "snippet": paragraph_text[:120]
+                })
                 return RepetitionCheckResult(
                     is_duplicate=True,
                     duplicate_level="NEAR",
@@ -105,6 +131,14 @@ class RepetitionDetector2:
                 eq_inter = candidate_eqs & item["equations"]
                 if len(eq_inter) >= 2 and sim >= 0.25:
                     self.conceptual_duplicate_count += 1
+                    self.duplicate_occurrences += 1
+                    self.affected_paragraphs.append({
+                        "location": location,
+                        "level": "CONCEPTUAL",
+                        "matching_location": item["location"],
+                        "similarity": round(sim, 3),
+                        "snippet": paragraph_text[:120]
+                    })
                     return RepetitionCheckResult(
                         is_duplicate=True,
                         duplicate_level="CONCEPTUAL",
@@ -142,13 +176,51 @@ class RepetitionDetector2:
         })
 
     def get_summary(self) -> Dict[str, Any]:
-        total = max(1, len(self.stored_paragraphs))
+        total_eval = max(1, self.total_candidates_evaluated)
+        exact_rate = min(1.0, max(0.0, self.exact_duplicate_count / total_eval))
+        near_rate = min(1.0, max(0.0, self.near_duplicate_count / total_eval))
+        conceptual_rate = min(1.0, max(0.0, self.conceptual_duplicate_count / total_eval))
+
         return {
+            "total_candidates_evaluated": self.total_candidates_evaluated,
             "total_registered_paragraphs": len(self.stored_paragraphs),
             "exact_duplicates_detected": self.exact_duplicate_count,
             "near_duplicates_detected": self.near_duplicate_count,
             "conceptual_duplicates_detected": self.conceptual_duplicate_count,
-            "exact_duplicate_rate": round(self.exact_duplicate_count / total, 4),
-            "near_duplicate_rate": round(self.near_duplicate_count / total, 4),
-            "conceptual_duplicate_rate": round(self.conceptual_duplicate_count / total, 4)
+            "unique_duplicate_strings": len(self.unique_duplicate_strings),
+            "duplicate_occurrences": self.duplicate_occurrences,
+            "exact_duplicate_rate": round(exact_rate, 4),
+            "near_duplicate_rate": round(near_rate, 4),
+            "conceptual_duplicate_rate": round(conceptual_rate, 4),
+            "affected_paragraphs_count": len(self.affected_paragraphs)
         }
+
+    def audit_docx_paragraphs(self, paragraphs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Runs rigorous repetition audit on extracted DOCX paragraphs.
+        
+        Args:
+            paragraphs: List of dicts, e.g. [{"text": str, "location": str, "is_heading": bool}]
+        """
+        auditor = RepetitionDetector2(near_threshold=self.near_threshold, min_word_count=self.min_word_count)
+        
+        for p in paragraphs:
+            # Skip headings, captions, very short lines
+            if p.get("is_heading"):
+                continue
+            text = p.get("text", "").strip()
+            loc = p.get("location", "DOCX Paragraph")
+            words = text.split()
+            if len(words) < self.min_word_count:
+                continue
+
+            check = auditor.check_candidate(text, loc)
+            if not check.is_duplicate:
+                auditor.register_paragraph(text, loc)
+
+        summary = auditor.get_summary()
+        summary["passed"] = (
+            summary["exact_duplicate_rate"] <= 0.02 and
+            summary["near_duplicate_rate"] <= 0.05
+        )
+        summary["affected_paragraphs"] = auditor.affected_paragraphs[:20]  # top 20 for diagnosis
+        return summary

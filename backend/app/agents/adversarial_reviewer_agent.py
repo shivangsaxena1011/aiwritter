@@ -107,8 +107,9 @@ class AdversarialReviewerAgent:
                         recommendation="Reference the canonical derivation rather than re-introducing."
                     ))
 
-            # 4. Check for repeated identical introductory sentences
-            first_sentence = re.split(r"[.!?]", content.strip())[0].strip() if content else ""
+            # 4. Check for repeated identical introductory prose sentences (strip headings first)
+            prose_content = re.sub(r"^#+.*$", "", content, flags=re.MULTILINE).strip()
+            first_sentence = re.split(r"[.!?]", prose_content)[0].strip() if prose_content else ""
             if len(first_sentence.split()) > 10:
                 first_norm = " ".join(re.sub(r"[^\w\s]", "", first_sentence.lower()).split())
                 if first_norm in seen_intro_phrases:

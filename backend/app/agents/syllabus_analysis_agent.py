@@ -188,9 +188,14 @@ JSON Output Schema:
 
         in_major_topics_block = False
 
+        has_future_chapter = any(bool(chapter_pattern.match(l)) for l in lines)
+
         for line in lines:
-            # Skip subject line if detected
-            if re.match(r"^(?:Book|Subject|Course|Syllabus):\s*", line, re.I):
+            # Skip subject/course/program metadata lines if detected
+            if re.match(r"^(?:Book|Subject|Course|Syllabus|Program|Degree):\s*", line, re.I):
+                continue
+            if re.match(r"^(?:B\.?Tech|B\.?E\.?|M\.?Tech|Undergraduate|Degree|First\s+Year|Second\s+Year).*—.*", line, re.I):
+                detected_subject = line.split("—")[-1].strip() if "—" in line else line.strip()
                 continue
 
             if re.match(r"^Major\s+Topics:\s*$", line, re.I):
@@ -213,7 +218,11 @@ JSON Output Schema:
                 in_major_topics_block = False
                 continue
 
-            # Ensure at least one chapter exists
+            # If chapters exist later in document and no chapter has started yet, this line is preamble metadata
+            if has_future_chapter and not current_chapter:
+                continue
+
+            # Ensure at least one chapter exists if document has no chapter headers at all
             if not current_chapter:
                 current_chapter = {
                     "number": 1,
