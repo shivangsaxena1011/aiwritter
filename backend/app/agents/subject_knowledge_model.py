@@ -324,18 +324,22 @@ class SubjectKnowledgeModel:
         Ensures the generated academic section has a 100% unique opening sentence
         incorporating the exact subtopic and topic, preventing adversarial reviewer
         repetition errors and eliminating boilerplate templates.
+        Strips leading redundant subtopic headings.
         """
         if not content:
             return content
 
         lines = content.strip().split("\n")
-        heading_lines = []
         body_lines = []
         for line in lines:
-            if line.startswith("#"):
-                heading_lines.append(line)
-            else:
-                body_lines.append(line)
+            line_str = line.strip()
+            if line_str.startswith("###"):
+                h_text = line_str.lstrip("#").strip()
+                norm_h = re.sub(r"[^\w\s]", "", h_text.lower())
+                norm_s = re.sub(r"[^\w\s]", "", subtopic.lower())
+                if norm_s and (norm_h == norm_s or norm_s in norm_h or norm_h in norm_s):
+                    continue
+            body_lines.append(line)
 
         body_text = "\n".join(body_lines).strip()
         if not body_text:
@@ -344,7 +348,7 @@ class SubjectKnowledgeModel:
         # Extract first non-empty sentence in body_text
         sentences = [s.strip() for s in re.split(r"[.!?]", body_text) if s.strip()]
         if not sentences:
-            return content
+            return body_text
 
         first_sentence = sentences[0]
         first_norm = " ".join(re.sub(r"[^\w\s]", "", first_sentence.lower()).split())
@@ -365,9 +369,6 @@ class SubjectKnowledgeModel:
             prefix = prefixes[idx]
             body_text = f"{prefix} {body_text}"
 
-        heading_part = "\n".join(heading_lines)
-        if heading_part:
-            return f"{heading_part}\n{body_text}"
         return body_text
 
     @classmethod
@@ -433,54 +434,25 @@ class SubjectKnowledgeModel:
     @classmethod
     def _generate_de_broglie_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["motivation", "inadequacy", "classical"]):
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope"]):
             return (
                 f"### {subtopic}\n"
-                "The formulation of the de Broglie hypothesis in 1924 marked one of the most profound conceptual revolutions in modern physical science. "
-                "Throughout the nineteenth century, physics rested comfortably upon a strict dichotomy between localized particles governed by Newtonian mechanics and continuous electromagnetic fields described by Maxwell's electrodynamics. "
-                "However, this classical paradigm proved fundamentally incapable of explaining blackbody radiation, the photoelectric effect, and the stability of atomic orbits. "
-                "Recognizing that electromagnetic radiation—classically treated as continuous waves—manifests discrete particle-like packet characteristics (photons) with energy $E = h\\nu$ and momentum $p = h/\\lambda$, the French physicist Louis de Broglie postulated that nature possesses an intrinsic symmetry. "
-                "He asserted that material entities such as electrons, protons, and neutrons, which had universally been categorized as discrete classical particles, must simultaneously exhibit an underlying wave character in their dynamical propagation."
+                "While the de Broglie wave hypothesis universally applies to all material entities, its observable manifestations are bounded by macroscopic physical constraints. "
+                "For macroscopic objects (such as a 0.15 kg cricket ball moving at 30 m/s), the associated de Broglie wavelength is approximately $1.47 \\times 10^{-34}\\text{ m}$—many orders of magnitude smaller than the Planck length and atomic nuclei. "
+                "Consequently, spatial wave diffraction and quantum interference effects are entirely unobservable in classical macroscopic bodies.\n\n"
+                "Furthermore, when particle velocities approach significant fractions of the speed of light ($v > 0.1c$), classical non-relativistic momentum $p = mv$ fails. "
+                "In relativistic regimes, the de Broglie wavelength must incorporate Lorentz contraction and relativistic momentum: $\\lambda = h / (\\gamma m_0 v) = (h / m_0 v)\\sqrt{1 - v^2/c^2}$."
             )
-        if any(k in s_low for k in ["postulate", "matter-wave", "pilot wave"]):
-            return (
-                f"### {subtopic}\n"
-                "The physical essence of de Broglie's thesis lies in associating every material particle possessing mechanical momentum $p$ with a characteristic pilot wave or matter wave. "
-                "Unlike classical mechanical waves (such as acoustic oscillations in fluid media) or classical electromagnetic radiation (transverse oscillations of electric and magnetic fields in free space), matter waves represent quantum probability amplitudes that dictate the spatial and temporal likelihood of locating a particle upon measurement. "
-                "The fundamental connection between the corpuscular attributes of the particle (mass $m$ and velocity $v$) and the wave attributes of the pilot oscillation (frequency $\\nu$ and wavelength $\\lambda$) is bridged exclusively by Planck's constant $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}.\n\n"
-                "To correctly apply the de Broglie relationship in engineering analysis, the wavelength scales inversely with momentum: $\\lambda \\propto 1/p$. As mass increases into the macroscopic domain, the wavelength shrinks below the Planck length scale, rendering quantum interference undetectable."
-            )
-        if any(k in s_low for k in ["derivation", "wavelength"]):
-            return (
-                f"### {subtopic}\n"
-                "The quantitative relationship establishing the de Broglie wavelength for a non-relativistic particle of mass $m$ moving with velocity $v$ is formulated as:\n\n"
-                "$$\\lambda = \\frac{h}{p} = \\frac{h}{mv} = \\frac{h}{\\sqrt{2m E_k}}$$\n\n"
-                "In this foundational expression, $\\lambda$ denotes the de Broglie wavelength in meters (m), $h$ represents Planck's constant ($6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$), $p$ is the relativistic or non-relativistic momentum (kg·m/s), and $E_k$ represents the kinetic energy of the moving particle in Joules (J).\n\n"
-                "When a particle possessing elementary electrical charge $q$ is accelerated from rest through an electrostatic potential difference $V$ (Volts), the kinetic energy acquired equals $E_k = qV$. Substituting this electrodynamic relationship into the momentum formulation yields:\n\n"
-                "$$\\lambda = \\frac{h}{\\sqrt{2m q V}}$$\n\n"
-                "For an electron possessing rest mass $m_e = 9.109 \\times 10^{-31}\\text{ kg}$ and elementary charge $e = 1.602 \\times 10^{-19}\\text{ C}$, substituting these fundamental physical constants gives the practical working formula:\n\n"
-                "$$\\lambda_e = \\sqrt{\\frac{150}{V}}\\text{ \\AA} = \\frac{1.227}{\\sqrt{V}}\\text{ nm}$$\n\n"
-                "The formal derivation proceeds by equating photon energy $E = hc/\\lambda$ with relativistic momentum $E = pc$, yielding $p = h/\\lambda \\implies \\lambda = h/p$, and extending this universally to all matter."
-            )
-        if any(k in s_low for k in ["experiment", "davisson", "germer", "thomson"]):
-            table_md = (
-                "| Entity / Particle | Rest Mass $m$ (kg) | Typical Velocity $v$ (m/s) | Momentum $p$ (kg·m/s) | De Broglie Wavelength $\\lambda$ | Observable Wave Effects |\n"
-                "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
-                "| Cricket Ball | $0.15\\text{ kg}$ | $30\\text{ m/s}$ | $4.5\\text{ kg}\\cdot\\text{m/s}$ | $1.47 \\times 10^{-34}\\text{ m}$ | Completely undetectable (unphysical) |\n"
-                "| Smoke Particle | $1.0 \\times 10^{-15}\\text{ kg}$ | $0.01\\text{ m/s}$ | $1.0 \\times 10^{-17}\\text{ kg}\\cdot\\text{m/s}$ | $6.63 \\times 10^{-17}\\text{ m}$ | Far smaller than atomic dimensions |\n"
-                "| Thermal Neutron | $1.675 \\times 10^{-27}\\text{ kg}$ | $2.20 \\times 10^3\\text{ m/s}$ | $3.68 \\times 10^{-24}\\text{ kg}\\cdot\\text{m/s}$ | $1.80 \\times 10^{-10}\\text{ m}$ ($1.80\\text{ \\AA}$) | Readily diffracted by crystal lattices |\n"
-                "| Electron ($100\\text{ V}$) | $9.109 \\times 10^{-31}\\text{ kg}$ | $5.93 \\times 10^6\\text{ m/s}$ | $5.40 \\times 10^{-24}\\text{ kg}\\cdot\\text{m/s}$ | $1.23 \\times 10^{-10}\\text{ m}$ ($1.23\\text{ \\AA}$) | Primary basis of electron microscopy |"
-            )
+        if any(k in s_low for k in ["experiment", "davisson", "germer", "thomson", "verification", "setup"]):
             return (
                 f"### {subtopic}\n"
                 "The definitive experimental verification of matter waves was achieved independently in 1927 by Clinton Davisson and Lester Germer at Bell Telephone Laboratories, and by George Paget Thomson at the University of Aberdeen. "
                 "Davisson and Germer directed a collimated beam of low-energy electrons toward the surface of a target nickel single crystal. "
                 "By measuring the angular distribution of the scattered electrons, they detected intense peak reflections at an accelerating potential of $54\\text{ V}$ and a scattering angle of $\\theta = 50^\\circ$. "
                 "Applying Bragg's diffraction law $2d\\sin\\theta = n\\lambda$ to the nickel crystal lattice spacing ($d = 0.091\\text{ nm}$), they deduced an electron wavelength of $0.165\\text{ nm}$, in extraordinary agreement with de Broglie's theoretical prediction ($\\lambda = 1.227/\\sqrt{54} = 0.167\\text{ nm}$).\n\n"
-                "Simultaneously, G. P. Thomson demonstrated that passing high-energy cathode rays through ultra-thin gold foils produced concentric circular diffraction rings identical to X-ray powder diffraction patterns, conclusively establishing the wave nature of electrons.\n\n"
-                f"{table_md}"
+                "Simultaneously, G. P. Thomson demonstrated that passing high-energy cathode rays through ultra-thin gold foils produced concentric circular diffraction rings identical to X-ray powder diffraction patterns, conclusively establishing the wave nature of electrons."
             )
-        if any(k in s_low for k in ["microscopy", "application", "engineering", "tem", "sem"]):
+        if any(k in s_low for k in ["microscopy", "application", "engineering", "tem", "sem", "technology", "relevance"]):
             return (
                 f"### {subtopic}\n"
                 "The physical reality of de Broglie waves underpins essential modern technological instruments in materials engineering and nanoscale science:\n\n"
@@ -488,608 +460,424 @@ class SubjectKnowledgeModel:
                 "2. **Electron Beam Lithography (EBL):** Semiconductor foundries employ focused electron beams to fabricate sub-10 nanometer gate profiles for advanced microprocessors, completely overcoming optical diffraction limits.\n\n"
                 "3. **Thermal Neutron Scattering:** Nuclear research reactors utilize thermal neutron diffraction to determine atomic and magnetic structures in high-temperature superconductors and biological macromolecules."
             )
+        if any(k in s_low for k in ["derivation", "wavelength", "formulation", "equation", "mathematical", "expression"]):
+            return (
+                f"### {subtopic}\n"
+                "The quantitative relationship establishing the de Broglie wavelength for a non-relativistic particle of mass $m$ moving with velocity $v$ is formulated as:\n\n"
+                "$$\\lambda = \\frac{h}{p} = \\frac{h}{mv} = \\frac{h}{\\sqrt{2m E_k}}$$\n\n"
+                "In this foundational expression, $\\lambda$ denotes the de Broglie wavelength in meters (m), $h$ represents Planck's constant ($6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$), $p$ is the momentum (kg·m/s), and $E_k$ represents kinetic energy (J).\n\n"
+                "When a particle possessing charge $q$ is accelerated from rest through potential difference $V$, kinetic energy acquired equals $E_k = qV$, yielding:\n\n"
+                "$$\\lambda = \\frac{h}{\\sqrt{2m q V}}$$\n\n"
+                "For an electron ($m_e = 9.109 \\times 10^{-31}\\text{ kg}$, $e = 1.602 \\times 10^{-19}\\text{ C}$), this yields the practical formula: $\\lambda_e = \\frac{1.227}{\\sqrt{V}}\\text{ nm}$."
+            )
+        if any(k in s_low for k in ["postulate", "matter-wave", "pilot wave", "principle"]):
+            return (
+                f"### {subtopic}\n"
+                "The physical essence of de Broglie's thesis lies in associating every material particle possessing mechanical momentum $p$ with a characteristic pilot wave or matter wave. "
+                "Unlike classical mechanical waves or electromagnetic radiation, matter waves represent quantum probability amplitudes that dictate the spatial and temporal likelihood of locating a particle upon measurement. "
+                "The fundamental connection between the corpuscular attributes of the particle ($m, v$) and the wave attributes of the pilot oscillation ($\\nu, \\lambda$) is bridged exclusively by Planck's constant $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$."
+            )
 
-        parts = [
-            f"### {subtopic}\n",
-            f"The investigation of {subtopic} develops the foundational principles connecting matter wave wavelengths with physical particle momentum. "
+        # Default concept / motivation
+        return (
+            f"### {subtopic}\n"
+            "The formulation of the de Broglie hypothesis in 1924 marked one of the most profound conceptual revolutions in modern physical science. "
             "Throughout the nineteenth century, physics rested comfortably upon a strict dichotomy between localized particles governed by Newtonian mechanics and continuous electromagnetic fields described by Maxwell's electrodynamics. "
-            "However, this classical paradigm proved fundamentally incapable of explaining blackbody radiation, the photoelectric effect, and the stability of atomic orbits. "
-            "Recognizing that electromagnetic radiation—classically treated as continuous waves—manifests discrete particle-like packet characteristics (photons) with energy $E = h\\nu$ and momentum $p = h/\\lambda$, the French physicist Louis de Broglie postulated that nature possesses an intrinsic symmetry. "
-            "He asserted that material entities such as electrons, protons, and neutrons, which had universally been categorized as discrete classical particles, must simultaneously exhibit an underlying wave character in their dynamical propagation.\n",
-            "### 1. Theoretical Framework and Physical Mechanisms\n",
-            "The physical essence of de Broglie's thesis lies in associating every material particle possessing mechanical momentum $p$ with a characteristic pilot wave or matter wave. "
-            "Unlike classical mechanical waves (such as acoustic oscillations in fluid media) or classical electromagnetic radiation (transverse oscillations of electric and magnetic fields in free space), matter waves represent quantum probability amplitudes that dictate the spatial and temporal likelihood of locating a particle upon measurement. "
-            "The fundamental connection between the corpuscular attributes of the particle (mass $m$ and velocity $v$) and the wave attributes of the pilot oscillation (frequency $\\nu$ and wavelength $\\lambda$) is bridged exclusively by Planck's constant $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}.\n",
-            "### 2. Analytical Formulation and Governing Equations\n",
-            "The quantitative relationship establishing the de Broglie wavelength for a non-relativistic particle of mass $m$ moving with velocity $v$ is formulated as:\n",
-            "$$\\lambda = \\frac{h}{p} = \\frac{h}{mv} = \\frac{h}{\\sqrt{2m E_k}}$$\n",
-            "In this foundational expression, $\\lambda$ denotes the de Broglie wavelength in meters (m), $h$ represents Planck's constant ($6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$), $p$ is the relativistic or non-relativistic momentum (kg·m/s), and $E_k$ represents the kinetic energy of the moving particle in Joules (J).\n"
-        ]
-
-        if derivation:
-            parts.extend([
-                "### 3. Step-by-Step Mathematical Derivation\n",
-                "The mathematical derivation of the de Broglie relationship proceeds systematically from Planck's radiation law and Einstein's special theory of relativity:\n",
-                "**Step 1: Energy of a Photon.** According to the Planck-Einstein quantum hypothesis, the total energy of a photon of frequency $\\nu$ and wavelength $\\lambda$ propagating at the speed of light $c$ is:\n",
-                "$$E = h\\nu = \\frac{hc}{\\lambda}$$\n",
-                "**Step 2: Relativistic Momentum of a Photon.** In special relativity, the energy-momentum relationship for a massless particle ($m_0 = 0$) simplifies to $E = pc$. Equating the two independent expressions for photon energy:\n",
-                "$$pc = \\frac{hc}{\\lambda} \\implies p = \\frac{h}{\\lambda}$$\n",
-                "**Step 3: Inversion for de Broglie Postulate.** Solving for the wavelength associated with the momentum $p$ yields:\n",
-                "$$\\lambda = \\frac{h}{p}$$\n",
-                "**Step 4: Extension to Massive Material Particles.** De Broglie hypothesized that this mathematical link applies not only to electromagnetic quanta but universally to all material entities possessing mechanical momentum $p = mv$:\n",
-                "$$\\lambda = \\frac{h}{mv}$$\n",
-                "**Step 5: Relation to Accelerating Potential.** Expressing the non-relativistic momentum in terms of kinetic energy $E_k = \\frac{p^2}{2m}$, we have $p = \\sqrt{2mE_k}$. For a particle of charge $q$ accelerated through potential $V$, $E_k = qV$, arriving at the final closed-form relation:\n",
-                "$$\\lambda = \\frac{h}{\\sqrt{2mqV}}$$\n"
-            ])
-
-        parts.extend([
-            "### 4. Comparison of De Broglie Wavelengths across Physical Domains\n",
-            "The table below contrasts de Broglie wavelengths across macroscopic systems and microscopic subatomic entities to illustrate why wave characteristics are observable exclusively in quantum regimes:\n",
-            "| Entity / Particle | Rest Mass $m$ (kg) | Typical Velocity $v$ (m/s) | Momentum $p$ (kg·m/s) | De Broglie Wavelength $\\lambda$ | Observable Wave Effects |\n",
-            "| :--- | :--- | :--- | :--- | :--- | :--- |\n",
-            "| Cricket Ball | $0.15\\text{ kg}$ | $30\\text{ m/s}$ | $4.5\\text{ kg}\\cdot\\text{m/s}$ | $1.47 \\times 10^{-34}\\text{ m}$ | Completely undetectable (unphysical) |\n",
-            "| Smoke Particle | $1.0 \\times 10^{-15}\\text{ kg}$ | $0.01\\text{ m/s}$ | $1.0 \\times 10^{-17}\\text{ kg}\\cdot\\text{m/s}$ | $6.63 \\times 10^{-17}\\text{ m}$ | Far smaller than atomic dimensions |\n",
-            "| Thermal Neutron | $1.675 \\times 10^{-27}\\text{ kg}$ | $2.20 \\times 10^3\\text{ m/s}$ | $3.68 \\times 10^{-24}\\text{ kg}\\cdot\\text{m/s}$ | $1.80 \\times 10^{-10}\\text{ m}$ ($1.80\\text{ \\AA}$) | Readily diffracted by crystal lattices |\n",
-            "| Electron ($100\\text{ V}$) | $9.109 \\times 10^{-31}\\text{ kg}$ | $5.93 \\times 10^6\\text{ m/s}$ | $5.40 \\times 10^{-24}\\text{ kg}\\cdot\\text{m/s}$ | $1.23 \\times 10^{-10}\\text{ m}$ ($1.23\\text{ \\AA}$) | Primary basis of electron microscopy |\n",
-            "\n### 5. Key Physical Characteristics and Constraints\n",
-            "To correctly apply the de Broglie relationship in engineering and physical analysis, the following core physical properties must be observed:\n",
-            "- **Inversely Proportional to Mass and Velocity:** The wavelength scales as $\\lambda \\propto 1/m$. As mass increases into the macroscopic domain, the wavelength shrinks below the Planck length scale, rendering quantum interference undetectable.\n",
-            "- **Non-Electromagnetic Character:** Matter waves are not electromagnetic oscillations; neutral particles such as neutrons and buckyballs ($C_{60}$) exhibit identical matter wave diffraction according to their momentum.\n",
-            "- **Relativistic Corrections:** When particle velocity approaches the speed of light ($v > 0.1c$), the relativistic momentum $p = \\gamma m_0 v = \\frac{m_0 v}{\\sqrt{1 - v^2/c^2}}$ must be employed.\n",
-            "\n### 6. Contemporary Engineering and Scientific Applications\n",
-            "The physical reality of de Broglie waves underpins essential modern technological instruments:\n",
-            "1. **Transmission Electron Microscopy (TEM):** Because accelerating electrons through $100\\text{ kV}$ to $300\\text{ kV}$ yields de Broglie wavelengths on the order of picometers ($0.0037\\text{ nm}$ at $100\\text{ kV}$), TEM achieves sub-angstrom spatial resolution, allowing direct imaging of atomic columns and crystal defects.\n",
-            "2. **Electron Beam Lithography (EBL):** Semiconductor foundries employ focused electron beams to fabricate sub-10 nanometer gate profiles for advanced microprocessors, completely overcoming optical diffraction limits.\n",
-            "3. **Thermal Neutron Scattering:** Nuclear research reactors utilize thermal neutron diffraction to determine atomic and magnetic structures in high-temperature superconductors and biological macromolecules.\n"
-        ])
-
-        if include_num:
-            parts.extend([
-                "### 7. Worked Solved Numerical Problem\n",
-                "**Problem Statement:** An electron is accelerated from rest through a potential difference of $150\\text{ V}$. Calculate: (a) its kinetic energy in Joules and electron-volts, (b) its de Broglie wavelength in angstroms and nanometers, and (c) the de Broglie wavelength of a $100\\text{ g}$ golf ball traveling at $20\\text{ m/s}$. Compare the two wavelengths.\n",
-                "**Given Data:**\n",
-                "- Accelerating potential $V = 150\\text{ V}$\n",
-                "- Electron rest mass $m_e = 9.109 \\times 10^{-31}\\text{ kg}$\n",
-                "- Elementary charge $e = 1.602 \\times 10^{-19}\\text{ C}$\n",
-                "- Planck constant $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$\n",
-                "**Governing Formula:**\n",
-                "$$E_k = eV, \\quad \\lambda_e = \\frac{h}{\\sqrt{2m_e E_k}} = \\frac{1.227}{\\sqrt{V}}\\text{ nm}, \\quad \\lambda_{ball} = \\frac{h}{M V_{ball}}$$\n",
-                "**Substitution:**\n",
-                "$$\\lambda_e = \\frac{1.227}{\\sqrt{150}}\\text{ nm}, \\quad \\lambda_{ball} = \\frac{6.626 \\times 10^{-34}}{0.10 \\times 20}\\text{ m}$$\n",
-                "**Calculation Steps:**\n",
-                "1. Electron kinetic energy: $E_k = (1.602 \\times 10^{-19}\\text{ C}) \\times 150\\text{ V} = 2.403 \\times 10^{-17}\\text{ J} = 150\\text{ eV}$.\n",
-                "2. Electron de Broglie wavelength:\n",
-                "$$\\lambda_e = \\frac{1.227}{\\sqrt{150}} = \\frac{1.227}{12.247} = 0.1002\\text{ nm} = 1.002\\text{ \\AA}$$\n",
-                "3. Golf ball de Broglie wavelength:\n",
-                "$$\\lambda_{ball} = \\frac{6.626 \\times 10^{-34}}{0.10 \\times 20} = \\frac{6.626 \\times 10^{-34}}{2.0} = 3.313 \\times 10^{-34}\\text{ m}$$\n",
-                "**Final Answer:**\n",
-                "$$\\mathbf{\\lambda_e = 0.1002\\text{ nm} \\quad (1.002\\text{ \\AA}), \\quad \\lambda_{ball} = 3.313 \\times 10^{-34}\\text{ m}}$$\n",
-                "The electron wavelength is comparable to interatomic lattice spacings in solids (~$1\\text{ \\AA}$), enabling diffraction, whereas the golf ball wavelength is $10^{-24}$ times smaller than an atomic nucleus, exhibiting zero observable wave effects.\n"
-            ])
-
-        if include_qa:
-            parts.extend([
-                "### 8. Review Questions and Academic Exercises\n",
-                "1. *Analytical*: Derive the expression for the de Broglie wavelength of a relativistic particle having rest mass $m_0$ and kinetic energy $E_k$. Show that it reduces to $\\lambda = h/\\sqrt{2m_0 E_k}$ in the non-relativistic limit.\n",
-                "2. *Conceptual*: Why did Davisson and Germer select nickel crystals rather than polycrystalline materials for their electron scattering experiment?\n",
-                "3. *Applied*: Calculate the accelerating voltage required in an electron microscope to achieve a resolving power of $0.05\\text{ nm}$ (assuming the resolution equals the de Broglie wavelength).\n"
-            ])
-
-        return "\n".join(parts)
+            "However, this classical paradigm proved fundamentally incapable of explaining blackbody radiation, the photoelectric effect, and atomic stability. "
+            "Recognizing that electromagnetic radiation manifests discrete particle-like packet characteristics (photons) with energy $E = h\\nu$ and momentum $p = h/\\lambda$, Louis de Broglie postulated that material entities such as electrons must simultaneously exhibit an underlying wave character in their dynamical propagation."
+        )
 
     @classmethod
     def _generate_particle_in_box_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["boundary constraints", "potential well model", "piecewise potential"]):
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope"]):
             return (
                 f"### {subtopic}\n"
-                "The particle in a one-dimensional infinite potential well serves as the primary foundational model demonstrating spatial quantum confinement. "
-                "Consider a non-relativistic quantum particle of rest mass $m$ constrained to translate along the $x$-axis between impenetrable rigid boundaries located at $x = 0$ and $x = L$. "
-                "The potential energy distribution function $V(x)$ is formally defined by the piecewise profile:\n"
-                "$$V(x) = \\begin{cases} 0 & \\text{for } 0 < x < L \\\\ \\infty & \\text{for } x \\le 0 \\text{ and } x \\ge L \\end{cases}$$\n\n"
-                "Because the potential energy is infinite outside the spatial domain $[0, L]$, the probability of locating the particle in the exterior regions is identically zero, mandating $\\psi(x) = 0$ for $x < 0$ and $x > L$. "
-                "To ensure spatial continuity of the quantum state function across the boundaries, $\\psi(x)$ must satisfy the Dirichlet boundary conditions:\n"
-                "$$\\psi(0) = 0 \\quad \\text{and} \\quad \\psi(L) = 0$$\n"
-                "Inside the well where $V(x) = 0$, the particle behaves as a completely free particle constrained only by its geometric enclosures."
+                "The infinite potential well serves as an idealized pedagogical archetype, but real physical systems possess finite potential barriers $V_0 < \\infty$. "
+                "In finite potential wells, the quantum wave function does not drop abruptly to zero at the interfaces $x = 0$ and $x = L$; instead, it penetrates into the classically forbidden barrier regions as an exponentially decaying evanescent wave $\\psi(x) \\propto e^{-\\kappa x}$, where $\\kappa = \\sqrt{2m(V_0 - E)}/\\hbar$.\n\n"
+                "Additionally, real solid-state devices exhibit three-dimensional geometries where potential profiles may be anisotropic or non-rectangular, requiring numerical solutions of the 3D Schrödinger equation with effective mass tensors $m^*$."
             )
-        if any(k in s_low for k in ["probability density", "standing wave node", "internal nodes"]):
-            table_md = (
-                "| Quantum Number $n$ | State Designation | Energy Eigenvalue $E_n$ | Internal Nodes | Probability at Midpoint $P(L/2)$ | Physical Behavior |\n"
-                "| :--- | :--- | :--- | :--- | :--- | :--- |\n"
-                "| $n = 1$ | Ground State | $E_1 = \\frac{h^2}{8mL^2}$ | $0$ | Maximum ($2/L$) | Fundamental half-wave resonance; non-zero zero-point energy |\n"
-                "| $n = 2$ | First Excited State | $E_2 = 4E_1$ | $1$ (at $x = L/2$) | Node ($0$) | Particle cannot be detected at center of box |\n"
-                "| $n = 3$ | Second Excited State | $E_3 = 9E_1$ | $2$ (at $L/3, 2L/3$) | Maximum ($2/L$) | Anti-node at center with two intermediate zero-crossings |\n"
-                "| $n = 4$ | Third Excited State | $E_4 = 16E_1$ | $3$ | Node ($0$) | High kinetic energy standing wave with four spatial lobes |"
-            )
-            return (
-                f"### {subtopic}\n"
-                "The spatial probability density distribution $P_n(x) = |\\psi_n(x)|^2 = \\frac{2}{L}\\sin^2\\left(\\frac{n\\pi x}{L}\\right)$ reveals striking departures from classical intuition. "
-                "In classical mechanics, a particle bouncing between rigid walls exhibits an entirely uniform probability density $P_{cl}(x) = 1/L$ at all points. "
-                "In quantum wave mechanics, standing matter wave interference creates stationary nodes where the probability of finding the particle vanishes identically, and anti-nodes where finding the particle is maximal.\n\n"
-                "For even quantum numbers ($n = 2, 4, \\dots$), a node occurs precisely at the geometric center $x = L/2$, meaning the particle has zero probability of being detected at the midpoint, yet it transitions freely between the left and right halves of the well.\n\n"
-                f"{table_md}"
-            )
-        if any(k in s_low for k in ["nanotechnology application", "quantum dot display", "heterostructure device"]):
+        if any(k in s_low for k in ["application", "technology", "nanotechnology", "quantum dot", "heterostructure", "relevance"]):
             return (
                 f"### {subtopic}\n"
                 "The one-dimensional infinite potential well provides the theoretical foundation for contemporary solid-state heterostructure engineering:\n\n"
                 "1. **Semiconductor Quantum Wells:** Utilizing molecular beam epitaxy (MBE), materials engineers sandwich an ultra-thin layer of gallium arsenide (GaAs, thickness $L \\sim 5\\text{ to }10\\text{ nm}$) between wider bandgap layers of aluminum gallium arsenide (AlGaAs). Conduction band electrons become quantized into discrete 2D subbands, forming high-efficiency quantum well diode lasers for telecommunications.\n\n"
                 "2. **Quantum Dots (Artificial Atoms):** Three-dimensional quantum confinement creates nanocrystals where electrons are confined in all directions. Because the ground-to-excited transition energy $\\Delta E \\propto 1/L^2$ depends inversely on nanocrystal diameter squared, tuning the chemical nanoparticle size tunes the emitted fluorescence color continuously across the visible spectrum for display panels (QLED) and deep-tissue biological imaging."
             )
+        if any(k in s_low for k in ["interpretation", "eigenstate", "solution", "probability density", "node", "zero-point", "eigenvalue"]):
+            return (
+                f"### {subtopic}\n"
+                "The spatial probability density distribution $P_n(x) = |\\psi_n(x)|^2 = \\frac{2}{L}\\sin^2\\left(\\frac{n\\pi x}{L}\\right)$ reveals striking departures from classical intuition. "
+                "In classical mechanics, a particle bouncing between rigid walls exhibits an entirely uniform probability density $P_{cl}(x) = 1/L$ at all points. "
+                "In quantum wave mechanics, standing matter wave interference creates stationary nodes where the probability of finding the particle vanishes identically, and anti-nodes where finding the particle is maximal.\n\n"
+                "For even quantum numbers ($n = 2, 4, \\dots$), a node occurs precisely at the geometric center $x = L/2$, meaning the particle has zero probability of being detected at the midpoint, yet it transitions freely between the left and right halves of the well."
+            )
+        if any(k in s_low for k in ["derivation", "analytical", "proof", "step-by-step", "boundary condition"]):
+            return (
+                f"### {subtopic}\n"
+                "Applying Dirichlet boundary conditions to the general spatial solution $\\psi(x) = A\\sin(kx) + B\\cos(kx)$:\n\n"
+                "1. **Left Boundary Condition ($x = 0$):** Requiring $\\psi(0) = 0$ yields $B = 0$, so $\\psi(x) = A\\sin(kx)$.\n\n"
+                "2. **Right Boundary Condition ($x = L$):** Requiring $\\psi(L) = 0$ demands $A\\sin(kL) = 0$. For non-trivial states ($A \\ne 0$), we obtain $\\sin(kL) = 0 \\implies kL = n\\pi$ for $n = 1, 2, 3, \\dots$, establishing wavenumber quantization $k_n = \\frac{n\\pi}{L}$.\n\n"
+                "3. **Energy Eigenvalue Quantization:** Equating $k_n^2 = \\frac{2mE_n}{\\hbar^2}$ yields the discrete energy spectrum:\n\n"
+                "$$E_n = \\frac{\\hbar^2 k_n^2}{2m} = \\frac{n^2 \\pi^2 \\hbar^2}{2mL^2} = \\frac{n^2 h^2}{8mL^2}$$\n\n"
+                "4. **State Normalization:** Imposing $\\int_0^L |\\psi_n(x)|^2 dx = 1$ yields $A = \\sqrt{2/L}$, giving normalized spatial eigenfunctions $\\psi_n(x) = \\sqrt{\\frac{2}{L}}\\sin\\left(\\frac{n\\pi x}{L}\\right)$."
+            )
+        if any(k in s_low for k in ["formulation", "governing", "equation", "mathematical"]):
+            return (
+                f"### {subtopic}\n"
+                "Inside the one-dimensional infinite potential well where $V(x) = 0$, the spatial state is governed by the time-independent Schrödinger equation:\n\n"
+                "$$-\\frac{\\hbar^2}{2m} \\frac{d^2\\psi(x)}{dx^2} = E\\psi(x) \\implies \\frac{d^2\\psi(x)}{dx^2} + k^2 \\psi(x) = 0$$\n\n"
+                "where the wavenumber parameter $k$ is defined by $k = \\frac{\\sqrt{2mE}}{\\hbar}$.\n\n"
+                "The general solution to this second-order linear differential equation is a linear combination of spatial harmonic functions:\n\n"
+                "$$\\psi(x) = A\\sin(kx) + B\\cos(kx)$$\n\n"
+                "where integration constants $A$ and $B$ are fixed by boundary conditions at the impenetrable rigid potential barriers $x = 0$ and $x = L$."
+            )
 
-        parts = [
-            f"### {subtopic}\n",
-            f"The study of {subtopic} analyzes spatial quantum confinement and energy quantization within potential energy wells. "
-            "Consider a quantum particle of mass $m$ constrained along the coordinate axis $x$ between rigid impenetrable boundaries at $x = 0$ and $x = L$, with potential profile $V(x) = 0$ for $0 < x < L$ and $V(x) = \\infty$ elsewhere. "
-            "To maintain continuity of the wave function across the impenetrable interfaces, $\\psi(x)$ must satisfy the Dirichlet boundary conditions:\n",
-            "$$\\psi(0) = 0 \\quad \\text{and} \\quad \\psi(L) = 0$$\n",
-            "### 1. Mathematical Derivation of Energy Eigenvalues and Eigenfunctions\n",
-            "Inside the potential well where $V(x) = 0$, the spatial state is governed by the one-dimensional stationary Schrödinger equation:\n",
-            "$$-\\frac{\\hbar^2}{2m} \\frac{d^2\\psi(x)}{dx^2} = E\\psi(x) \\implies \\frac{d^2\\psi(x)}{dx^2} + k^2 \\psi(x) = 0$$\n",
-            "where wavevector $k = \\sqrt{2mE}/\\hbar$. The general solution is a linear superposition of orthogonal basis modes:\n",
-            "$$\\psi(x) = A\\sin(kx) + B\\cos(kx)$$\n",
-            "**Step 1: Imposition of Left Boundary Condition.** At $x = 0$:\n",
-            "$$\\psi(0) = A\\sin(0) + B\\cos(0) = 0 \\implies B = 0$$\n",
-            "yielding $\\psi(x) = A\\sin(kx)$.\n",
-            "**Step 2: Imposition of Right Boundary Condition.** Evaluating at $x = L$:\n",
-            "$$\\psi(L) = A\\sin(kL) = 0 \\implies kL = n\\pi, \\quad n = 1, 2, 3, \\dots$$\n",
-            "**Step 3: Discrete Quantized Energy Spectrum.** Substituting $k_n = \\frac{n\\pi}{L}$ into the energy relation $E = \\frac{\\hbar^2 k^2}{2m}$ yields the discrete quantized eigenvalues:\n",
-            "$$E_n = \\frac{\\hbar^2}{2m}\\left(\\frac{n\\pi}{L}\\right)^2 = \\frac{n^2 \\pi^2 \\hbar^2}{2mL^2} = \\frac{n^2 h^2}{8mL^2}, \\quad n = 1, 2, 3, \\dots$$\n",
-            "**Step 4: Wave Function Normalization.** Enforcing the Born probability normalization condition $\\int_0^L |\\psi_n(x)|^2 dx = 1$:\n",
-            "$$A^2 \\int_0^L \\sin^2\\left(\\frac{n\\pi x}{L}\\right) dx = A^2 \\left(\\frac{L}{2}\\right) = 1 \\implies A = \\sqrt{\\frac{2}{L}}$$\n",
-            "yielding the complete normalized spatial eigenmodes:\n",
-            "$$\\psi_n(x) = \\sqrt{\\frac{2}{L}} \\sin\\left(\\frac{n\\pi x}{L}\\right)$$\n",
-            "### 2. Physical Consequences and Zero-Point Energy\n",
-            "A foundational consequence of quantum confinement is that the lowest admissible state ($n = 1$), termed the ground state or zero-point energy:\n",
-            "$$E_1 = \\frac{h^2}{8mL^2} > 0$$\n",
-            "is strictly non-zero. A quantum particle confined within a finite spatial domain can never be brought completely to rest. "
-            "This phenomenon is a direct consequence of the Heisenberg uncertainty principle: confining the particle within a maximum position uncertainty $\\Delta x \\approx L$ requires an irreducible momentum uncertainty $\\Delta p \\ge \\frac{\\hbar}{2L}$, which mandates a non-vanishing minimum kinetic energy.\n"
-        ]
-
-        if include_num:
-            parts.extend([
-                "### 3. Worked Solved Numerical Problem\n",
-                "**Problem Statement:** An electron is confined within a one-dimensional infinite potential well of width $L = 1.0\\text{ nm}$. Calculate: (a) the ground state energy $E_1$ in Joules and electron-volts ($\text{eV}$), (b) the first excited state energy $E_2$, and (c) the transition photon wavelength from $n = 2$ to $n = 1$.\n",
-                "**Given Data:** $L = 1.0 \\times 10^{-9}\\text{ m}$, $m_e = 9.109 \\times 10^{-31}\\text{ kg}$, $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$, $c = 3.0 \\times 10^8\\text{ m/s}$.\n",
-                "**Governing Formula:** $E_n = \\frac{n^2 h^2}{8m_e L^2}$, $\\Delta E = E_2 - E_1 = 3E_1$, $\\lambda = \\frac{hc}{\\Delta E}$.\n",
-                "**Calculation Steps:**\n",
-                "1. Ground state energy $E_1$:\n",
-                "$$E_1 = \\frac{(6.626 \\times 10^{-34})^2}{8 \\times (9.109 \\times 10^{-31}) \\times (1.0 \\times 10^{-9})^2} = 6.025 \\times 10^{-20}\\text{ J} = 0.3761\\text{ eV}$$\n",
-                "2. First excited state energy: $E_2 = 4 \\times 0.3761\\text{ eV} = 1.5044\\text{ eV}$.\n",
-                "3. Transition wavelength:\n",
-                "$$\\lambda = \\frac{(6.626 \\times 10^{-34}) \\times (3.0 \\times 10^8)}{(1.5044 - 0.3761) \\times 1.602 \\times 10^{-19}} = 1099.7\\text{ nm}$$\n",
-                "**Final Answer:** $\\mathbf{E_1 = 0.376\\text{ eV}, \\quad E_2 = 1.504\\text{ eV}, \\quad \\lambda = 1100\\text{ nm}}$\n"
-            ])
-        return "\n".join(parts)
+        # Default concept / boundary constraints
+        return (
+            f"### {subtopic}\n"
+            "The particle in a one-dimensional infinite potential well serves as the primary foundational model demonstrating spatial quantum confinement. "
+            "Consider a non-relativistic quantum particle of rest mass $m$ constrained to translate along the $x$-axis between impenetrable rigid boundaries located at $x = 0$ and $x = L$. "
+            "The potential energy distribution function $V(x)$ is formally defined by the piecewise profile:\n"
+            "$$V(x) = \\begin{cases} 0 & \\text{for } 0 < x < L \\\\ \\infty & \\text{for } x \\le 0 \\text{ and } x \\ge L \\end{cases}$$\n\n"
+            "Because the potential energy is infinite outside the spatial domain $[0, L]$, the probability of locating the particle in the exterior regions is identically zero, mandating $\\psi(x) = 0$ for $x < 0$ and $x > L$. "
+            "To ensure spatial continuity of the quantum state function across the boundaries, $\\psi(x)$ must satisfy Dirichlet boundary conditions $\\psi(0) = 0$ and $\\psi(L) = 0$."
+        )
 
     @classmethod
     def _generate_heisenberg_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["derivation", "fourier", "wavepacket", "proof"]):
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope"]):
             return (
                 f"### {subtopic}\n"
-                "The mathematical derivation of Heisenberg's uncertainty principle proceeds directly from the Fourier analysis of localized wavepackets:\n\n"
-                "**Step 1: Wavepacket Representation.** A spatially localized matter wave packet in one dimension is represented by the inverse Fourier integral of spatial plane waves:\n"
-                "$$\\psi(x) = \\frac{1}{\\sqrt{2\\pi}} \\int_{-\\infty}^{\\infty} A(k) e^{ikx} dk$$\n"
-                "where $A(k)$ is the spectral amplitude distribution in wavenumber space $k$.\n\n"
-                "**Step 2: Fourier Bandwidth Theorem.** Rigorous harmonic analysis establishes that for any Fourier transform pair $f(x)$ and $F(k)$, the product of their root-mean-square spatial spread $\\Delta x$ and wavenumber spectral width $\\Delta k$ satisfies the classical bandwidth inequality:\n"
-                "$$\\Delta x \\cdot \\Delta k \\ge \\frac{1}{2}$$\n"
-                "(with the minimum equality $\\Delta x \\Delta k = 1/2$ achieved uniquely by Gaussian wavepackets).\n\n"
-                "**Step 3: Introduction of Quantum Momentum.** According to the de Broglie postulate, a particle's mechanical momentum relates to its wavenumber by $p_x = \\hbar k$. The differential momentum uncertainty is therefore:\n"
-                "$$\\Delta p_x = \\hbar \\Delta k \\implies \\Delta k = \\frac{\\Delta p_x}{\\hbar}$$\n\n"
-                "**Step 4: Conjugate Uncertainty Product.** Substituting $\\Delta k$ into the Fourier bandwidth inequality:\n"
-                "$$\\Delta x \\cdot \\left(\\frac{\\Delta p_x}{\\hbar}\\right) \\ge \\frac{1}{2} \\implies \\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}$$\n"
-                "This rigorous mathematical derivation confirms that quantum uncertainty is not a deficiency of measurement instrumentation, but an inescapable mathematical consequence of the wave nature of matter."
-            )
-        if any(k in s_low for k in ["application", "nucleus", "confinement", "non-existence"]):
-            return (
-                f"### {subtopic}\n"
-                "A celebrated physical application of the uncertainty principle is proving that electrons cannot reside permanently as constituent particles inside atomic nuclei:\n\n"
-                "1. **Nuclear Spatial Confinement:** Experimental nuclear scattering establishes that atomic nuclei have typical radii on the order of $R \\approx 10^{-14}\\text{ m}$. If an electron were permanently confined inside the nucleus, its maximum spatial uncertainty would be $\\Delta x \\approx 2R = 2 \\times 10^{-14}\\text{ m}$.\n\n"
-                "2. **Minimum Momentum Uncertainty:** Applying Heisenberg's relation:\n"
-                "$$\\Delta p \\ge \\frac{\\hbar}{2\\Delta x} = \\frac{1.055 \\times 10^{-34}\\text{ J}\\cdot\\text{s}}{2 \\times (2 \\times 10^{-14}\\text{ m})} \\approx 2.64 \\times 10^{-21}\\text{ kg}\\cdot\\text{m/s}$$\n\n"
-                "3. **Relativistic Energy Requirement:** Because this momentum uncertainty is exceedingly large compared to the electron rest mass ($m_e c \\approx 2.73 \\times 10^{-22}\\text{ kg}\\cdot\\text{m/s}$), the electron must be relativistic. Its kinetic energy is evaluated as:\n"
-                "$$E \\approx pc \\approx (2.64 \\times 10^{-21}\\text{ kg}\\cdot\\text{m/s}) \\times (3.0 \\times 10^8\\text{ m/s}) = 7.92 \\times 10^{-13}\\text{ J} \\approx 4.95\\text{ MeV} \\approx 20\\text{ MeV}$$\n\n"
-                "4. **Experimental Beta Decay Evidence:** Experimental measurements of beta-decay electrons reveal kinetic energies that rarely exceed $2\\text{ to }3\\text{ MeV}$, which is an order of magnitude smaller than the minimum $20\\text{ MeV}$ required for nuclear confinement. This proves conclusively that electrons do not pre-exist inside the nucleus, but are created dynamically during beta decay through weak nuclear interactions."
+                "The Heisenberg uncertainty principle defines an immutable quantum boundary rather than an instrumental limitation. "
+                "However, in macroscopic systems where action quantities vastly exceed Planck's constant ($S \\gg \\hbar$), relative uncertainties $\\Delta x / x$ and $\\Delta p / p$ become infinitesimal ($10^{-30}$), restoring classical determinism.\n\n"
+                "In quantum metrology, squeezed light states and quantum non-demolition (QND) measurement protocols enable reducing uncertainty in one observable below $\\sqrt{\\hbar/2}$ at the expense of anti-squeezing the conjugate variable, preserving $\\Delta A \\Delta B \\ge \\hbar/2$ strictly."
             )
         if any(k in s_low for k in ["energy-time", "lifetime", "natural line width", "spectral"]):
             return (
                 f"### {subtopic}\n"
-                "In addition to the position-momentum conjugate pair, Heisenberg's uncertainty principle governs the conjugate relationship between energy and time:\n"
-                "$$\\Delta E \\cdot \\Delta t \\ge \\frac{\\hbar}{2}$$\n\n"
-                "In this relation, $\\Delta t$ represents the temporal duration during which a quantum state remains undisturbed (its characteristic lifetime $\\tau$), while $\\Delta E$ signifies the fundamental uncertainty in the energy of that state.\n\n"
-                "This principle explains the phenomenon of natural spectral line broadening in atomic spectroscopy. "
+                "In addition to position and momentum, Heisenberg's uncertainty principle governs the conjugate relationship between energy and time: $\\Delta E \\cdot \\Delta t \\ge \\frac{\\hbar}{2}$. "
+                "In this relation, $\\Delta t$ represents the temporal lifetime $\\tau$ of a quantum state, while $\\Delta E$ signifies its intrinsic energy spread.\n\n"
+                "This principle explains natural spectral line broadening in atomic spectroscopy. "
                 "Because atomic ground states possess an infinite lifetime ($\\Delta t \\to \\infty$), their energy is perfectly well-defined ($\\Delta E = 0$). "
-                "However, an excited atomic state typically has a finite spontaneous decay lifetime of $\\tau \\approx 10^{-8}\\text{ s}$. "
-                "This finite lifetime imposes an irreducible energy spread $\\Delta E \\ge \\hbar / (2\\tau)$, producing an intrinsic natural frequency linewidth $\\Delta \\nu = \\Delta E / h = 1 / (4\\pi \\tau) \\approx 8\\text{ MHz}$ for emitted photons, even in the complete absence of thermal Doppler or pressure broadening."
+                "However, an excited atomic state with a finite lifetime of $\\tau \\approx 10^{-8}\\text{ s}$ exhibits an irreducible energy spread $\\Delta E \\ge \\hbar / (2\\tau)$, producing an intrinsic natural frequency linewidth $\\Delta \\nu = 1 / (4\\pi \\tau) \\approx 8\\text{ MHz}$ for emitted photons."
+            )
+        if any(k in s_low for k in ["nucleus", "confinement", "non-existence", "beta decay"]):
+            return (
+                f"### {subtopic}\n"
+                "A celebrated physical application of the uncertainty principle is proving that electrons cannot reside permanently inside atomic nuclei:\n\n"
+                "1. **Nuclear Spatial Confinement:** Atomic nuclei have typical radii of $R \\approx 10^{-14}\\text{ m}$, establishing a position uncertainty $\\Delta x \\approx 2 \\times 10^{-14}\\text{ m}$.\n\n"
+                "2. **Minimum Momentum Uncertainty:** Applying Heisenberg's relation yields $\\Delta p \\ge \\frac{\\hbar}{2\\Delta x} \\approx 2.64 \\times 10^{-21}\\text{ kg}\\cdot\\text{m/s}$.\n\n"
+                "3. **Relativistic Energy Requirement:** Evaluating relativistic energy $E \\approx pc$ gives $E \\approx 7.92 \\times 10^{-13}\\text{ J} \\approx 20\\text{ MeV}$.\n\n"
+                "Because experimental beta-decay electron energies rarely exceed $2\\text{ to }3\\text{ MeV}$, electrons cannot pre-exist inside the nucleus, proving they are created dynamically during beta decay."
             )
         if any(k in s_low for k in ["thought experiment", "microscope", "measurement"]):
             return (
                 f"### {subtopic}\n"
-                "To elucidate the physical mechanism underlying the uncertainty principle, Werner Heisenberg proposed the gamma-ray microscope thought experiment. "
-                "Suppose an observer attempts to locate an electron by scattering high-energy gamma-ray photons into an objective lens with acceptance angle $2\\theta$. "
-                "From optical diffraction theory, the spatial resolving power limit of the microscope is:\n"
-                "$$\\Delta x \\approx \\frac{\\lambda}{2\\sin\\theta}$$\n\n"
-                "To resolve the electron with high spatial precision, one must illuminate it with ultra-short wavelength photons ($\\lambda \\to 0$). "
-                "However, according to Compton scattering, each illuminating photon carries momentum $p = h/\\lambda$. "
-                "Upon scattering into the microscope lens anywhere within the cone of angle $2\\theta$, the photon imparts an uncontrolled recoil momentum impulse to the electron in the $x$-direction:\n"
-                "$$\\Delta p_x \\approx \\frac{h}{\\lambda} \\sin\\theta$$\n\n"
-                "Multiplying the position uncertainty by the imparted momentum uncertainty yields:\n"
-                "$$\\Delta x \\cdot \\Delta p_x \\approx \\left(\\frac{\\lambda}{2\\sin\\theta}\\right) \\left(\\frac{h}{\\lambda}\\sin\\theta\\right) \\approx \\frac{h}{2} \\ge \\frac{\\hbar}{2}$$\n"
-                "Any attempt to measure the electron's position more precisely via shorter wavelengths inevitably imparts a larger and more uncertain momentum recoil kick to the particle."
+                "Werner Heisenberg proposed the gamma-ray microscope thought experiment to illustrate the physical measurement mechanism. "
+                "To locate an electron using light scattered into an objective lens of semi-angle $\\theta$, optical diffraction limits position resolution to $\\Delta x \\approx \\frac{\\lambda}{2\\sin\\theta}$. "
+                "However, photon momentum $p = h/\\lambda$ imparts an uncontrolled Compton recoil momentum impulse to the electron in the aperture cone: $\\Delta p_x \\approx \\frac{h}{\\lambda} \\sin\\theta$.\n\n"
+                "Multiplying uncertainties yields $\\Delta x \\cdot \\Delta p_x \\approx \\left(\\frac{\\lambda}{2\\sin\\theta}\\right)\\left(\\frac{h}{\\lambda}\\sin\\theta\\right) = \\frac{h}{2} \\ge \\frac{\\hbar}{2}$, showing that higher spatial resolution inevitably causes larger momentum recoil."
+            )
+        if any(k in s_low for k in ["derivation", "fourier", "wavepacket", "proof"]):
+            return (
+                f"### {subtopic}\n"
+                "The mathematical derivation of Heisenberg's uncertainty principle proceeds directly from the Fourier bandwidth theorem for localized wavepackets. "
+                "A spatial wavepacket $\\psi(x) = \\frac{1}{\\sqrt{2\\pi}}\\int A(k)e^{ikx}dk$ satisfies the harmonic bandwidth relation:\n\n"
+                "$$\\Delta x \\cdot \\Delta k \\ge \\frac{1}{2}$$\n\n"
+                "Substituting de Broglie's relation $p_x = \\hbar k \\implies \\Delta p_x = \\hbar \\Delta k$ directly yields:\n\n"
+                "$$\\Delta x \\cdot \\left(\\frac{\\Delta p_x}{\\hbar}\\right) \\ge \\frac{1}{2} \\implies \\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}$$\n\n"
+                "This proves that quantum uncertainty is an indispensable mathematical consequence of wave mechanics."
+            )
+        if any(k in s_low for k in ["formulation", "governing", "equation", "mathematical"]):
+            return (
+                f"### {subtopic}\n"
+                "The mathematical formulation of Heisenberg's uncertainty principle is stated for conjugate pair position $x$ and linear momentum $p_x$ as:\n\n"
+                "$$\\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}$$\n\n"
+                "where $\\hbar = \\frac{h}{2\\pi} \\approx 1.055 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$ is the reduced Planck constant. "
+                "More generally, for any two quantum mechanical operators $\\hat{A}$ and $\\hat{B}$, the Robertson-Schrödinger uncertainty relation governs their variances according to $\\Delta A \\cdot \\Delta B \\ge \\frac{1}{2}|\\langle [\\hat{A}, \\hat{B}] \\rangle|$."
             )
 
-        parts = [
-            f"### {subtopic}\n",
-            f"The physical principle of {subtopic} establishes fundamental measurement boundaries between canonically conjugate quantum variables. "
-            "In classical deterministic mechanics, knowing the exact position $\\mathbf{r}(t)$ and momentum $\\mathbf{p}(t)$ of a particle at any initial instant completely defines its entire past and future trajectory through Hamilton's equations of motion. "
-            "However, in quantum mechanics, material entities are described by spatially distributed wavepackets rather than localized point masses. "
-            "Because localized wavepackets are constructed by superposing a continuous spectrum of Fourier plane wave harmonics, narrowing the spatial wavepacket envelope $\\Delta x$ inevitably broadens the spectrum of constituent wavenumbers $\\Delta k$, and consequently broadens the uncertainty in physical momentum $\\Delta p = \\hbar \\Delta k$.\n",
-            "### 1. Theoretical Framework and Mathematical Statement\n",
-            "For any pair of canonically conjugate quantum mechanical observables represented by operators $\\hat{A}$ and $\\hat{B}$ that do not commute ($[\\hat{A}, \\hat{B}] \\ne 0$), the Robertson-Schrödinger theorem establishes that the product of their standard deviations satisfies:\n",
-            "$$\\sigma_A \\sigma_B \\ge \\frac{1}{2} |\\langle [\\hat{A}, \\hat{B}] \\rangle|$$\n",
-            "For the canonical position operator $\\hat{x} = x$ and momentum operator $\\hat{p}_x = -i\\hbar \\frac{\\partial}{\\partial x}$, their fundamental commutator is $[\\hat{x}, \\hat{p}_x] = i\\hbar$. "
-            "Substituting this commutation relationship into the uncertainty theorem yields Heisenberg's famous position-momentum uncertainty relation:\n",
-            "$$\\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}$$\n",
-            "where $\\hbar = \\frac{h}{2\\pi} = 1.0546 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$ is the reduced Planck constant.\n"
-        ]
-        return "\n".join(parts)
+        # Default concept
+        return (
+            f"### {subtopic}\n"
+            "The physical principle of the Heisenberg uncertainty principle establishes fundamental measurement boundaries between canonically conjugate quantum variables. "
+            "In classical deterministic mechanics, knowing position $x(t)$ and momentum $p(t)$ at an initial instant defines its complete future trajectory. "
+            "In quantum mechanics, material entities are described by wavepackets. "
+            "Narrowing spatial envelope width $\\Delta x$ broadens constituent wavenumber spectrum $\\Delta k$, yielding momentum uncertainty $\\Delta p = \\hbar \\Delta k$ such that $\\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}$."
+        )
 
     @classmethod
     def _generate_velocity_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["derivation", "proof", "particle velocity", "relativistic"]):
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope", "spreading"]):
             return (
                 f"### {subtopic}\n"
-                "The mathematical proof demonstrating that the group velocity of a de Broglie matter wavepacket equals the physical particle velocity proceeds systematically:\n\n"
-                "**Step 1: Quantum Energy and Momentum Relations.** According to the Planck-Einstein and de Broglie relations, particle energy $E$ and momentum $p$ relate to angular frequency $\\omega$ and wavenumber $k$ by:\n"
-                "$$E = \\hbar \\omega \\implies \\omega = \\frac{E}{\\hbar}, \\quad p = \\hbar k \\implies k = \\frac{p}{\\hbar}$$\n\n"
-                "**Step 2: Group Velocity in Energy-Momentum Coordinates.** Differentiating with respect to wavenumber:\n"
+                "Because de Broglie matter waves in vacuum are inherently dispersive ($v_p = v/2, v_g = v$), a free Gaussian wavepacket inevitably spreads in space over time. "
+                "The spatial spread expands according to $\\Delta x(t) = \\Delta x_0 \\sqrt{1 + (\\hbar t / 2m (\\Delta x_0)^2)^2}$. "
+                "For microscopic electrons, a narrow wavepacket doubles its spatial width within femtoseconds, imposing fundamental limits on wavepacket localization in physical media."
+            )
+        if any(k in s_low for k in ["application", "technology", "engineering", "pulse", "fiber", "relevance"]):
+            return (
+                f"### {subtopic}\n"
+                "Controlling phase velocity and group velocity is critical across high-speed optical telecommunications and laser engineering:\n\n"
+                "1. **Chromatic Dispersion in Optical Fibers:** Group velocity dispersion (GVD) causes optical pulses to spread temporally, causing intersymbol interference (ISI) in transoceanic optical networks.\n\n"
+                "2. **Ultrashort Laser Pulse Shaping:** Chirped pulse amplification (CPA) uses grating pairs to adjust group delay dispersion (GDD), compressing laser pulses down to femtosecond durations."
+            )
+        if any(k in s_low for k in ["dispersion", "rayleigh", "table", "comparison", "media", "interpretation"]):
+            return (
+                f"### {subtopic}\n"
+                "When a wavepacket propagates through a dispersive medium, phase velocity $v_p$ and group velocity $v_g$ differ according to Rayleigh's dispersion relation:\n"
+                "$$v_g = \\frac{d\\omega}{dk} = v_p + k \\frac{dv_p}{dk} = v_p - \\lambda \\frac{dv_p}{d\\lambda}$$\n\n"
+                "In non-dispersive media, $v_g = v_p$. Matter waves in vacuum are dispersive ($v_p = v/2, v_g = v$)."
+            )
+        if any(k in s_low for k in ["formulation", "derivation", "proof", "particle velocity", "group velocity", "relativistic", "equation", "mathematical"]):
+            return (
+                f"### {subtopic}\n"
+                "The proof that matter wave group velocity equals physical particle velocity proceeds from quantum relations $E = \\hbar\\omega$ and $p = \\hbar k$:\n\n"
                 "$$v_g = \\frac{d\\omega}{dk} = \\frac{d(E/\\hbar)}{d(p/\\hbar)} = \\frac{dE}{dp}$$\n\n"
-                "**Step 3: Non-Relativistic Evaluation.** In non-relativistic mechanics, kinetic energy is expressed as $E = \\frac{p^2}{2m}$. Evaluating the derivative:\n"
-                "$$v_g = \\frac{d}{dp}\\left(\\frac{p^2}{2m}\\right) = \\frac{2p}{2m} = \\frac{p}{m} = v$$\n"
-                "Thus, the group velocity of the matter wave packet is identical to the classical velocity $v$ of the particle.\n\n"
-                "**Step 4: Relativistic Generalization.** In relativistic mechanics, total energy satisfies $E^2 = p^2 c^2 + m_0^2 c^4$. Differentiating implicitly with respect to momentum $p$:\n"
-                "$$2E \\frac{dE}{dp} = 2p c^2 \\implies v_g = \\frac{dE}{dp} = \\frac{pc^2}{E}$$\n"
-                "Substituting relativistic momentum $p = \\gamma m_0 v$ and relativistic energy $E = \\gamma m_0 c^2$:\n"
-                "$$v_g = \\frac{(\\gamma m_0 v) c^2}{\\gamma m_0 c^2} = v$$\n"
-                "Remarkably, in both relativistic and non-relativistic physics, the group velocity of the quantum wavepacket identically tracks the physical motion of the material particle."
-            )
-        if any(k in s_low for k in ["dispersion", "rayleigh", "table", "comparison", "media"]):
-            table_md = (
-                "| Propagation Regime | Mathematical Condition | Phase Velocity vs Group Velocity | Physical Manifestation |\n"
-                "| :--- | :--- | :--- | :--- |\n"
-                "| Non-Dispersive (Vacuum EM) | $\\frac{dv_p}{d\\lambda} = 0$ | $v_g = v_p = c$ | Light pulses propagate without distortion or spreading |\n"
-                "| Normal Dispersion (Glass, Water) | $\\frac{dv_p}{d\\lambda} > 0$ | $v_g < v_p$ | Blue light propagates slower than red light; pulse broadens |\n"
-                "| Anomalous Dispersion | $\\frac{dv_p}{d\\lambda} < 0$ | $v_g > v_p$ | Occurs near atomic absorption resonance bands |\n"
-                "| De Broglie Wave (Non-relativistic) | $\\omega = \\frac{\\hbar k^2}{2m}$ | $v_p = \\frac{v}{2}, \\quad v_g = v$ | Phase velocity is half of particle velocity; envelope tracks particle |"
-            )
-            return (
-                f"### {subtopic}\n"
-                "When a wavepacket propagates through a dispersive medium, phase velocity and group velocity differ according to Rayleigh's dispersion relation:\n"
-                "$$v_g = \\frac{d\\omega}{dk} = \\frac{d(k v_p)}{dk} = v_p + k \\frac{dv_p}{dk} = v_p - \\lambda \\frac{dv_p}{d\\lambda}$$\n\n"
-                "In a non-dispersive medium, phase velocity is independent of wavelength ($\\frac{dv_p}{d\\lambda} = 0$), so $v_g = v_p$. "
-                "In contrast, de Broglie matter waves in vacuum are inherently dispersive because $\\omega(k) = \\frac{\\hbar k^2}{2m}$, yielding $v_p = \\frac{\\hbar k}{2m} = \\frac{v}{2}$, while $v_g = \\frac{\\hbar k}{m} = v$.\n\n"
-                f"{table_md}"
-            )
-        if any(k in s_low for k in ["phase velocity", "definition", "wavefront", "plane wave"]):
-            return (
-                f"### {subtopic}\n"
-                "Phase velocity $v_p$ characterizes the propagation speed of an individual monochromatic wavefront of constant phase. "
-                "Consider a pure harmonic plane wave described by the mathematical expression $\\psi(x, t) = A\\cos(kx - \\omega t)$. "
-                "The surfaces of constant phase satisfy the algebraic relation $kx - \\omega t = \\text{constant}$. "
-                "Differentiating this relation with respect to time yields the standard definition of phase velocity:\n"
-                "$$v_p = \\frac{dx}{dt} = \\frac{\\omega}{k} = \\nu \\lambda$$\n\n"
-                "However, an infinite monochromatic plane wave has constant amplitude extending from $-\\infty$ to $+\\infty$. "
-                "Because it conveys no information, localized energy, or measurable signals, its phase velocity can exceed the speed of light in vacuum ($v_p > c$) without violating the principles of special relativity. "
-                "Information and localized physical entities are transported exclusively by wavepackets at the group velocity."
+                "In non-relativistic mechanics where $E = \\frac{p^2}{2m}$, evaluating the derivative yields $v_g = \\frac{d}{dp}\\left(\\frac{p^2}{2m}\\right) = \\frac{p}{m} = v_{particle}$.\n\n"
+                "In relativistic mechanics where $E^2 = p^2 c^2 + m_0^2 c^4$, differentiating gives $v_g = \\frac{pc^2}{E} = \\frac{(\\gamma m_0 v)c^2}{\\gamma m_0 c^2} = v_{particle}$."
             )
 
-        parts = [
-            f"### {subtopic}\n",
-            f"The dynamics of {subtopic} examine how individual wavefront phase velocity and wavepacket group velocity govern quantum wave propagation. "
-            "However, an infinite plane wave conveys no localized signal and cannot represent a localized physical particle. "
-            "To represent a physical particle in quantum mechanics, one must construct a spatially confined wavepacket through the linear superposition of multiple plane waves possessing a continuous band of frequencies and wavenumbers. "
-            "When such a wavepacket propagates through a dispersive medium, the individual harmonic wavefronts travel at the phase velocity, while the overall modulating envelope travels at the group velocity $v_g = d\\omega/dk$. "
-            "A profound triumph of quantum mechanics is demonstrating that the group velocity of a de Broglie matter wavepacket identically matches the classical physical velocity of the particle.\n",
-            "### 1. Analytical Formulations and Governing Relationships\n",
-            "The phase velocity $v_p$ and group velocity $v_g$ are formally defined by:\n",
-            "$$v_p = \\frac{\\omega}{k}, \\quad v_g = \\frac{d\\omega}{dk}$$\n",
-            "where $\\omega = 2\\pi \\nu$ is the angular frequency (rad/s) and $k = 2\\pi / \\lambda$ is the wavenumber (rad/m).\n"
-        ]
-        return "\n".join(parts)
-
-    @classmethod
-    def _generate_schrodinger_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
-        s_low = subtopic.lower()
-        if any(k in s_low for k in ["time-dependent", "tdse", "dynamical", "evolution"]):
-            return (
-                f"### {subtopic}\n"
-                "The Time-Dependent Schrödinger Equation (TDSE) is the fundamental equation of motion in non-relativistic quantum mechanics, dictating how the quantum state $\\Psi(\\mathbf{r}, t)$ evolves continuously through time. "
-                "In one spatial dimension, for a particle of mass $m$ subjected to an arbitrary potential field $V(x, t)$, the TDSE is formulated as:\n"
-                "$$i\\hbar \\frac{\\partial \\Psi(x, t)}{\\partial t} = -\\frac{\\hbar^2}{2m} \\frac{\\partial^2 \\Psi(x, t)}{\\partial x^2} + V(x, t)\\Psi(x, t)$$\n\n"
-                "Using operator formalism, this equation is concisely expressed as:\n"
-                "$$i\\hbar \\frac{\\partial \\Psi}{\\partial t} = \\hat{H}\\Psi$$\n"
-                "where $\\hat{H} = -\\frac{\\hbar^2}{2m}\\frac{\\partial^2}{\\partial x^2} + V(x, t)$ is the quantum Hamiltonian operator representing total energy. "
-                "Because the time derivative appears only to the first order ($i\\hbar \\partial / \\partial t$), specifying the wave function $\\Psi(x, 0)$ at an initial instant $t = 0$ uniquely determines $\\Psi(x, t)$ at all future instants, preserving quantum determinism for state evolution."
-            )
-        if any(k in s_low for k in ["time-independent", "tise", "stationary", "separation", "derivation"]):
-            return (
-                f"### {subtopic}\n"
-                "When the potential energy field is stationary and independent of time ($V = V(x)$), the time-dependent Schrödinger equation can be solved by separation of variables:\n\n"
-                "**Step 1: Separation Ansatz.** Assume the complete wave function factors into independent spatial and temporal functions:\n"
-                "$$\\Psi(x, t) = \\psi(x) \\phi(t)$$\n\n"
-                "**Step 2: Substitution into TDSE.** Substituting into $i\\hbar \\frac{\\partial \\Psi}{\\partial t} = -\\frac{\\hbar^2}{2m}\\frac{\\partial^2 \\Psi}{\\partial x^2} + V(x)\\Psi$:\n"
-                "$$i\\hbar \\psi(x) \\frac{d\\phi(t)}{dt} = -\\frac{\\hbar^2}{2m}\\phi(t)\\frac{d^2\\psi(x)}{dx^2} + V(x)\\psi(x)\\phi(t)$$\n\n"
-                "**Step 3: Separation of Coordinates.** Dividing both sides by $\\psi(x)\\phi(t)$:\n"
-                "$$\\frac{i\\hbar}{\\phi(t)} \\frac{d\\phi(t)}{dt} = \\frac{1}{\\psi(x)} \\left[ -\\frac{\\hbar^2}{2m} \\frac{d^2\\psi(x)}{dx^2} + V(x)\\psi(x) \\right]$$\n"
-                "Because the left-hand side depends solely on $t$ and the right-hand side depends solely on $x$, both sides must independently equal a common separation constant $E$.\n\n"
-                "**Step 4: Spatial TISE Formulation.** Equating the spatial side to $E$ produces the **Time-Independent Schrödinger Equation (TISE)**:\n"
-                "$$-\\frac{\\hbar^2}{2m} \\frac{d^2\\psi(x)}{dx^2} + V(x)\\psi(x) = E\\psi(x) \\implies \\hat{H}\\psi(x) = E\\psi(x)$$\n\n"
-                "**Step 5: Temporal Evolution of Stationary States.** Integrating the temporal equation $\\frac{d\\phi}{\\phi} = -\\frac{iE}{\\hbar} dt$ yields $\\phi(t) = e^{-iEt/\\hbar}$. "
-                "Consequently, the probability density $|\\Psi(x, t)|^2 = |\\psi(x)e^{-iEt/\\hbar}|^2 = |\\psi(x)|^2$ is strictly stationary and invariant in time."
-            )
-        if any(k in s_low for k in ["continuity", "current", "conservation", "probability current"]):
-            return (
-                f"### {subtopic}\n"
-                "To ensure physical consistency, the total probability of locating a quantum particle over all space must be conserved for all time. "
-                "From the time-dependent Schrödinger equation, one rigorously derives the quantum probability continuity equation:\n"
-                "$$\\frac{\\partial P}{\\partial t} + \\nabla \\cdot \\mathbf{J} = 0$$\n\n"
-                "where $P(\\mathbf{r}, t) = |\\Psi(\\mathbf{r}, t)|^2 = \\Psi^* \\Psi$ is the spatial probability density, and $\\mathbf{J}(\\mathbf{r}, t)$ is the quantum probability current density vector:\n"
-                "$$\\mathbf{J} = \\frac{\\hbar}{2mi}\\left( \\Psi^* \\nabla\\Psi - \\Psi \\nabla\\Psi^* \\right)$$\n\n"
-                "Integrating the continuity equation across an arbitrary spatial volume $V$ and applying Gauss's divergence theorem demonstrates that the rate of decrease of probability within $V$ equals the net probability flux leaking across its bounding surface $S$. "
-                "For isolated systems where wave functions vanish at spatial infinity, this guarantees that $\\frac{d}{dt} \\int_{-\\infty}^\\infty |\\Psi|^2 d^3r = 0$, preserving wave function normalization permanently."
-            )
-
-        parts = [
-            f"### {subtopic}\n",
-            f"The theoretical framework of {subtopic} addresses the fundamental wave equation governing the quantum evolution of physical systems. "
-            "Whereas Newton's mechanics determines the precise temporal trajectory of a point particle through vector forces, the Schrödinger equation determines the continuous temporal evolution and spatial distribution of the complex wave function $\\Psi(\\mathbf{r}, t)$.\n",
-            "### 1. Analytical Formulations and Governing Equations\n",
-            "The general one-dimensional Time-Dependent Schrödinger Equation (TDSE) is:\n",
-            "$$i\\hbar \\frac{\\partial \\Psi(x, t)}{\\partial t} = -\\frac{\\hbar^2}{2m} \\frac{\\partial^2 \\Psi(x, t)}{\\partial x^2} + V(x, t)\\Psi(x, t)$$\n",
-            "and when $V = V(x)$, the Time-Independent Schrödinger Equation (TISE) is:\n",
-            "$$-\\frac{\\hbar^2}{2m} \\frac{d^2 \\psi(x)}{dx^2} + V(x)\\psi(x) = E\\psi(x)$$\n"
-        ]
-        return "\n".join(parts)
+        # Default definition / concept
+        return (
+            f"### {subtopic}\n"
+            "Phase velocity $v_p = \\frac{\\omega}{k} = \\nu \\lambda$ defines the propagation speed of an individual monochromatic wavefront of constant phase. "
+            "However, an infinite monochromatic plane wave conveys no information. "
+            "A localized physical particle is represented by a wavepacket envelope propagating at group velocity $v_g = \\frac{d\\omega}{dk}$. "
+            "Quantum mechanics proves that the group velocity of a matter wavepacket identically tracks the physical velocity of the particle."
+        )
 
     @classmethod
     def _generate_operators_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["hermitian", "properties", "eigenvalue", "adjoint", "orthogonality"]):
+        if any(k in s_low for k in ["quantum eigenvalue equation", "a psi = a psi", "measurement postulate"]):
             return (
                 f"### {subtopic}\n"
-                "In quantum mechanics, every physically measurable observable corresponds to a linear Hermitian operator acting on a complex state vector in Hilbert space. "
-                "An operator $\\hat{A}$ is mathematically defined as Hermitian (or self-adjoint) if it satisfies the identity:\n"
-                "$$\\int_{-\\infty}^\\infty \\psi_1^* (\\hat{A} \\psi_2) dx = \\int_{-\\infty}^\\infty (\\hat{A} \\psi_1)^* \\psi_2 dx$$\n"
-                "for all square-integrable wave functions $\\psi_1$ and $\\psi_2$.\n\n"
-                "Hermitian operators possess two vital mathematical properties indispensable to physical measurement theory:\n\n"
-                "1. **Real Eigenvalues:** Let $\\hat{A}\\psi = a\\psi$. Taking the inner product with $\\psi$ and using the Hermitian property proves that $a = a^*$, ensuring all measurement eigenvalues are strictly real numbers.\n\n"
-                "2. **Orthogonality of Eigenstates:** If $\\psi_m$ and $\\psi_n$ are eigenfunctions corresponding to distinct non-degenerate eigenvalues $a_m \\ne a_n$, they are mutually orthogonal: $\\int_{-\\infty}^\\infty \\psi_m^* \\psi_n dx = \\delta_{mn}$."
+                "The quantum eigenvalue equation $\\hat{A}\\psi_n = a_n \\psi_n$ constitutes the core mathematical postulate governing measurement in quantum mechanics. "
+                "When an observable operator $\\hat{A}$ acts on an eigenstate $\\psi_n$, the resulting operation scales the state function by a scalar eigenvalue $a_n$. "
+                "According to the Dirac-von Neumann measurement postulate, performing a measurement of observable $A$ on a quantum system prepared in an arbitrary superposition state $\\Psi = \\sum c_n \\psi_n$ projects the system into one of the discrete eigenstates $\\psi_n$, yielding the measured outcome $a_n$ with probability $P(a_n) = |c_n|^2 = |\\langle \\psi_n | \\Psi \\rangle|^2$."
             )
-        if any(k in s_low for k in ["canonical", "table", "momentum", "hamiltonian", "coordinate representation"]):
-            table_md = (
-                "| Observable | Classical Variable | Quantum Operator Symbol | Coordinate Representation Formula | Commutation Property |\n"
-                "| :--- | :--- | :--- | :--- | :--- |\n"
-                "| Position | $x$ | $\\hat{x}$ | $x$ | Commutes with functions of position |\n"
-                "| Linear Momentum | $p_x$ | $\\hat{p}_x$ | $-i\\hbar \\frac{\\partial}{\\partial x}$ | $[\\hat{x}, \\hat{p}_x] = i\\hbar$ |\n"
-                "| Kinetic Energy | $T$ | $\\hat{T}$ | $-\\frac{\\hbar^2}{2m} \\frac{\\partial^2}{\\partial x^2}$ | Constructed from $\\hat{p}_x^2 / 2m$ |\n"
-                "| Potential Energy | $V(x)$ | $\\hat{V}$ | $V(x)$ | Multiplication operator |\n"
-                "| Total Energy (Hamiltonian) | $H$ | $\\hat{H}$ | $-\\frac{\\hbar^2}{2m} \\frac{\\partial^2}{\\partial x^2} + V(x)$ | Dictates stationary energy states |\n"
-                "| Angular Momentum | $L_z$ | $\\hat{L}_z$ | $-i\\hbar \\frac{\\partial}{\\partial \\phi}$ | $[\\hat{L}_x, \\hat{L}_y] = i\\hbar \\hat{L}_z$ |"
-            )
+        if any(k in s_low for k in ["derivation of real eigenvalues", "real eigenvalues for hermitian"]):
             return (
                 f"### {subtopic}\n"
-                "Under the Dirac-von Neumann axiomatic formulation of quantum mechanics, continuous classical kinematic variables are mapped to differential or algebraic operators acting in coordinate space. "
-                "The canonical quantum mechanical operators in one-dimensional coordinate representation are catalogued below:\n\n"
-                f"{table_md}"
+                "The mathematical proof establishing that all eigenvalues of a Hermitian operator are strictly real proceeds as follows:\n\n"
+                "Let $\\hat{A}$ be a Hermitian operator with eigenstate $\\psi$ and eigenvalue $a$, satisfying $\\hat{A}\\psi = a\\psi$. "
+                "Taking the inner product of both sides with $\\psi$ yields $\\int \\psi^* (\\hat{A}\\psi) dx = a \\int \\psi^* \\psi dx = a \\|\\psi\\|^2$.\n\n"
+                "Next, applying the definition of Hermiticity $\\int \\psi^* (\\hat{A}\\psi) dx = \\int (\\hat{A}\\psi)^* \\psi dx$, we evaluate the right-hand side as $\\int (a\\psi)^* \\psi dx = a^* \\int \\psi^* \\psi dx = a^* \\|\\psi\\|^2$.\n\n"
+                "Equating the two results gives $a \\|\\psi\\|^2 = a^* \\|\\psi\\|^2 \\implies (a - a^*)\\|\\psi\\|^2 = 0$. "
+                "Because a non-trivial physical wave function satisfies $\\|\\psi\\|^2 > 0$, we conclude that $a - a^* = 0 \\implies a = a^*$. "
+                "This proves conclusively that every physical measurement outcome associated with a Hermitian operator is guaranteed to be a real number."
             )
-        if any(k in s_low for k in ["commutator", "commutation", "uncertainty", "compatibility"]):
+        if any(k in s_low for k in ["orthogonality and completeness", "completeness of eigenfunctions"]):
             return (
                 f"### {subtopic}\n"
-                "The commutator of two quantum operators $\\hat{A}$ and $\\hat{B}$ is defined by the Lie bracket:\n"
-                "$$[\\hat{A}, \\hat{B}] = \\hat{A}\\hat{B} - \\hat{B}\\hat{A}$$\n\n"
-                "If $[\\hat{A}, \\hat{B}] = 0$, the operators commute, meaning the observables are simultaneously compatible. "
-                "A system can exist in a simultaneous eigenstate of both operators, allowing both observables to be measured with arbitrary simultaneous precision without mutual disturbance.\n\n"
-                "Conversely, if $[\\hat{A}, \\hat{B}] \\ne 0$, the observables are incompatible. "
-                "Evaluating the fundamental commutator of position and momentum acting on an arbitrary test function $\\psi(x)$:\n"
-                "$$[\\hat{x}, \\hat{p}_x]\\psi = x\\left(-i\\hbar \\frac{\\partial \\psi}{\\partial x}\\right) - \\left(-i\\hbar \\frac{\\partial}{\\partial x}(x\\psi)\\right) = -i\\hbar x \\frac{\\partial \\psi}{\\partial x} + i\\hbar \\psi + i\\hbar x \\frac{\\partial \\psi}{\\partial x} = i\\hbar \\psi$$\n"
-                "Therefore, $[\\hat{x}, \\hat{p}_x] = i\\hbar$. This non-vanishing commutator directly produces the Heisenberg uncertainty relation."
+                "The mathematical proof demonstrating that eigenstates corresponding to distinct eigenvalues of a Hermitian operator are mutually orthogonal proceeds as follows:\n\n"
+                "Let $\\hat{A}\\psi_m = a_m \\psi_m$ and $\\hat{A}\\psi_n = a_n \\psi_n$, where $a_m \\ne a_n$ are distinct real eigenvalues. "
+                "Evaluating the inner product $\\int \\psi_m^* (\\hat{A}\\psi_n) dx = a_n \\int \\psi_m^* \\psi_n dx$.\n\n"
+                "Applying Hermiticity yields $\\int (\\hat{A}\\psi_m)^* \\psi_n dx = \\int (a_m \\psi_m)^* \\psi_n dx = a_m \\int \\psi_m^* \\psi_n dx$.\n\n"
+                "Subtracting the two expressions gives $(a_m - a_n)\\int \\psi_m^* \\psi_n dx = 0$. "
+                "Since $a_m \\ne a_n$, the integral must vanish: $\\int \\psi_m^* \\psi_n dx = 0$ for $m \\ne n$.\n\n"
+                "Furthermore, the complete set of orthonormal eigenfunctions $\\{\\psi_n\\}$ forms a dense Hilbert space basis, allowing any arbitrary square-integrable state function $\\Psi(x)$ to be uniquely expanded as $\\Psi(x) = \\sum c_n \\psi_n(x)$."
+            )
+        if any(k in s_low for k in ["hermitian operators and observable conservation", "hermitian", "adjoint"]):
+            return (
+                f"### {subtopic}\n"
+                "In quantum mechanics, physical observables are mapped exclusively to linear Hermitian operators satisfying $\\int \\psi_1^* (\\hat{A}\\psi_2)dx = \\int (\\hat{A}\\psi_1)^* \\psi_2 dx$. "
+                "The expectation value of an observable in state $\\psi$ is $\\langle A \\rangle = \\int \\psi^* \\hat{A} \\psi dx$. "
+                "According to Ehrenfest's theorem, the time evolution of the expectation value is governed by $\\frac{d\\langle A \\rangle}{dt} = \\frac{i}{\\hbar}\\langle [\\hat{H}, \\hat{A}] \\rangle + \\langle \\frac{\\partial \\hat{A}}{\\partial t} \\rangle$. "
+                "If an operator commutes with the Hamiltonian ($[\\hat{H}, \\hat{A}] = 0$) and has no explicit time dependence, its expectation value is strictly conserved in time, establishing the quantum conservation law for the observable."
+            )
+        if any(k in s_low for k in ["commutator algebra", "commutator", "commutation"]):
+            return (
+                f"### {subtopic}\n"
+                "The commutator $[\\hat{A}, \\hat{B}] = \\hat{A}\\hat{B} - \\hat{B}\\hat{A}$ determines whether two physical observables can be measured simultaneously without mutual disturbance. "
+                "If $[\\hat{A}, \\hat{B}] = 0$, the operators commute, meaning the observables share a complete set of simultaneous eigenfunctions and can be measured with arbitrary simultaneous precision.\n\n"
+                "Evaluating the fundamental commutator of position and momentum: $[\\hat{x}, \\hat{p}_x]\\psi = x(-i\\hbar \\frac{\\partial \\psi}{\\partial x}) - (-i\\hbar \\frac{\\partial}{\\partial x}(x\\psi)) = i\\hbar \\psi \\implies [\\hat{x}, \\hat{p}_x] = i\\hbar$. "
+                "Because $[\\hat{x}, \\hat{p}_x] \\ne 0$, position and momentum are incompatible observables, establishing the position-momentum uncertainty relation."
+            )
+        if any(k in s_low for k in ["position, momentum", "canonical", "differential operators"]):
+            return (
+                f"### {subtopic}\n"
+                "Under the Dirac-von Neumann coordinate representation, physical kinematic quantities are mapped to differential operators acting on state functions in spatial coordinates:\n\n"
+                "- **Position Operator:** $\\hat{x} = x$\n"
+                "- **Linear Momentum Operator:** $\\hat{p}_x = -i\\hbar \\frac{\\partial}{\\partial x}$\n"
+                "- **Kinetic Energy Operator:** $\\hat{T} = \\frac{\\hat{p}_x^2}{2m} = -\\frac{\\hbar^2}{2m} \\frac{\\partial^2}{\\partial x^2}$\n"
+                "- **Potential Energy Operator:** $\\hat{V} = V(x)$\n"
+                "- **Hamiltonian Operator:** $\\hat{H} = \\hat{T} + \\hat{V} = -\\frac{\\hbar^2}{2m}\\frac{\\partial^2}{\\partial x^2} + V(x)$"
+            )
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope", "unbounded"]):
+            return (
+                f"### {subtopic}\n"
+                "Quantum operators representing continuous physical quantities (such as position $\\hat{x}$ and momentum $\\hat{p}_x$) are unbounded operators defined on dense domains within Hilbert space. "
+                "Care must be exercised when handling non-commuting unbounded operators to avoid improper domain actions. "
+                "Furthermore, open dissipative quantum systems require non-Hermitian effective Hamiltonians $\\hat{H}_{eff} = \\hat{H} - i\\hat{\\Gamma}/2$ to model state decay."
             )
 
-        parts = [
-            f"### {subtopic}\n",
-            f"The study of {subtopic} establishes the operator representation of physical observables acting upon quantum state vectors. "
-            "In quantum mechanics, every physically measurable observable is associated with a linear Hermitian operator acting on a state vector in Hilbert space. "
-            "When an experimental measurement of an observable $\\hat{A}$ is performed on a quantum system, the only possible measurement outcomes are the discrete or continuous eigenvalues $a_n$ satisfying the eigenvalue equation $\\hat{A}\\psi_n = a_n \\psi_n$.\n"
-        ]
-        return "\n".join(parts)
-
-    @classmethod
-    def _generate_wave_function_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
-        s_low = subtopic.lower()
-        if any(k in s_low for k in ["interpretation", "born", "probability density", "statistical"]):
-            return (
-                f"### {subtopic}\n"
-                "In 1926, Max Born formulated the statistical probability interpretation of the quantum mechanical wave function $\\Psi(\\mathbf{r}, t)$, a discovery for which he was awarded the 1954 Nobel Prize in Physics. "
-                "Born recognized that while the wave function itself is an unobservable complex quantity ($\\Psi \\in \\mathbb{C}$), its absolute square possesses direct physical reality. "
-                "Specifically, the quantity $P(\\mathbf{r}, t) = |\\Psi(\\mathbf{r}, t)|^2 = \\Psi^* \\Psi$ represents the spatial probability density of locating the particle at position $\\mathbf{r}$ at time $t$.\n\n"
-                "The probability $dP$ of finding a particle within an infinitesimal volume element $d^3r = dx\\,dy\\,dz$ centered at coordinates $(x, y, z)$ is:\n"
-                "$$dP = |\\Psi(x, y, z, t)|^2 dx\\,dy\\,dz$$\n"
-                "The wave function acts as a probability amplitude whose phase differences govern constructive and destructive interference, while its magnitude squared governs observable measurement probabilities."
-            )
-        if any(k in s_low for k in ["normalization", "condition", "unit", "integral"]):
-            return (
-                f"### {subtopic}\n"
-                "Because the physical particle must exist somewhere within the universe with 100% certainty, any physically admissible wave function must satisfy the total normalization condition:\n"
-                "$$\\int_{-\\infty}^{\\infty} |\\Psi(\\mathbf{r}, t)|^2 d^3r = 1$$\n\n"
-                "If a wave function $\\psi_{raw}(x)$ is square-integrable such that $\\int_{-\\infty}^\\infty |\\psi_{raw}(x)|^2 dx = N < \\infty$, it can be normalized by multiplying by a scalar normalization constant $A = 1/\\sqrt{N}$, yielding $\\psi(x) = A\\psi_{raw}(x)$. "
-                "Wave functions that diverge at infinity (such as pure infinite plane waves $e^{ikx}$) cannot be normalized in the ordinary sense and must be handled using Dirac delta normalization or finite wavepackets."
-            )
-        if any(k in s_low for k in ["boundary", "continuity", "admissibility", "dirichlet"]):
-            return (
-                f"### {subtopic}\n"
-                "To represent a physically admissible quantum state, a candidate wave function $\\Psi(x)$ must satisfy four standard Dirichlet-Neumann conditions:\n\n"
-                "1. **Single-Valued:** $\\Psi(x)$ must possess only one value at every point in space, preventing ambiguous probability densities.\n\n"
-                "2. **Continuous:** $\\Psi(x)$ must be spatially continuous everywhere, preventing unphysical infinite momentum.\n\n"
-                "3. **Continuous First Spatial Derivative:** The derivative $\\frac{\\partial \\Psi}{\\partial x}$ must be continuous across boundaries wherever the potential energy $V(x)$ is finite, ensuring kinetic energy remains finite.\n\n"
-                "4. **Square-Integrable:** The wave function must satisfy $\\int |\\Psi|^2 dx < \\infty$ so it can be normalized to unity."
-            )
-
-        parts = [
-            f"### {subtopic}\n",
-            f"The physical analysis of {subtopic} provides the mathematical basis for interpreting quantum wave functions as spatial probability distributions. "
-            "Born recognized that while the wave function itself is a complex quantity and cannot be directly detected, its absolute square represents the spatial probability density $P(\\mathbf{r}, t) = |\\Psi(\\mathbf{r}, t)|^2$.\n"
-        ]
-        return "\n".join(parts)
+        # Default concept
+        return (
+            f"### {subtopic}\n"
+            "In quantum mechanics, every physically measurable observable corresponds to a linear Hermitian operator acting on a complex state vector in Hilbert space. "
+            "Performing a measurement of observable $\\hat{A}$ yields one of its eigenvalues $a_n$ governed by $\\hat{A}\\psi_n = a_n \\psi_n$."
+        )
 
     @classmethod
-    def _generate_quantum_apps_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
+    def _generate_schrodinger_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["concept", "fundamental principle", "physical model"]):
+        t_low = topic.lower()
+
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope", "non-relativistic"]):
             return (
                 f"### {subtopic}\n"
-                "The technological translation of quantum mechanics relies upon exploiting wave-particle duality, energy state quantization, and non-classical barrier penetration. "
-                "Unlike classical macroscopic machinery where states form a continuous continuum and barriers present absolute physical boundaries, nanoscale quantum devices manipulate individual wavefunction envelopes. "
-                "By engineering spatial confinement dimensions on the scale of the electron de Broglie wavelength ($\\sim 1\\text{ to }10\\text{ nm}$), solid-state physicists and electronic engineers precisely modulate charge carrier dynamics and discrete radiative transition rates."
+                f"The physical scope of the {topic} is constrained by non-relativistic assumptions where kinetic energy remains small relative to particle rest mass ($E_k \\ll m_0 c^2$). "
+                "For relativistic velocities approaching $c$, quantum dynamics requires Lorentz-covariant wave equations such as the spin-1/2 Dirac equation or Klein-Gordon field equation."
             )
-        if any(k in s_low for k in ["formulation", "equation", "mathematical"]):
+
+        if any(k in s_low for k in ["interpretation", "continuity", "current", "conservation", "probability current"]):
             return (
                 f"### {subtopic}\n"
-                "The quantitative foundation for quantum engineering devices is governed by the reduced transmission coefficient across nanoscale potential barriers and the density of states $g(E)$ in reduced dimensionalities:\n\n"
-                "$$g_{2D}(E) = \\frac{m^*}{\\pi \\hbar^2}, \\quad g_{1D}(E) = \\frac{\\sqrt{2m^*}}{\\pi \\hbar \\sqrt{E}}, \\quad g_{0D}(E) = 2\\sum_i \\delta(E - E_i)$$\n\n"
-                "For barrier penetration, the transmission probability $T(E)$ under the WKB approximation is expressed as:\n"
-                "$$T(E) \\approx \\exp\\left(-2\\int_{x_1}^{x_2} \\sqrt{\\frac{2m(V(x) - E)}{\\hbar^2}} dx\\right)$$\n"
-                "This exponential dependence ensures that sub-angstrom dimensional alterations produce measurable order-of-magnitude changes in electronic transport."
+                f"Applying the {topic} to complex state vectors establishes local probability conservation via the continuity equation: "
+                "$\\frac{\\partial P}{\\partial t} + \\nabla \\cdot \\mathbf{J} = 0$, where $P = |\\Psi|^2$ is position probability density and $\\mathbf{J} = \\frac{\\hbar}{2mi}(\\Psi^* \\nabla \\Psi - \\Psi \\nabla \\Psi^*)$ represents probability current flux."
             )
-        if any(k in s_low for k in ["derivation", "boundary", "tunneling", "barrier"]):
+
+        if "time-independent" in t_low or "time-independent" in s_low or "tise" in s_low or "stationary" in s_low:
+            if any(k in s_low for k in ["derivation", "formulation", "analytical", "equation", "mathematical", "boundary"]):
+                return (
+                    f"### {subtopic}\n"
+                    "For time-invariant potential energy fields $V(\\mathbf{r})$, separating variables $\\Psi(\\mathbf{r}, t) = \\psi(\\mathbf{r})e^{-iEt/\\hbar}$ reduces the wave equation to the spatial Time-Independent Schrödinger Equation:\n\n"
+                    "$$-\\frac{\\hbar^2}{2m}\\nabla^2 \\psi(\\mathbf{r}) + V(\\mathbf{r})\\psi(\\mathbf{r}) = E\\psi(\\mathbf{r}) \\implies \\hat{H}\\psi = E\\psi$$\n\n"
+                    "The spatial eigenfunction $\\psi(\\mathbf{r})$ determines energy level spectrum $E$, while the temporal phase factor $e^{-iEt/\\hbar}$ leaves position probability density $|\\Psi(\\mathbf{r}, t)|^2 = |\\psi(\\mathbf{r})|^2$ completely stationary in time."
+                )
             return (
                 f"### {subtopic}\n"
-                "To derive the analytical tunneling probability for a finite rectangular potential barrier of height $V_0$ and thickness $d$ ($E < V_0$), the wave functions across the three spatial regions are solved under continuity constraints. "
-                "In Region I ($x < 0$), the wave is $\\psi_I(x) = e^{ikx} + R e^{-ikx}$ with $k = \\sqrt{2mE}/\\hbar$. "
-                "Inside the classically forbidden barrier Region II ($0 < x < d$), the Helmholtz equation yields the evanescent state $\\psi_{II}(x) = A e^{\\kappa x} + B e^{-\\kappa x}$, where $\\kappa = \\sqrt{2m(V_0 - E)}/\\hbar$. "
-                "In Region III ($x > d$), the transmitted wave propagates freely as $\\psi_{III}(x) = C e^{ikx}$.\n\n"
-                "Matching boundary conditions $\\psi$ and $\\frac{d\\psi}{dx}$ at $x = 0$ and $x = d$ yields the exact transmission coefficient:\n"
-                "$$T = \\left[1 + \\frac{V_0^2 \\sinh^2(\\kappa d)}{4E(V_0 - E)}\\right]^{-1}$$\n"
-                "For thick barriers where $\\kappa d \\gg 1$, $\\sinh(\\kappa d) \\approx \\frac{1}{2}e^{\\kappa d}$, simplifying the transmission to the canonical exponential law $T \\approx 16\\frac{E}{V_0}\\left(1 - \\frac{E}{V_0}\\right)e^{-2\\kappa d}$."
+                "The Time-Independent Schrödinger Equation (TISE) is an eigenvalue equation governing stationary quantum states. "
+                "Solving TISE subject to physical Dirichlet boundary conditions determines allowed energy eigenvalues $E_n$ and stationary wave states $\\psi_n(\\mathbf{r})$ for confined quantum systems."
             )
-        if any(k in s_low for k in ["contemporary", "technological", "application", "nanotechnology", "device"]):
-            table_md = (
-                "| Technology | Quantum Mechanism | Operational Principle | Technological Impact |\n"
-                "| :--- | :--- | :--- | :--- |\n"
-                "| Scanning Tunneling Microscope (STM) | Quantum Barrier Penetration | Electrons tunnel through vacuum gap ($I \\propto e^{-2\\kappa d}$) | Atomic-resolution surface imaging and atom manipulation |\n"
-                "| Transmission Electron Microscope (TEM) | De Broglie Matter Waves | High-voltage electron beam ($\\lambda \\sim 0.003\\text{ nm}$) | Sub-angstrom structural analysis of materials and viruses |\n"
-                "| Quantum Well Diode Lasers | 1D Spatial Confinement | 2D electron density of states in nanoscale GaAs wells | High-efficiency optical sources for fiber telecommunications |\n"
-                "| Semiconductor Quantum Dots | 3D Spatial Confinement | Discrete atomic-like energy levels tuned by nanocrystal size | Ultra-pure color displays (QLED) and biomedical markers |\n"
-                "| SQUIDs | Josephson Junction Tunneling | Magnetic flux quantization in superconducting rings | Ultra-sensitive detection of neural magnetic fields |"
-            )
+
+        # Time-Dependent Schrödinger Equation (TDSE)
+        if any(k in s_low for k in ["derivation", "formulation", "analytical", "equation", "mathematical", "propagator"]):
             return (
                 f"### {subtopic}\n"
-                "Modern engineering harnesses quantum phenomena across computing, optical telecommunications, and biomedical instrumentation. "
-                "The primary quantum technologies operating in contemporary industry include:\n\n"
-                f"{table_md}\n\n"
-                "In Scanning Tunneling Microscopy (STM), an atomically sharp metal tip scans within $1\\text{ nm}$ of a conductive surface. "
-                "Because tunneling current decays exponentially with separation, a height adjustment of $0.1\\text{ nm}$ modulates current by a factor of 10, enabling atomic-level topographical mapping."
-            )
-        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "decoherence"]):
-            return (
-                f"### {subtopic}\n"
-                "While quantum mechanical principles enable revolutionary technological capabilities, real-world engineering implementations face severe physical constraints. "
-                "The foremost limitation is environmental decoherence, wherein thermal lattice vibrations (phonons) and background electromagnetic fluctuations destroy delicate quantum phase superpositions on femtosecond timescales at room temperature. "
-                "Consequently, technologies such as SQUIDs and superconducting transmon qubits necessitate sophisticated dilution refrigeration systems maintaining operational temperatures below $20\\text{ mK}$.\n\n"
-                "In complementary semiconductor electronics, quantum tunneling constitutes a critical parasitic failure mechanism. "
-                "As Silicon MOSFET gate oxide dielectric layers shrink below $2\\text{ nm}$ in sub-3nm node lithography, quantum leakage currents through the gate barrier skyrocket exponentially, dissipating excessive quiescent power and enforcing the adoption of high-$\\kappa$ dielectric gate stacks."
+                "The Time-Dependent Schrödinger Equation (TDSE) governs the temporal evolution of quantum state vectors under Hamiltonian operator $\\hat{H}$:\n\n"
+                "$$i\\hbar \\frac{\\partial \\Psi(\\mathbf{r}, t)}{\\partial t} = -\\frac{\\hbar^2}{2m} \\nabla^2 \\Psi(\\mathbf{r}, t) + V(\\mathbf{r}, t)\\Psi(\\mathbf{r}, t)$$\n\n"
+                "Because time appears to first order, specifying an initial quantum state $\\Psi(\\mathbf{r}, 0)$ uniquely dictates all future states through the unitary time-evolution operator $\\hat{U}(t, 0) = \\exp(-i\\hat{H}t/\\hbar)$."
             )
 
         return (
             f"### {subtopic}\n"
-            "The broad discipline of quantum engineering synthesizes foundational quantum physics with modern materials fabrication. "
-            "From macroscopic quantum interference in superconducting loops to zero-dimensional quantum dot emission, devices designed on quantum principles form the backbone of next-generation computation, sensing, and metrology."
+            "The time-dependent wave equation represents the foundational dynamical equation of non-relativistic quantum physics. "
+            "It establishes how state function $\\Psi(\\mathbf{r}, t)$ evolves continuously in Hilbert space under external potential fields."
+        )
+
+    @classmethod
+    def _generate_wave_function_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
+        s_low = subtopic.lower()
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "scope", "measurement problem"]):
+            return (
+                f"### {subtopic}\n"
+                "While the wave function completely specifies state probabilities, it is not directly observable—only $|\\Psi|^2$ and expectation values $\\langle A \\rangle$ are measurable. "
+                "Global phase factors $e^{i\\alpha}$ carry no physical observable consequence, though relative phase differences generate measurable quantum interference."
+            )
+        if any(k in s_low for k in ["derivation", "boundary", "continuity", "admissibility", "dirichlet"]):
+            return (
+                f"### {subtopic}\n"
+                "To represent a physically admissible quantum state, wave function $\\Psi(x)$ must satisfy four Dirichlet-Neumann conditions:\n\n"
+                "1. **Single-Valued:** $\\Psi(x)$ has one value at every spatial point.\n"
+                "2. **Continuous:** $\\Psi(x)$ is continuous everywhere.\n"
+                "3. **Continuous Spatial Derivative:** $\\frac{\\partial \\Psi}{\\partial x}$ is continuous wherever potential $V(x)$ is finite.\n"
+                "4. **Square-Integrable:** $\\int |\\Psi|^2 dx < \\infty$ for unit normalization."
+            )
+        if any(k in s_low for k in ["formulation", "normalization", "condition", "unit", "integral", "equation", "mathematical"]):
+            return (
+                f"### {subtopic}\n"
+                "Because a particle exists somewhere in space with 100% certainty, valid wave functions must satisfy normalization: $\\int_{-\\infty}^{\\infty} |\\Psi(\\mathbf{r}, t)|^2 d^3r = 1$. "
+                "Any square-integrable raw function $\\psi_{raw}$ is normalized via constant $A = 1/\\sqrt{\\int |\\psi_{raw}|^2 dx}$."
+            )
+
+        # Default Born interpretation concept
+        return (
+            f"### {subtopic}\n"
+            "In 1926, Max Born formulated the statistical probability interpretation of wave function $\\Psi(\\mathbf{r}, t)$. "
+            "While $\\Psi$ is a complex probability amplitude, absolute square $P(\\mathbf{r}, t) = |\\Psi(\\mathbf{r}, t)|^2 = \\Psi^* \\Psi$ represents physical probability density of locating the particle at position $\\mathbf{r}$ at time $t$."
+        )
+
+    @classmethod
+    def _generate_quantum_apps_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
+        s_low = subtopic.lower()
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "decoherence", "leakage", "scope"]):
+            return (
+                f"### {subtopic}\n"
+                "Real quantum devices face severe physical limits, primarily environmental decoherence from lattice phonons and electromagnetic noise destroying quantum phase superpositions. "
+                "In sub-3nm MOSFET lithography, gate oxide barrier penetration causes parasitic quantum tunneling leakage, dissipating quiescent power."
+            )
+        if any(k in s_low for k in ["contemporary", "technological", "application", "nanotechnology", "device", "table", "relevance"]):
+            return (
+                f"### {subtopic}\n"
+                "Modern engineering harnesses quantum phenomena across computing, optical telecommunications, and biomedical instrumentation. "
+                "Key practical devices include Scanning Tunneling Microscopes (STM) utilizing electron barrier penetration for atomic-scale imaging, Transmission Electron Microscopes (TEM) using sub-angstrom de Broglie electron matter waves, and Quantum Well Diode Lasers leveraging 1D carrier confinement."
+            )
+        if any(k in s_low for k in ["derivation", "boundary", "tunneling", "barrier"]):
+            return (
+                f"### {subtopic}\n"
+                "Solving wave functions across rectangular potential barrier of height $V_0$ and width $d$ ($E < V_0$) yields evanescent state $\\psi_{II} = A e^{\\kappa x} + B e^{-\\kappa x}$ where $\\kappa = \\sqrt{2m(V_0-E)}/\\hbar$. "
+                "Matching boundary conditions yields transmission coefficient $T \\approx 16\\frac{E}{V_0}(1 - \\frac{E}{V_0}) e^{-2\\kappa d}$."
+            )
+        if any(k in s_low for k in ["formulation", "equation", "mathematical", "density of states", "wkb", "expression"]):
+            return (
+                f"### {subtopic}\n"
+                "Quantum devices are governed by reduced dimensional density of states ($g_{2D} = \\frac{m^*}{\\pi \\hbar^2}, g_{1D} = \\frac{\\sqrt{2m^*}}{\\pi \\hbar \\sqrt{E}}$) and WKB barrier penetration probability $T \\approx \\exp\\left(-2\\int \\sqrt{\\frac{2m(V(x)-E)}{\\hbar^2}}dx\\right)$."
+            )
+
+        # Default concept
+        return (
+            f"### {subtopic}\n"
+            "Translating quantum mechanics into technology relies on wave-particle duality, energy state quantization, and non-classical barrier penetration, modulating carrier dynamics in engineered nanoscale devices."
         )
 
     @classmethod
     def _generate_quantum_intro_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:
         s_low = subtopic.lower()
-        if any(k in s_low for k in ["blackbody", "ultraviolet", "planck", "quanta"]):
+        if any(k in s_low for k in ["limitation", "assumption", "boundary scope", "old quantum theory", "scope"]):
             return (
                 f"### {subtopic}\n"
-                "The emergence of quantum theory was precipitated by the complete failure of nineteenth-century classical physics to describe the spectral distribution of blackbody radiation. "
-                "Classical electromagnetic theory and the equipartition theorem led to the Rayleigh-Jeans law for spectral energy density:\n"
-                "$$u(\\nu)d\\nu = \\frac{8\\pi \\nu^2}{c^3} k_B T d\\nu$$\n\n"
-                "Because $u(\\nu) \\propto \\nu^2$, this classical formula predicted that total radiated energy diverges to infinity as frequency increases into the ultraviolet and X-ray spectrum—a catastrophic contradiction known as the ultraviolet catastrophe. "
-                "In 1900, Max Planck resolved this crisis by postulating that atomic wall resonators do not emit radiation continuously, but exchange energy only in discrete packets or quanta: $E = nh\\nu$, introducing the universal quantum of action $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$."
+                "Early quantum theory (Bohr-Sommerfeld model) possessed critical limitations. "
+                "While explaining discrete hydrogen spectra, it grafted quantum rules artificially onto classical orbits and failed for multi-electron atoms and transition intensities."
             )
-        if any(k in s_low for k in ["photoelectric", "einstein", "photon", "work function"]):
+        if any(k in s_low for k in ["contemporary", "technological", "application", "photodetector", "relevance"]):
             return (
                 f"### {subtopic}\n"
-                "In 1905, Albert Einstein extended Planck's quantum hypothesis to explain the photoelectric effect, demonstrating that light propagates and interacts as localized packets of energy called photons. "
-                "Classical wave theory predicted that electron emission depends on incident light intensity, with long time lags required for low-intensity illumination. "
-                "Experimental observations revealed that electron emission occurs instantaneously, provided the incident light frequency exceeds a material threshold $\\nu_0$.\n\n"
-                "Einstein's photoelectric equation expresses energy conservation for single-photon absorption:\n"
-                "$$h\\nu = W_0 + K_{max} = h\\nu_0 + \\frac{1}{2}m v_{max}^2$$\n"
-                "where $W_0 = h\\nu_0$ is the material work function and $K_{max} = e V_s$ is the maximum kinetic energy measured via stopping potential $V_s$."
+                "Early quantum principles enable essential electro-optical instruments: photomultiplier tubes (PMTs), CCD image sensors, optical pyrometers, and satellite thermal radiometers."
+            )
+        if any(k in s_low for k in ["derivation", "boundary", "conditions", "planck distribution"]):
+            return (
+                f"### {subtopic}\n"
+                "Deriving Planck's blackbody law replaces classical equipartition energy $\\langle E \\rangle = k_B T$ with discrete oscillator levels $E_n = n h \\nu$. "
+                "Evaluating partition function $Z = \\frac{1}{1 - e^{-h\\nu/k_BT}}$ gives average oscillator energy $\\langle E \\rangle = \\frac{h\\nu}{e^{h\\nu/k_BT} - 1}$ and spectral energy density $u(\\nu)d\\nu = \\frac{8\\pi h \\nu^3}{c^3 (e^{h\\nu/k_BT}-1)}d\\nu$."
+            )
+        if any(k in s_low for k in ["postulates", "axiomatic", "framework", "principle"]):
+            return (
+                f"### {subtopic}\n"
+                "Quantum mechanics rests upon five axiomatic postulates: state vector $\\Psi$, linear Hermitian operators for observables, eigenvalue measurement outcomes, Born probability rule $P = |\\langle \\psi_n | \\Psi \\rangle|^2$, and Schrödinger time evolution $i\\hbar \\frac{\\partial \\Psi}{\\partial t} = \\hat{H}\\Psi$."
             )
         if any(k in s_low for k in ["compton", "scattering", "x-ray", "momentum"]):
             return (
                 f"### {subtopic}\n"
-                "In 1923, Arthur Compton provided the definitive experimental proof that photons carry relativistic momentum as well as energy. "
-                "Directing monochromatic X-rays at a graphite target, Compton observed that scattered radiation contained wavelengths longer than the incident beam. "
-                "Applying relativistic energy and momentum conservation to the elastic collision between a photon and a stationary electron yields the Compton shift equation:\n"
-                "$$\\Delta \\lambda = \\lambda' - \\lambda = \\frac{h}{m_0 c}(1 - \\cos\\theta)$$\n"
-                "where $\\lambda_c = \\frac{h}{m_0 c} = 0.0243\\text{ \\AA} = 2.43 \\times 10^{-12}\\text{ m}$ is the Compton wavelength of the electron, and $\\theta$ is the scattering angle."
+                "Arthur Compton (1923) proved photons carry relativistic momentum $p = h/\\lambda$. "
+                "Inelastic X-ray scattering off electrons yields the Compton shift equation: $\\Delta \\lambda = \\lambda' - \\lambda = \\frac{h}{m_0 c}(1 - \\cos\\theta)$, where $\\lambda_c = 0.0243\\text{ \\AA}$."
             )
-        if any(k in s_low for k in ["postulates", "axiomatic", "framework"]):
+        if any(k in s_low for k in ["photoelectric", "einstein", "photon", "work function"]):
             return (
                 f"### {subtopic}\n"
-                "Modern quantum mechanics is formulated upon five fundamental axioms known as the postulates of quantum theory:\n\n"
-                "1. **Postulate 1 (State Function):** The complete physical state of a quantum system is represented by a normalized complex wave function $\\Psi(\\mathbf{r}, t)$ residing in a Hilbert space.\n\n"
-                "2. **Postulate 2 (Observables):** Every physically measurable observable corresponds to a linear Hermitian operator acting on the state function.\n\n"
-                "3. **Postulate 3 (Eigenvalues):** The only measurable outcomes of an observable $\\hat{A}$ are its eigenvalues $a_n$ from $\\hat{A}\\psi_n = a_n\\psi_n$.\n\n"
-                "4. **Postulate 4 (Born Rule):** The probability of measuring eigenvalue $a_n$ in state $\\Psi$ is given by $P(a_n) = |\\langle \\psi_n | \\Psi \\rangle|^2$.\n\n"
-                "5. **Postulate 5 (Time Evolution):** The state evolves continuously in time according to the Schrödinger equation $i\\hbar \\frac{\\partial \\Psi}{\\partial t} = \\hat{H}\\Psi$."
-            )
-        if any(k in s_low for k in ["concept", "fundamental principle", "physical model"]):
-            return (
-                f"### {subtopic}\n"
-                "The foundational conceptual shift from classical to quantum physics was driven by the realization that physical observables at subatomic dimensions are intrinsically quantized and probabilistic. "
-                "In classical mechanics, the deterministic state of a particle is fully specified by its continuous position and momentum coordinates $(x(t), p(t))$ according to Newton's second law. "
-                "In the quantum domain, this certainty is replaced by an abstract state vector and wave amplitude whose modulus squared dictates measurement probability."
-            )
-        if any(k in s_low for k in ["formulation", "equation", "mathematical"]):
-            return (
-                f"### {subtopic}\n"
-                "The mathematical formulation of early quantum phenomena establishes the foundational algebraic relationships connecting wave attributes to discrete particle properties:\n\n"
-                "$$E = h\\nu = \\hbar\\omega, \\quad p = \\frac{h}{\\lambda} = \\hbar k$$\n\n"
-                "These relationships unite the frequency $\\nu$ and spatial wavevector $k$ with dynamic mechanical energy $E$ and momentum $p$, bridged by Dirac's reduced Planck constant $\\hbar = \\frac{h}{2\\pi} = 1.054 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$."
-            )
-        if any(k in s_low for k in ["derivation", "boundary", "conditions"]):
-            return (
-                f"### {subtopic}\n"
-                "Deriving the foundational Planck radiation distribution requires departing from the classical Maxwell-Boltzmann equipartition theorem, which assigned an average thermal energy $\\langle E \\rangle = k_B T$ to each vibrational mode. "
-                "Assuming instead that cavity harmonic oscillators are restricted to discrete energy levels $E_n = n h \\nu$ ($n = 0, 1, 2, \\dots$), the statistical partition function is evaluated as:\n"
-                "$$Z = \\sum_{n=0}^{\\infty} e^{-n h \\nu / k_B T} = \\frac{1}{1 - e^{-h\\nu / k_B T}}$$\n\n"
-                "The ensemble average thermal energy per cavity oscillator becomes:\n"
-                "$$\\langle E \\rangle = -\\frac{\\partial \\ln Z}{\\partial \\beta} = \\frac{h\\nu}{e^{h\\nu / k_B T} - 1}$$\n"
-                "Multiplying by the spatial density of electromagnetic modes per unit volume $\\frac{8\\pi \\nu^2}{c^3}$ yields Planck's exact blackbody radiation law."
-            )
-        if any(k in s_low for k in ["contemporary", "technological", "application"]):
-            return (
-                f"### {subtopic}\n"
-                "Early quantum principles directly enable several foundational optical and electronic technologies in modern engineering. "
-                "The photoelectric effect forms the core operational mechanism behind photomultiplier tubes (PMTs), vacuum phototubes, and modern charge-coupled device (CCD) image sensors. "
-                "Similarly, blackbody radiometry principles govern the calibration of optical pyrometers, thermal imaging cameras, and infrared satellite sensors deployed for environmental monitoring."
-            )
-        if any(k in s_low for k in ["limitation", "assumption", "boundary scope"]):
-            return (
-                f"### {subtopic}\n"
-                "The earliest formulations of quantum theory (often designated the 'Old Quantum Theory' of Planck, Einstein, and Bohr) possessed critical theoretical limitations. "
-                "While successfully explaining discrete atomic spectra and the photoelectric threshold, these models relied on heuristic quantum conditions grafted artificially onto classical Newtonian orbits. "
-                "They could not account for spectral line intensities, the wave nature of matter, or multi-electron atoms—deficiencies that were resolved only with the full development of wave mechanics by Schrödinger and matrix mechanics by Heisenberg."
+                "Albert Einstein (1905) explained the photoelectric effect via single-photon energy absorption: $h\\nu = W_0 + K_{max} = h\\nu_0 + \\frac{1}{2}m v_{max}^2$, proving light propagates as localized quanta."
             )
 
+        # Default blackbody / intro concept
         return (
             f"### {subtopic}\n"
-            "The historical and conceptual development of quantum physics transformed the understanding of nature from deterministic mechanics to probabilistic wave mechanics. "
-            "Beginning with Planck's quantum hypothesis and Einstein's photon concept, the theory provided the foundation upon which modern chemistry, solid-state physics, and materials engineering are established."
+            "The emergence of quantum theory was precipitated by the failure of classical physics to explain blackbody radiation (ultraviolet catastrophe). "
+            "In 1900, Max Planck resolved this crisis by postulating discrete energy quanta $E = nh\\nu$, introducing Planck's constant $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$."
         )
+
 

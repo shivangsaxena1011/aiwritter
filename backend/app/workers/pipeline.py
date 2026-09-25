@@ -414,7 +414,8 @@ class BookGenerationOrchestrator:
                                         timing_stats["content_generation_time"] += (time.time() - t_write_0)
 
                             # Stage 7: Derivation Engine Integration
-                            if requires_derivation and any(kw in subtopic.title.lower() for kw in ["equation", "derivation", "proof", "formulation", "model", "box", "well", "wave", "hypothesis", "relativity"]):
+                            # Only invoke external DerivationAgent if content lacks mathematical equations ($$)
+                            if requires_derivation and "$$" not in content and any(kw in subtopic.title.lower() for kw in ["derivation", "proof"]):
                                 try:
                                     self._log_event("log", f"📐 DerivationAgent: Formulating analytical proof for {subtopic.title}...")
                                     deriv_res = await self.derivation_agent.generate_derivation(
@@ -425,7 +426,9 @@ class BookGenerationOrchestrator:
                                     )
                                     deriv_md = deriv_res.get("markdown_content")
                                     if deriv_md and deriv_md not in content:
-                                        content += f"\n\n#### Formal Analytical Derivation of {subtopic.title}\n\n{deriv_md}"
+                                        clean_deriv_md = re.sub(r'^\s*#{1,6}\s+[^\n]+\n*', '', deriv_md.strip())
+                                        if clean_deriv_md:
+                                            content += f"\n\n#### Analytical Derivation\n\n{clean_deriv_md}"
                                 except Exception as d_err:
                                     logger.warning(f"Derivation generation fallback: {d_err}")
 
@@ -488,21 +491,25 @@ class BookGenerationOrchestrator:
                                 self.table_planner_accepted = 0
                                 self.table_planner_rejected = 0
 
-                            if "|" in content:
-                                self.table_planner_evaluated += 1
-                                purpose = "COMPARISON" if any(w in subtopic.title.lower() for w in ["comparison", "difference", "table", "states", "properties", "experiment", "davisson", "regime"]) else "CONCEPT"
-                                table_necessity = self.table_planner.evaluate_necessity(
-                                    subtopic_title=subtopic.title,
-                                    topic_title=topic.title,
-                                    purpose=purpose,
-                                    section_content=content
-                                )
-                                if table_necessity.is_necessary:
-                                    self.table_planner_accepted += 1
-                                else:
-                                    self.table_planner_rejected += 1
+                            sec_table_md = None
+                            self.table_planner_evaluated += 1
+                            purpose = "COMPARISON" if any(w in subtopic.title.lower() for w in ["comparison", "difference", "table", "states", "properties", "experiment", "davisson", "regime"]) else "CONCEPT"
+                            table_necessity = self.table_planner.evaluate_necessity(
+                                subtopic_title=subtopic.title,
+                                topic_title=topic.title,
+                                purpose=purpose,
+                                section_content=content
+                            )
+                            if table_necessity.is_necessary:
+                                self.table_planner_accepted += 1
+                                sec_table_md = table_necessity.markdown_content
+                                if sec_table_md and sec_table_md not in content:
+                                    content = content + "\n\n" + sec_table_md
+                            else:
+                                self.table_planner_rejected += 1
+                                if "|" in content:
                                     # Strip unneeded markdown table while retaining explanatory text
-                                    content = re.sub(r'(\|[^\n]+\|\r?\n)+', '', content)
+                                    content = re.sub(r'(\|[^\n]+\|(?:\r?\n|$))+', '', content)
 
                             # Orchestration 2.0: Multi-Level Repetition Detection & Deduplication
                             paras = [p.strip() for p in content.split("\n\n") if p.strip()]
@@ -675,7 +682,8 @@ class BookGenerationOrchestrator:
                             "word_count": word_count,
                             "image_path": img_path,
                             "image_caption": img_caption,
-                            "placeholder_box": placeholder_box
+                            "placeholder_box": placeholder_box,
+                            "table_markdown": sec_table_md
                         })
 
                         is_first_in_topic = False
@@ -785,6 +793,7 @@ class BookGenerationOrchestrator:
                     bibliography=bib_md if (include_references and all_sources) else None
                 )
             )
+            self.assembly_model = assembly_model
 
             # Export DOCX directly and exclusively from BookAssemblyModel
             safe_title = "".join(c for c in book.title if c.isalnum() or c in (" ", "_", "-")).replace(" ", "_")

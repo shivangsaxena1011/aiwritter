@@ -286,19 +286,21 @@ class DOCXExporter(DocumentExporter):
         """Converts academic section content, figures, and tables into Word elements with strict
         hierarchy (H1: Chapter, H2: Topic, H3: Subtopic, H4: Subsection) and duplicate suppression."""
         last_heading_text: Optional[str] = None
+        last_heading_level: Optional[int] = None
 
         def add_safe_heading(text: str, level: int):
-            nonlocal last_heading_text
+            nonlocal last_heading_text, last_heading_level
             clean_text = text.strip()
             if not clean_text:
                 return None
             norm_new = re.sub(r"[^\w\s]", "", clean_text.lower())
             norm_last = re.sub(r"[^\w\s]", "", (last_heading_text or "").strip().lower())
-            if norm_new == norm_last and norm_new:
+            if level == last_heading_level and norm_new and norm_last and norm_new == norm_last:
                 logger.warning(f"Suppressed consecutive duplicate heading in DOCX: '{clean_text}' (level {level})")
                 return None
             h = doc.add_heading(clean_text, level=level)
             last_heading_text = clean_text
+            last_heading_level = level
             return h
 
         rendered_units = set()
@@ -451,12 +453,17 @@ class DOCXExporter(DocumentExporter):
                 continue
 
             # 2. Markdown Tables
-            if line_str.startswith("|") and line_str.endswith("|"):
+            if line_str.startswith("|"):
                 table_lines = []
-                while idx < total_lines and lines[idx].strip().startswith("|") and lines[idx].strip().endswith("|"):
-                    table_lines.append(lines[idx].strip())
-                    idx += 1
-                self._add_real_word_table(doc, table_lines)
+                while idx < total_lines:
+                    curr = lines[idx].strip()
+                    if curr.startswith("|"):
+                        table_lines.append(curr)
+                        idx += 1
+                    else:
+                        break
+                if table_lines:
+                    self._add_real_word_table(doc, table_lines)
                 continue
 
             # 3. Headings
@@ -570,6 +577,37 @@ class DOCXExporter(DocumentExporter):
 
             idx += 1
 
+    @staticmethod
+    def _clean_table_cell_math(text: str) -> str:
+        """Cleans raw LaTeX math formatting out of table cell text into clean readable unicode."""
+        if not text:
+            return text
+        t = text
+        t = re.sub(r"\\text\{([^}]+)\}", r"\1", t)
+        t = re.sub(r"\\mathrm\{([^}]+)\}", r"\1", t)
+        t = re.sub(r"\\mathbf\{([^}]+)\}", r"\1", t)
+        t = re.sub(r"\\AA", "Å", t)
+        t = re.sub(r"\\lambda", "λ", t)
+        t = re.sub(r"\\theta", "θ", t)
+        t = re.sub(r"\\pi", "π", t)
+        t = re.sub(r"\\infty", "∞", t)
+        t = re.sub(r"\\approx", "≈", t)
+        t = re.sub(r"\\propto", "∝", t)
+        t = re.sub(r"\\cdot", "·", t)
+        t = re.sub(r"\\times", "×", t)
+        t = re.sub(r"\\quad", " ", t)
+        t = re.sub(r"\\le", "≤", t)
+        t = re.sub(r"\\ge", "≥", t)
+        t = re.sub(r"\\delta", "δ", t)
+        t = re.sub(r"\\nu", "ν", t)
+        t = re.sub(r"\\hbar", "ℏ", t)
+        t = re.sub(r"\\hat\{([^}]+)\}", r"\1", t)
+        t = re.sub(r"\\frac\{([^}]+)\}\{([^}]+)\}", r"\1/\2", t)
+        t = re.sub(r"\\sqrt\{([^}]+)\}", r"√\1", t)
+        t = re.sub(r"\\[a-zA-Z]+", "", t)
+        t = re.sub(r"[\$\{\}\\]+", "", t)
+        return " ".join(t.split())
+
     def _add_real_word_table(self, doc: Document, table_lines: List[str]):
         """Converts Markdown table rows into true Word tables with formatting."""
         parsed_rows = []
@@ -616,7 +654,7 @@ class DOCXExporter(DocumentExporter):
 
             for col_idx, cell in enumerate(row.cells):
                 if col_idx < len(parsed_rows[row_idx]):
-                    cell.text = parsed_rows[row_idx][col_idx]
+                    cell.text = self._clean_table_cell_math(parsed_rows[row_idx][col_idx])
                 else:
                     cell.text = ""
 

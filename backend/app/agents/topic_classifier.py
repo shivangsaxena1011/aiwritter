@@ -119,25 +119,35 @@ class TopicTypeClassifier:
     def get_pedagogical_structure(cls, labels: List[TopicType], topic_title: str) -> List[Dict[str, str]]:
         """
         Dynamically recommends section flow based on topic classifications.
-        Never outputs generic boilerplate titles.
+        Varies structural section archetype sequences to prevent generic template repetitions.
         """
         sections: List[Dict[str, str]] = []
         lbl_set = set(labels)
 
         # 1. Historical or Conceptual Foundation
-        if TopicType.HISTORICAL in lbl_set or TopicType.LAW_OR_PRINCIPLE in lbl_set:
+        if TopicType.HISTORICAL in lbl_set:
             sections.append({
                 "title": f"Historical Motivation and Physical Foundations of {topic_title}",
                 "pedagogy": "Establish classical limits and experimental catalyst"
             })
+        elif TopicType.LAW_OR_PRINCIPLE in lbl_set:
+            sections.append({
+                "title": f"Foundational Principle and Physical Definition of {topic_title}",
+                "pedagogy": "Clear operational definition and underlying physical intuition"
+            })
+        elif TopicType.EXPERIMENTAL in lbl_set:
+            sections.append({
+                "title": f"Experimental Origins and Discovery of {topic_title}",
+                "pedagogy": "Laboratory observations and key historical setups"
+            })
         else:
             sections.append({
                 "title": f"Physical Concept and Fundamental Principles of {topic_title}",
-                "pedagogy": "Clear operational definition and underlying physical intuition"
+                "pedagogy": "Core operational definition and physical intuition"
             })
 
-        # 2. Mathematical Formulation / Derivation
-        if TopicType.DERIVATION_HEAVY in lbl_set or TopicType.MATHEMATICAL in lbl_set:
+        # 2. Mathematical Formulation / Derivation / Expression
+        if TopicType.DERIVATION_HEAVY in lbl_set and TopicType.EXPERIMENTAL not in lbl_set:
             sections.append({
                 "title": f"Mathematical Formulation and Governing Equations of {topic_title}",
                 "pedagogy": "Differential equations, operators, and coordinate assumptions"
@@ -155,22 +165,32 @@ class TopicTypeClassifier:
                 "title": f"Mathematical Expression and Governing Relations of {topic_title}",
                 "pedagogy": "Formal statement of equation with full symbol definitions"
             })
-
-        # 3. Experimental Evidence / Apparatus
-        if TopicType.EXPERIMENTAL in lbl_set or TopicType.APPARATUS in lbl_set or TopicType.LAW_OR_PRINCIPLE in lbl_set:
+        elif TopicType.PROCESS in lbl_set:
             sections.append({
-                "title": f"Experimental Verification and Laboratory Evidence for {topic_title}",
-                "pedagogy": "Key historical experiments and measured confirmation"
+                "title": f"Step-by-Step Mechanism and Dynamical Evolution of {topic_title}",
+                "pedagogy": "Sequence of physical states and rate equations"
             })
 
-        # 4. Modern Applications
-        if TopicType.APPLICATION in lbl_set or not any(s["title"].startswith("Experimental") for s in sections):
+        # 3. Experimental Verification / Apparatus Setup
+        if TopicType.EXPERIMENTAL in lbl_set or TopicType.APPARATUS in lbl_set:
             sections.append({
-                "title": f"Contemporary Engineering and Technological Applications of {topic_title}",
-                "pedagogy": "Practical devices, instrumentation, and industrial relevance"
+                "title": f"Experimental Setup and Instrumentation for {topic_title}",
+                "pedagogy": "Apparatus design, measurement methods, and observed data"
             })
 
-        # 5. Limitations / Validity
+        # 4. Modern Applications / Engineering Relevance
+        if TopicType.APPLICATION in lbl_set or TopicType.APPARATUS in lbl_set:
+            sections.append({
+                "title": f"Engineering Applications and Technological Relevance of {topic_title}",
+                "pedagogy": "Practical devices, solid-state sensors, and industrial impact"
+            })
+        elif TopicType.DERIVATION_HEAVY not in lbl_set:
+            sections.append({
+                "title": f"Contemporary Engineering Applications of {topic_title}",
+                "pedagogy": "Modern technological uses and nanoscale device modeling"
+            })
+
+        # 5. Limitations / Validity Scope
         sections.append({
             "title": f"Physical Limitations, Assumptions, and Boundary Scope of {topic_title}",
             "pedagogy": "Domain of applicability, non-relativistic limits, and failure modes"
@@ -179,7 +199,7 @@ class TopicTypeClassifier:
         # 6. Numericals if enabled
         if TopicType.NUMERICAL in lbl_set:
             sections.append({
-                "title": f"Worked Numerical Examples on {topic_title}",
+                "title": f"Worked Solved Numerical Problems on {topic_title}",
                 "pedagogy": "Step-by-step problem solving with given, formula, and units"
             })
 
