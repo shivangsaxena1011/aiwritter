@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-09-25T02:54:50.726759+00:00",
+  "version": "2.2",
+  "subject": "Engineering Physics",
+  "chapter_title": "Quantum Mechanics",
+  "execution_time_seconds": 23.39,
+  "publication_ready": true,
+  "old_2_1_audit_summary": {
+    "publication_ready": false,
+    "blocking_reasons": [
+      "Prose paragraph exact duplicate audit failed: 13 exact duplicates (7.98%).",
+      "Found 21 exact duplicate table(s) in final DOCX.",
+      "Found 1 repeated semantic comparison table(s) across topics.",
+      "Found 28 table(s) with unrendered raw math LaTeX artifacts.",
+      "Detected 28 unrendered raw math LaTeX artifact(s) in document.",
+      "Tables mismatch: planned (2) != rendered (28)",
+      "Figures mismatch: planned (1) != rendered (7)"
+    ]
+  },
+  "new_2_2_audit_summary": {
+    "publication_ready": true,
+    "docx_path": "C:\\Users\\Project\\ai-book-writer\\artifacts\\content_orchestration_2_2_chapter.docx",
+    "total_docx_paragraphs": 345,
+    "evaluated_prose_paragraphs": 131,
+    "exact_duplicate_paragraphs": 0,
+    "near_duplicate_paragraphs": 6,
+    "exact_duplicate_paragraph_rate": 0.0,
+    "near_duplicate_paragraph_rate": 0.0458,
+    "total_headings": 80,
+    "consecutive_duplicate_headings": 0,
+    "generic_headings": 0,
+    "structural_template_families": [],
+    "total_tables": 3,
+    "exact_duplicate_tables": 0,
+    "near_duplicate_tables": 0,
+    "semantic_duplicate_tables": 0,
+    "math_rendering_errors_in_tables": 0,
+    "total_figures": 7,
+    "figure_caption_mismatches": 0,
+    "math_rendering_artifacts_count": 0,
+    "count_reconciliation_valid": true,
+    "blocking_reasons": [],
+    "summary_counts": {
+      "chapters": 1,
+      "topics": 12,
+      "sections": 61,
+      "paragraphs": 345,
+      "equations": 97,
+      "tables": 3,
+      "figures": 7,
+      "words": 5610
+    },
+    "reconciliation_details": {
+      "is_valid": true,
+      "discrepancies": [],
+      "planned": {
+        "chapters": 1,
+        "topics": 12,
+        "sections": 61,
+        "paragraphs": 0,
+        "equations": 0,
+        "tables": 3,
+        "figures": 7,
+        "words": 5481
+      },
+      "assembled": {
+        "chapters": 1,
+        "topics": 12,
+        "sections": 61,
+        "paragraphs": 0,
+        "equations": 0,
+        "tables": 3,
+        "figures": 7,
+        "words": 5481
+      },
+      "rendered": {
+        "chapters": 1,
+        "topics": 12,
+        "sections": 61,
+        "paragraphs": 345,
+        "equations": 97,
+        "tables": 3,
+        "figures": 7,
+        "words": 5610
+      }
+    }
+  }
+}

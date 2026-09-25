@@ -1,0 +1,78 @@
+{
+  "version": "2.2",
+  "timestamp": "2026-09-25T02:54:50.725051+00:00",
+  "subject": "Engineering Physics",
+  "chapter_title": "Quantum Mechanics",
+  "truth_source": "Reopened Rendered DOCX File",
+  "docx_path": "C:\\Users\\Project\\ai-book-writer\\artifacts\\content_orchestration_2_2_chapter.docx",
+  "auditor_class": "IndependentArtifactAuditor",
+  "publication_ready": true,
+  "summary_counts": {
+    "chapters": 1,
+    "topics": 12,
+    "sections": 61,
+    "paragraphs": 345,
+    "equations": 97,
+    "tables": 3,
+    "figures": 7,
+    "words": 5610
+  },
+  "reconciliation": {
+    "is_valid": true,
+    "discrepancies": [],
+    "planned": {
+      "chapters": 1,
+      "topics": 12,
+      "sections": 61,
+      "paragraphs": 0,
+      "equations": 0,
+      "tables": 3,
+      "figures": 7,
+      "words": 5481
+    },
+    "assembled": {
+      "chapters": 1,
+      "topics": 12,
+      "sections": 61,
+      "paragraphs": 0,
+      "equations": 0,
+      "tables": 3,
+      "figures": 7,
+      "words": 5481
+    },
+    "rendered": {
+      "chapters": 1,
+      "topics": 12,
+      "sections": 61,
+      "paragraphs": 345,
+      "equations": 97,
+      "tables": 3,
+      "figures": 7,
+      "words": 5610
+    }
+  },
+  "prose_audit": {
+    "total_paragraphs": 345,
+    "evaluated_prose": 131,
+    "exact_duplicates": 0,
+    "near_duplicates": 6,
+    "exact_rate": 0.0,
+    "near_rate": 0.0458
+  },
+  "table_audit": {
+    "total_tables": 3,
+    "exact_duplicates": 0,
+    "near_duplicates": 0,
+    "semantic_duplicates": 0,
+    "math_errors": 0
+  },
+  "structure_audit": {
+    "consecutive_duplicate_headings": 0,
+    "generic_headings": 0,
+    "structural_template_families": []
+  },
+  "figure_audit": {
+    "total_figures": 7,
+    "caption_mismatches": 0
+  }
+}

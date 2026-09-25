@@ -1,0 +1,21 @@
+{
+  "version": "2.2",
+  "old_2_1_docx_audit": {
+    "publication_ready": false,
+    "blocking_reasons": [
+      "Prose paragraph exact duplicate audit failed: 13 exact duplicates (7.98%).",
+      "Found 21 exact duplicate table(s) in final DOCX.",
+      "Found 1 repeated semantic comparison table(s) across topics.",
+      "Found 28 table(s) with unrendered raw math LaTeX artifacts.",
+      "Detected 28 unrendered raw math LaTeX artifact(s) in document.",
+      "Tables mismatch: planned (2) != rendered (28)",
+      "Figures mismatch: planned (1) != rendered (7)"
+    ],
+    "total_failures": 7
+  },
+  "new_2_2_docx_audit": {
+    "publication_ready": true,
+    "blocking_reasons": [],
+    "total_failures": 0
+  }
+}
