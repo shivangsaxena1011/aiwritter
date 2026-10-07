@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-07T19:40:00.129988+00:00",
+  "timestamp": "2026-10-07T20:18:23.207153+00:00",
   "categories_processed": {
     "category_a_user_data": {
       "description": "Real user accounts, project entities, customer syllabi",
@@ -52,22 +52,14 @@
       "description": "Stale generated DOCX files, telemetry JSONs, and test asset dirs",
       "status": "PURGED",
       "files_removed": [
-        "Engineering_Physics_Quantum_Foundations_aee7f6.docx",
-        "Engineering_Physics_Quantum_Foundations_aee7f6_quality_report.json",
-        "Engineering_Physics_Quantum_Foundations_aee7f6_syllabus_coverage.json",
-        "Engineering_Physics_Quantum_Foundations_aee7f6_telemetry.json",
-        "Engineering_Physics_Quantum_Foundations_bc2e6c.docx",
-        "Engineering_Physics_Quantum_Foundations_bc2e6c_quality_report.json",
-        "Engineering_Physics_Quantum_Foundations_bc2e6c_syllabus_coverage.json",
-        "Engineering_Physics_Quantum_Foundations_bc2e6c_telemetry.json",
-        "Test_Architecture_Book_86a8c0.docx",
-        "Test_Architecture_Book_86a8c0_quality_report.json",
-        "Test_Architecture_Book_86a8c0_syllabus_coverage.json",
-        "Test_Architecture_Book_86a8c0_telemetry.json",
-        "Test_Architecture_Book_a8ff89.docx",
-        "Test_Architecture_Book_a8ff89_quality_report.json",
-        "Test_Architecture_Book_a8ff89_syllabus_coverage.json",
-        "Test_Architecture_Book_a8ff89_telemetry.json"
+        "Engineering_Physics_Quantum_Foundations_59c723.docx",
+        "Engineering_Physics_Quantum_Foundations_59c723_quality_report.json",
+        "Engineering_Physics_Quantum_Foundations_59c723_syllabus_coverage.json",
+        "Engineering_Physics_Quantum_Foundations_59c723_telemetry.json",
+        "Test_Architecture_Book_ef2cc6.docx",
+        "Test_Architecture_Book_ef2cc6_quality_report.json",
+        "Test_Architecture_Book_ef2cc6_syllabus_coverage.json",
+        "Test_Architecture_Book_ef2cc6_telemetry.json"
       ],
       "asset_dirs_removed": [
         "assets"
@@ -86,7 +78,7 @@
     }
   },
   "summary": {
-    "total_test_files_removed": 18,
+    "total_test_files_removed": 10,
     "total_db_records_purged": 0,
     "user_records_deleted": 0,
     "production_readiness_verdict": "CLEAN_PRISTINE"

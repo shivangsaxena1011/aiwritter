@@ -15,8 +15,8 @@
 
 - **🤖 15 Autonomous Domain Agents:** Specialized multi-agent publishing team including:
   - `SyllabusAnalysisAgent` (Zero topic omission parser & domain classification)
-  - `TopicDecompositionAgent` (Physics, CS, Math, Engineering blueprints)
-  - `ResearchAgent` (IEEE/APA bibliography management, 6-gram originality audit)
+  - `TopicDecompositionAgent` (Normalized canonical matching for Physics, CS, Math, Engineering blueprints)
+  - `ResearchAgent` (IEEE/APA bibliography management, live CrossRef/Wikipedia grounding, prompt injection defenses)
   - `ContentPlanningAgent` (Pedagogical roadmaps, learning outcomes)
   - `ContentWriterAgent` (Paragraph-first academic prose, anti-AI cliché filters)
   - `DerivationAgent` (Formal mathematical proof structures)
@@ -24,11 +24,12 @@
   - `ContentReviewAgent` (Multi-dimensional 100-point rubric, automatic rewrite loops)
   - `FactCheckAgent` & `BookConsistencyAgent` (Claim auditing, cross-chapter terminology memory)
   - `DocumentStructureAgent`, `DOCXExportEngine`, & `DocumentValidationAgent` (Canonical textbook layout, native OMML, and automated DOCX inspection)
+  - `IndependentArtifactAuditor` & `FinalDocxAuditor` (Direct OpenXML artifact truth verification)
 - **📐 Native Word OMML Equations:** Converts LaTeX equations directly into Microsoft Word OMML XML elements (`<m:oMathPara>`, `<m:f>`, `<m:rad>`, `<m:sSup>`). Equations are crisp, vectorized, and editable in Microsoft Word with Cambria Math.
 - **📊 Publication-Grade Typography & Tables:** Strict adherence to academic standards: Times New Roman, 12pt body, 1.5 line spacing, Justified alignment, 1-inch margins, running headers, and native XML tables with dark slate headers (`#1E293B`) and zebra striping.
 - **📈 Black-and-White Academic Schematics:** Automatically generates high-contrast technical line art using **Google Imagen 3** or deterministic **Matplotlib** scientific plots, with resilient multi-tier fallback to styled academic callouts.
 - **🔄 Durable Job Engine & Partial Recovery:** Background worker queue backed by SQLite or PostgreSQL. Checkpoints completed sections to disk and database—if interrupted, generation resumes seamlessly without lost progress.
-- **🔍 Automated Quality Reports:** Emits `document_quality_report.json` auditing font compliance, line spacing, margins, OMML display equations, table shading, and syllabus coverage.
+- **🔍 Automated Quality Reports:** Emits comprehensive OpenXML audits assessing font compliance, line spacing, margins, OMML display equations, table shading, and syllabus coverage.
 - **🔒 Zero-Credential Persistence:** Gemini API keys are held strictly in runtime memory, never written to disk, database, or browser `localStorage`.
 
 ---
@@ -36,126 +37,180 @@
 ## 🏛️ System Architecture
 
 ```text
-USER / BROWSER CLIENT
+INPUT (Topic, Course Outline, or University Syllabus)
   │
   ▼
-SYLLABUS / TOPIC INPUT (with Academic Toggles)
+SYLLABUS ANALYSIS & DOMAIN CLASSIFIER
   │
   ▼
-SYLLABUS ANALYSIS AGENT (Zero-Omission Parsing)
+TOPIC DECOMPOSITION AGENT (Canonical Hierarchy & Archetype Contracts)
   │
   ▼
-TOPIC DECOMPOSITION AGENT (Domain Blueprints: Physics, CS, Math, Engineering)
+CONTENT PLANNING & ROADMAP AGENT
+  │
+  ├──► WEB RESEARCH AGENT (Live CrossRef/Wikipedia, Data Fencing, IEEE/APA Citations)
   │
   ▼
-CONTENT PLANNING AGENT (Pedagogical Roadmaps & Outcomes)
-  │
-  ├──► WEB RESEARCH AGENT (Data Fencing, Citations & IEEE/APA Bibliography)
-  │
-  ▼
-CONTENT WRITER & DERIVATION AGENTS (Paragraph-First Prose, Anti-AI Filter)
+CONTENT WRITER & DERIVATION AGENTS (Paragraph-First Prose, Solved Numericals, Q&A)
   │
   ├──► DIAGRAM SYSTEM (Monochrome Line Art / Matplotlib Plots, Chapter Captions)
   │
   ▼
-EDITORIAL REVIEW & FACT-CHECK AGENTS (5-Dimension Rubric, Rewrite Loops)
+EDITORIAL REVIEW & FACT-CHECK AGENTS (5-Dimension Rubric, Anti-Plagiarism)
   │
   ▼
-BOOK CONSISTENCY AGENT (Terminology & Notation Continuity)
+CANONICAL BOOK ASSEMBLY MODEL (Content Orchestration 2.1)
   │
   ▼
-DOCUMENT STRUCTURE & DOCX EXPORT ENGINE (Times New Roman, 1.5 Spacing, OMML)
+NATIVE DOCX EXPORT ENGINE (Times New Roman 12pt, 1.5 Spacing, OMML Math)
   │
   ▼
-DOCUMENT VALIDATION AGENT (Automated XML & Typography Compliance Report)
+INDEPENDENT ARTIFACT AUDITOR (Re-opens DOCX OpenXML, Validates Word Count & Equations)
   │
   ▼
-PRODUCTION MICROSOFT WORD TEXTBOOK (.docx) + QUALITY REPORT
+PRODUCTION MICROSOFT WORD TEXTBOOK (.docx) + VERIFICATION REPORTS
 ```
 
 ---
 
-## ⚡ Quick Start
+## 🚀 How to Run AIWritter
 
-### 1. Windows (One-Click)
-Simply double-click:
+### Prerequisites
+- **Python 3.10 – 3.12** installed on your system.
+- *(Optional)* A **Google Gemini API Key** from [Google AI Studio](https://aistudio.google.com/) for live AI generation. If not provided, AIWritter includes built-in authoritative knowledge models for offline generation and testing.
+
+---
+
+### Method 1: Windows One-Click Launch (Easiest)
+Simply double-click the included batch launcher in the project root:
 ```cmd
 Double-Click-To-Run.bat
 ```
-This automatically initializes the Python virtual environment, installs dependencies, creates data folders, and launches your browser to `http://127.0.0.1:8000`.
-
-### 2. Linux / macOS
-```bash
-chmod +x run.sh
-./run.sh
-```
-
-### 3. Docker Compose
-```bash
-docker-compose up -d --build
-```
-Open [http://localhost:8000](http://localhost:8000) in your browser.
+This batch file will:
+1. Verify or create your Python virtual environment (`.venv`).
+2. Install all required dependencies from `requirements.txt`.
+3. Create all runtime directories (`output/`, `output/assets/`).
+4. Initialize the database schema (`app.db`).
+5. Start the FastAPI server on `http://127.0.0.1:8000`.
+6. Automatically open your default web browser to the AIWritter Publishing Studio.
 
 ---
 
-## 🛠️ Configuration & Deployment
+### Method 2: Manual Command Line Launch (All Platforms)
 
-Copy the configuration template:
-```bash
-cp .env.example .env
-```
+1. **Activate Virtual Environment:**
+   ```powershell
+   # Windows PowerShell:
+   .\.venv\Scripts\Activate.ps1
 
-### Key Configuration Variables:
-```env
-# AI Provider Configuration
-AI_MODE=gemini                          # gemini or mock
-GEMINI_API_KEY=your_gemini_api_key_here
-GEMINI_TEXT_MODEL=gemini-2.5-flash
-GEMINI_IMAGE_MODEL=imagen-3.0-generate-002
-MAX_CONTENT_REVIEW_RETRIES=2
+   # Linux / macOS:
+   source .venv/bin/activate
+   ```
 
-# Database & Storage
-DATABASE_URL=sqlite:///./data/aiwriter.db  # or postgresql+psycopg2://...
-STORAGE_TYPE=local                      # local, s3, gcs
-STORAGE_LOCAL_DIR=./output
-```
+2. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Configure Environment Variables (Optional):**
+   Copy the `.env.example` file to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   Set your API key if using live Google Gemini:
+   ```env
+   GEMINI_API_KEY=AIzaSy...your_key_here
+   AI_MODE=gemini
+   ```
+
+4. **Start the Web Application:**
+   ```bash
+   uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+5. **Open the Studio:**
+   Navigate to [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser.
 
 ---
 
-## 🧪 Comprehensive Automated Test & Regression Suite
+### Method 3: Headless CLI Book Generation
+To generate textbooks directly from the terminal without using the web UI:
 
-AIWritter features a comprehensive **104-test automated suite** and a dedicated **20-point historical defect regression suite** verifying all mathematical engines, multi-agent pipelines, document typography, and security boundaries:
+- **Generate Full 5-Chapter University Physics Book:**
+  ```powershell
+  .\.venv\Scripts\python.exe scripts/generate_full_5chapter_book.py
+  ```
+  Generates a complete 5-chapter textbook covering Quantum Mechanics, Wave Optics, Lasers, Fiber Optics, and Electromagnetism/Relativity into `./output/`.
+
+- **Run Multi-Tier Acceptance Benchmarks:**
+  ```powershell
+  .\.venv\Scripts\python.exe scripts/run_final_production_benchmarks.py
+  ```
+
+---
+
+## 💻 Using the Web Application (3-Step Publishing Workflow)
+
+1. **Step 1: Syllabus & Topic Definition**
+   - Enter your **Book Title**, **Subtitle**, and **Author / Institution**.
+   - Paste a raw university syllabus, course outline, or topic list into the input box.
+   - Click **AI Parse Syllabus** to automatically decompose the syllabus into chapters, topics, and subtopics.
+   - Customize academic options: Writing Depth (*Detailed*, *Standard*, *Comprehensive*), Citation Style (*IEEE*, *APA*), Solved Numericals toggle, Review Questions toggle, and Diagram generation toggle.
+   - Click **Begin Book Generation**.
+
+2. **Step 2: Live Publishing Engine & Event Stream**
+   - Watch real-time multi-agent orchestration via Server-Sent Events (SSE).
+   - Track live agent progress across syllabus parsing, web research, content drafting, mathematical derivations, diagram generation, peer review, and DOCX assembly.
+   - Inspect console logs, word counts, and stage updates in real time.
+
+3. **Step 3: Document Review & Download**
+   - Review the final document scorecard (academic rigor, completeness, consistency, pedagogy).
+   - Click **Download Completed Textbook (.docx)** to retrieve your publication-grade Microsoft Word document.
+
+---
+
+## 🧹 Test-Data Cleanup & Sanitization
+
+AIWritter includes an automated data sanitization utility to ensure zero mock data, ephemeral test records, or temporary lock files pollute the production environment:
 
 ```powershell
-# Run complete test suite (104 tests)
-.\.venv\Scripts\python.exe -m pytest -v
-
-# Run 20 historical defect regressions
-.\.venv\Scripts\python.exe -m pytest tests/test_defect_regressions.py -v
-
-# Run 3-tier production benchmark verification
-.\.venv\Scripts\python.exe scripts/run_final_production_benchmarks.py --audit-only
+.\.venv\Scripts\python.exe scripts/clean_test_data.py
 ```
 
-### Verified Benchmark Levels:
-1. **Level 1 (Micro Benchmark):** 1 Chapter, 5 Topics, 27 Sections, 37 OMML equations, 1,805 words (`artifacts/final_micro_benchmark.docx`) — **PASSED (0 blocking issues)**.
-2. **Level 2 (Quantum Mechanics):** 1 Chapter, 12 Topics, 61 Sections, 39 OMML equations, 4 tables, 7 figures, 3,133 words (`artifacts/final_quantum_mechanics_benchmark.docx`) — **PASSED (0 blocking issues)**.
-3. **Level 3 (Full 5-Chapter B.Tech):** 5 Chapters, 53 Topics, 106 Sections, 22 OMML equations, 3 tables, 7 figures, 5,536 words (`artifacts/final_full_btech_benchmark.docx`) — **PASSED (0 blocking issues)**.
+This utility safely:
+- Purges all test records and jobs from the SQLite database.
+- Re-initializes a pristine database schema with 0 rows across all 13 production tables.
+- Cleans stale test outputs and assets from `./output/`.
+- Protects user templates (`templates/master_book_template.docx`) and source code.
+- Generates `artifacts/test_data_cleanup_report.json` and `.md`.
 
-### Test Coverage Highlights:
-- `test_defect_regressions.py`: 20 / 20 regression tests guaranteeing prevention of preamble pollution, duplicate headings, repetitive table generation, raw LaTeX leaks, and false count reconciliation.
-- `test_omml_and_math.py`: OMML XML conversion, nested radicals (`\sqrt{\frac{2}{L}}`), canonical numerical structure, and arithmetic sanity checks.
-- `test_research_and_originality.py`: Academic research gathering, IEEE/APA references, prompt injection data fencing, and 6-gram originality audit.
-- `test_diagram_and_images.py`: Academic monochrome prompt enforcement, Matplotlib technical schematics, and chapter-aware captions (`Figure X.Y`).
-- `test_document_validation_and_quality.py`: Programmatic `.docx` validation of font family, line spacing, margins, OMML equations, and table formatting.
-- `test_e2e_publishing_pipeline.py`: Complete 14-stage end-to-end publishing pipeline execution and asset persistence.
-- `test_file_security.py`: Path traversal defenses, key isolation, safe filename sanitization.
+---
+
+## 🧪 Automated Test & Regression Suite
+
+AIWritter features a **104-test automated pytest suite** and a **20-point historical defect regression suite** verifying all mathematical engines, multi-agent pipelines, document typography, and security boundaries:
+
+```powershell
+# Run the complete test suite (104 tests)
+.\.venv\Scripts\python.exe -m pytest -v
+
+# Run historical defect regressions
+.\.venv\Scripts\python.exe -m pytest tests/test_defect_regressions.py -v
+
+# Run content intelligence & quality gate tests
+.\.venv\Scripts\python.exe -m pytest tests/test_content_intelligence.py -v
+```
+
+### Verified Benchmark Levels (Direct OpenXML Reconciliation):
+1. **Level 1 (Micro Benchmark):** 1 Chapter, 5 Topics, 27 Sections, 98 OMML equations, 2 tables, 2 figures, 4,944 words (`artifacts/final_micro_benchmark.docx`) — **PASSED (`publication_ready = True`, 0 blocking issues)**.
+2. **Level 2 (Quantum Mechanics):** 1 Chapter, 12 Topics, 61 Sections, 208 OMML equations, 4 tables, 3 figures, 9,744 words (`artifacts/final_quantum_mechanics_benchmark.docx`) — **PASSED (`publication_ready = True`, 0 blocking issues)**.
+3. **Level 3 (Full 5-Chapter B.Tech Syllabus):** 5 Chapters, 53 Topics, 106 Sections, 447 OMML equations, 3 tables, 7 figures, 21,075 words (`artifacts/final_full_btech_benchmark.docx`) — **PASSED (`publication_ready = True`, 0 blocking issues)**.
 
 ---
 
 ## 📚 Technical Documentation
 
-Explore the comprehensive engineering documentation in the [`docs/`](docs/) directory:
+Explore detailed engineering documentation in the [`docs/`](docs/) directory:
 
 - [**System Architecture**](docs/ARCHITECTURE.md): Multi-agent pipeline overview, component interaction, and deployment modes.
 - [**Agent Catalog & Specifications**](docs/AGENTS.md): Detailed specifications for all 15 publishing agents.
@@ -174,4 +229,4 @@ Explore the comprehensive engineering documentation in the [`docs/`](docs/) dire
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the LICENSE file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.

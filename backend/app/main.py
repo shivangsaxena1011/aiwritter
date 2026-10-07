@@ -163,7 +163,9 @@ async def serve_index():
 
 @app.get("/{file_name}")
 async def serve_frontend_assets(file_name: str):
-    file_path = os.path.join(frontend_dir, file_name)
+    file_path = os.path.abspath(os.path.join(frontend_dir, file_name))
+    if not file_path.startswith(frontend_dir):
+        return RedirectResponse(url="/")
     if os.path.exists(file_path) and os.path.isfile(file_path):
         from fastapi.responses import FileResponse
         return FileResponse(file_path)

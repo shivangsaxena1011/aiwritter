@@ -199,8 +199,13 @@ class FinalDocxAuditor:
 
         # 3. Total Tables
         raw_tables_count = len(doc.tables)
-        # Content tables (exclude the scorecard appendix table if present)
-        content_tables_count = max(0, raw_tables_count - 1) if raw_tables_count > 0 else 0
+        has_scorecard_table = False
+        if raw_tables_count > 0:
+            last_tbl = doc.tables[-1]
+            last_cell = last_tbl.rows[0].cells[0].text if last_tbl.rows and last_tbl.rows[0].cells else ""
+            if "scorecard" in last_cell.lower() or "metric" in last_cell.lower():
+                has_scorecard_table = True
+        content_tables_count = (raw_tables_count - 1) if has_scorecard_table else raw_tables_count
 
         # Rendered Count Manifest
         rendered_manifest = CountManifest(
