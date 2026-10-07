@@ -36,7 +36,7 @@ class IndependentAuditResult:
     math_rendering_artifacts_count: int
     count_reconciliation_valid: bool
     blocking_reasons: List[str]
-    summary_counts: Dict[str, int]
+    summary_counts: Dict[str, Any]
     reconciliation_details: Dict[str, Any]
 
     content_depth: Dict[str, Any] = field(default_factory=dict)
@@ -130,6 +130,131 @@ class IndependentArtifactAuditor:
         if "numerical" in s or "problem" in s or "exemplar" in s:
             return "NUMERICAL"
         return "GENERAL"
+
+    @staticmethod
+    def _classify_topic_semantic_type(topic_title: str, text_corpus: str = "") -> str:
+        """Determines the academic semantic archetype of a topic for contract validation."""
+        t = topic_title.lower()
+        if any(k in t for k in ["derivation", "equation", "formula", "schrödinger", "schrodinger", "lorentz", "poynting", "einstein coefficient", "box", "well", "numerical aperture"]):
+            return "derivation"
+        elif any(k in t for k in ["experiment", "apparatus", "davisson", "germer", "newton's rings", "michelson", "double slit", "grating"]):
+            return "experimental"
+        elif any(k in t for k in ["algorithm", "computational", "numerical method", "complexity"]):
+            return "algorithmic"
+        elif any(k in t for k in ["application", "processing", "communication", "sensor", "industrial", "medical"]):
+            return "application"
+        elif any(k in t for k in ["step-index and graded-index", "single mode and multi mode", "comparison", "difference", "versus", " vs "]):
+            return "comparison"
+        elif any(k in t for k in ["operator", "eigenvalue", "eigenfunction", "vector potential", "mathematical", "matrix", "resolving power"]):
+            return "mathematical"
+        elif any(k in t for k in ["ruby laser", "he-ne laser", "semiconductor diode laser", "fabrication", "splicing", "preform", "system", "process", "drawing", "pumping"]):
+            return "process/system"
+        else:
+            return "conceptual"
+
+    @staticmethod
+    def _validate_semantic_contract(
+        topic_title: str,
+        archetype: str,
+        paragraphs: List[str],
+        total_words: int
+    ) -> Tuple[bool, List[str]]:
+        """
+        Validates authentic university pedagogical contracts per topic semantic type:
+          - conceptual: principle/concept, detailed mechanism/properties, application/implications
+          - derivation/mathematical: motivation/starting relation, derivation steps, physical interpretation
+          - experimental: apparatus/principle, procedure/observation, physical conclusion
+          - application: operational principle, engineering implementation context
+          - comparison: comparative physical trade-offs and mechanisms
+          - process/system: procedural stages, system architectures, and operational dynamics
+        """
+        corpus = " ".join(paragraphs).lower()
+        failures = []
+
+        if total_words < 100:
+            failures.append(f"Topic '{topic_title}' has insufficient depth ({total_words} words < 100 threshold).")
+
+        if len(paragraphs) < 2:
+            failures.append(f"Topic '{topic_title}' has fewer than 2 paragraphs ({len(paragraphs)} found).")
+
+        if archetype == "conceptual":
+            has_principle = any(k in corpus for k in [
+                "principle", "concept", "postulate", "phenomenon", "definition", "discovered", "theory",
+                "law", "foundation", "coherence", "polarization", "interference", "attenuation", "dispersion",
+                "state", "lifetime", "structure", "guidance"
+            ])
+            has_mechanism = any(k in corpus for k in [
+                "mechanism", "property", "state", "mode", "frequency", "behavior", "radiation", "quantum",
+                "optical", "energy", "wave", "matter", "phase", "wavefront", "amplitude", "vector", "refractive"
+            ])
+            has_application = any(k in corpus for k in [
+                "application", "implication", "significance", "consequence", "limit", "classical", "experiment",
+                "engineering", "technol", "physic", "optical", "instrument", "laser", "fiber", "spectroscopy",
+                "metrology", "transmission", "telecom", "holograph"
+            ])
+            if not (has_principle and has_mechanism):
+                failures.append(f"Conceptual contract missing foundational principle or mechanism in '{topic_title}'.")
+            if not has_application:
+                failures.append(f"Conceptual contract missing application or physical implications in '{topic_title}'.")
+
+        elif archetype in ("derivation", "mathematical"):
+            has_motivation = any(k in corpus for k in [
+                "motivat", "derive", "consider", "formulat", "starting", "governing", "equation", "relation",
+                "wave", "potential", "criterion", "resolv", "operator", "observable", "formalism", "postulate", "definition"
+            ])
+            has_steps = any(k in corpus for k in [
+                "yields", "substitut", "integrat", "evaluat", "simplif", "solving", "boundary", "differential",
+                "=", "\\frac", "\\times", "\\sum", "given by", "express", "limit", "proportional"
+            ])
+            has_interp = any(k in corpus for k in [
+                "interpret", "condition", "limit", "physical", "constant", "proves", "establishes", "significance",
+                "demonstrat", "quantiz", "wavelength"
+            ])
+            if not (has_motivation and (has_steps or has_interp)):
+                failures.append(f"Derivation contract missing mathematical development or interpretation in '{topic_title}'.")
+
+        elif archetype == "experimental":
+            has_apparatus = any(k in corpus for k in [
+                "apparatus", "setup", "crystal", "source", "interferometer", "slit", "cavity", "mirror", "beam",
+                "geometry", "plate", "grating", "ruling"
+            ])
+            has_observation = any(k in corpus for k in [
+                "observation", "fringe", "pattern", "detect", "result", "measured", "shift", "voltage", "intensity",
+                "ray", "maxima", "minima", "diffract"
+            ])
+            has_conclusion = any(k in corpus for k in [
+                "demonstrat", "confirm", "validat", "null", "conclusion", "verif", "proved", "measured", "wavelength",
+                "dispersive"
+            ])
+            if not (has_apparatus and (has_observation or has_conclusion)):
+                failures.append(f"Experimental contract missing apparatus setup or observation analysis in '{topic_title}'.")
+
+        elif archetype == "application":
+            has_principle = any(k in corpus for k in [
+                "operat", "principle", "transmitt", "process", "manufactur", "system", "device", "carrier",
+                "sensor", "transducer", "modulat", "detect"
+            ])
+            has_impl = any(k in corpus for k in [
+                "technolog", "amplif", "modulat", "power", "fiber", "laser", "cutting", "welding", "medical",
+                "detector", "sensor", "telecom", "monitoring", "strain", "temperature", "network"
+            ])
+            if not (has_principle and has_impl):
+                failures.append(f"Application contract missing engineering mechanism or technological context in '{topic_title}'.")
+
+        elif archetype == "comparison":
+            has_comparison = any(k in corpus for k in ["contrast", "differ", "whereas", "while", "unlike", "compared", "advantage", "dispersion", "mode"])
+            if not has_comparison:
+                failures.append(f"Comparison contract missing contrastive analysis in '{topic_title}'.")
+
+        elif archetype == "process/system":
+            has_steps = any(k in corpus for k in [
+                "process", "stage", "step", "fabricat", "drawing", "pumping", "align", "fusion", "method", "preform",
+                "system", "level", "transition", "cavity", "mirror", "discharge", "excitation"
+            ])
+            if not has_steps:
+                failures.append(f"Process contract missing procedural steps or system description in '{topic_title}'.")
+
+        return (len(failures) == 0, failures)
 
     def audit(
         self,
@@ -569,19 +694,60 @@ class IndependentArtifactAuditor:
         }
 
         vals = sorted(substantive_topics.values()) if substantive_topics else [0]
+        total_substantive_words = sum(vals)
+        mean_words = round(total_substantive_words / len(vals), 1) if vals and len(vals) > 0 else 0.0
         median_words = vals[len(vals) // 2] if vals else 0
         min_words = vals[0] if vals else 0
-        topics_below_target = sum(1 for v in vals if v < 200)
+        max_words = vals[-1] if vals else 0
+
+        count_below_100 = sum(1 for v in vals if v < 100)
+        count_below_200 = sum(1 for v in vals if v < 200)
+        count_below_300 = sum(1 for v in vals if v < 300)
+
+        contract_failures_list: List[str] = []
+        topic_archetypes: Dict[str, str] = {}
+        for top_name, paras in prose_by_topic.items():
+            if top_name.lower().strip() in EXCLUDED_SECTIONS:
+                continue
+            arch = self._classify_topic_semantic_type(top_name, " ".join(paras))
+            topic_archetypes[top_name] = arch
+            valid_contract, failures = self._validate_semantic_contract(
+                top_name, arch, paras, substantive_topics.get(top_name, 0)
+            )
+            if not valid_contract:
+                contract_failures_list.extend(failures)
+
         empty_or_shallow_topics = [t for t, v in substantive_topics.items() if v < 50]
+        if len(empty_or_shallow_topics) > 0:
+            blocking_reasons.append(
+                f"Found {len(empty_or_shallow_topics)} empty or shallow topic(s) (<50 words): {empty_or_shallow_topics}"
+            )
+        if count_below_100 > 0:
+            blocking_reasons.append(
+                f"Content depth audit failed: {count_below_100} topic(s) have <100 words."
+            )
+        if len(contract_failures_list) > 0:
+            blocking_reasons.append(
+                f"Pedagogical semantic contract failure across {len(contract_failures_list)} checks: {contract_failures_list}"
+            )
 
         content_depth_metrics = {
             "substantive_topics_evaluated": len(substantive_topics),
-            "substantive_words_per_topic": substantive_topics,
+            "substantive_body_words": total_substantive_words,
+            "total_openxml_words": total_words,
+            "mean_words_per_topic": mean_words,
             "median_words_per_topic": median_words,
             "min_words_per_topic": min_words,
-            "topics_below_depth_target": topics_below_target,
+            "max_words_per_topic": max_words,
+            "count_below_100": count_below_100,
+            "count_below_200": count_below_200,
+            "count_below_300": count_below_300,
+            "contract_failures_count": len(contract_failures_list),
+            "contract_failures": contract_failures_list,
+            "topic_archetypes": topic_archetypes,
             "empty_or_shallow_topics_count": len(empty_or_shallow_topics),
-            "empty_or_shallow_topics": empty_or_shallow_topics
+            "empty_or_shallow_topics": empty_or_shallow_topics,
+            "substantive_words_per_topic": substantive_topics
         }
 
         # SHA-256 of the DOCX file
@@ -598,6 +764,15 @@ class IndependentArtifactAuditor:
         publication_ready = (len(blocking_reasons) == 0)
 
         summary_counts = rendered_manifest.to_dict()
+        summary_counts["substantive_body_words"] = total_substantive_words
+        summary_counts["mean_words_per_topic"] = mean_words
+        summary_counts["median_words_per_topic"] = median_words
+        summary_counts["min_words_per_topic"] = min_words
+        summary_counts["max_words_per_topic"] = max_words
+        summary_counts["count_below_100"] = count_below_100
+        summary_counts["count_below_200"] = count_below_200
+        summary_counts["count_below_300"] = count_below_300
+        summary_counts["contract_failures"] = len(contract_failures_list)
         reconciliation_details = {
             "is_valid": count_reconciliation_valid,
             "discrepancies": discrepancies,

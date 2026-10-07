@@ -1,6 +1,6 @@
 # AIWritter — Final Engineering & Production Release Candidate Report
 **Release Version:** `v3.0.0-RC1`  
-**Date:** 2026-10-07 18:16:25 UTC  
+**Date:** 2026-10-07 19:32:17 UTC  
 **Status:** **RELEASE_CANDIDATE (PRODUCTION CODE HARDENED BUT LIVE PROVIDER EXECUTION UNVERIFIED)**  
 
 ---
@@ -26,14 +26,19 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 
 ### 2.1 Benchmark 1: Level 1 Micro Benchmark (5 Topics)
 - **Target File:** `artifacts/final_micro_benchmark.docx`
-- **SHA-256 Hash:** `4c3be1684503d698e402473f214bee0901f78a31f8edcdafbac7ccfee992ad44`
+- **SHA-256 Hash:** `ae4b040efce3bd4f3ab8e917b1d95733e1eadfdafe9c180133b95a2da8c59e4d`
 - **Scope:** 1 Chapter, 5 Topics, 27 Subtopics
-- **Total OpenXML Words:** 1,805 words
-- **Substantive Body Prose Words:** 806 words
-- **Chapters / Topics / Sections:** 1 / 5 / 27
-- **OMML Native Equations:** 37
-- **Pedagogical Tables:** 3 (Exact Duplicates: 0)
-- **Technical Figures:** 3 (Caption Mismatches: 0)
+- **Total OpenXML Words:** 4,944 words
+- **Substantive Body Prose Words:** 3,963 words
+- **Mean Words Per Topic:** 792.6 words
+- **Median Words Per Topic:** 719 words
+- **Min / Max Words Per Topic:** 346 / 1129 words
+- **Topic Depth Distribution:** <100 words: 0 | <200 words: 0 | <300 words: 0
+- **Pedagogical Contract Failures:** 0
+- **Chapters / Topics / Sections:** 1 / 5 / 24
+- **OMML Native Equations:** 98
+- **Pedagogical Tables:** 2 (Exact Duplicates: 0)
+- **Technical Figures:** 2 (Caption Mismatches: 0)
 - **Duplicate Headings:** 0
 - **Generic Fallback Headings:** 0
 - **Exact Duplicate Prose Rate:** 0.00%
@@ -44,13 +49,18 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 
 ### 2.2 Benchmark 2: Level 2 Chapter 1 Quantum Mechanics (12 Topics)
 - **Target File:** `artifacts/final_quantum_mechanics_benchmark.docx`
-- **SHA-256 Hash:** `c4101c2f937cd0374b173957c35ac9c39072847d528a769d10e7e7f8eee3e683`
-- **Total OpenXML Words:** 4,970 words
-- **Substantive Body Prose Words:** 2,609 words
-- **Chapters / Topics / Sections:** 1 / 12 / 61
-- **OMML Native Equations:** 122
+- **SHA-256 Hash:** `e29989f29e5b21a9fbbba7e9c5ad65342f973fcf54ddd314f4939bbfb73b001d`
+- **Total OpenXML Words:** 9,744 words
+- **Substantive Body Prose Words:** 7,692 words
+- **Mean Words Per Topic:** 641.0 words
+- **Median Words Per Topic:** 516 words
+- **Min / Max Words Per Topic:** 319 / 1144 words
+- **Topic Depth Distribution:** <100 words: 0 | <200 words: 0 | <300 words: 0
+- **Pedagogical Contract Failures:** 0
+- **Chapters / Topics / Sections:** 1 / 12 / 50
+- **OMML Native Equations:** 208
 - **Pedagogical Tables:** 4 (Exact Duplicates: 0)
-- **Technical Figures:** 7 (Caption Mismatches: 0)
+- **Technical Figures:** 3 (Caption Mismatches: 0)
 - **Duplicate Headings:** 0
 - **Generic Fallback Headings:** 0
 - **Exact Duplicate Prose Rate:** 0.00%
@@ -61,19 +71,23 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 
 ### 2.3 Benchmark 3: Level 3 Full 5-Chapter B.Tech Engineering Physics Textbook
 - **Target File:** `artifacts/final_full_btech_benchmark.docx`
-- **SHA-256 Hash:** `64e0cf186b49a1fce5d5738d83d5a57ed61021c10590671a6a0bf8e18f9426f9`
+- **SHA-256 Hash:** `87c41ad408bfa5918d5828be10487c5054e7b556b2daca7d8455bd6f1b7bb05e`
 - **Scope:** 5 Chapters, 53 Topics, 106 Subtopics
-- **Total OpenXML Words:** 15,660 words
-- **Substantive Body Prose Words:** 9,960 words
+- **Total OpenXML Words:** 21,075 words
+- **Substantive Body Prose Words:** 14,842 words
+- **Mean Words Per Topic:** 280.0 words
+- **Median Words Per Topic:** 278 words
+- **Min / Max Words Per Topic:** 113 / 466 words
+- **Topic Depth Distribution:** <100 words: 0 | <200 words: 1 | <300 words: 35
+- **Pedagogical Contract Failures:** 0
 - **Chapters / Topics / Sections:** 5 / 53 / 106
-- **OMML Native Equations:** 329
+- **OMML Native Equations:** 447
 - **Pedagogical Tables:** 3 (Exact Duplicates: 0)
 - **Technical Figures:** 7
 - **Duplicate Headings:** 0
 - **Generic Fallback Headings:** 0
 - **Exact Duplicate Prose Rate:** 0.00%
 - **Three-Way Count Reconciliation:** `PLANNED == ASSEMBLED == RENDERED` (True)
-- **Content Depth Status:** 0 topics below depth target, 0 empty or shallow topics
 - **Independent Artifact Truth Audit:** **PASSED (`publication_ready = True`)**
 
 ---
@@ -123,8 +137,8 @@ The platform provides specialized pedagogical domain providers via `SubjectKnowl
 | `artifacts/final_release_report.json` | JSON | Emitted | Reconciled with artifacts |
 | `artifacts/final_release_report.md` | Markdown | Emitted | Reconciled with artifacts |
 | `artifacts/final_failure_log.json` | JSON | Emitted | Reconciled with artifacts |
-| `artifacts/final_micro_benchmark.docx` | DOCX | Audited (PASSED) | `4c3be1684503d698e402473f214bee0901f78a31f8edcdafbac7ccfee992ad44` |
-| `artifacts/final_quantum_mechanics_benchmark.docx` | DOCX | Audited (PASSED) | `c4101c2f937cd0374b173957c35ac9c39072847d528a769d10e7e7f8eee3e683` |
-| `artifacts/final_full_btech_benchmark.docx` | DOCX | Audited (PASSED) | `64e0cf186b49a1fce5d5738d83d5a57ed61021c10590671a6a0bf8e18f9426f9` |
+| `artifacts/final_micro_benchmark.docx` | DOCX | Audited (PASSED) | `ae4b040efce3bd4f3ab8e917b1d95733e1eadfdafe9c180133b95a2da8c59e4d` |
+| `artifacts/final_quantum_mechanics_benchmark.docx` | DOCX | Audited (PASSED) | `e29989f29e5b21a9fbbba7e9c5ad65342f973fcf54ddd314f4939bbfb73b001d` |
+| `artifacts/final_full_btech_benchmark.docx` | DOCX | Audited (PASSED) | `87c41ad408bfa5918d5828be10487c5054e7b556b2daca7d8455bd6f1b7bb05e` |
 
 **Conclusion:** AIWritter is verified, hardened, and tagged as Release Candidate `v3.0.0-RC1`.

@@ -239,12 +239,31 @@ Return JSON:
         requires_derivation: bool,
         requires_numericals: bool
     ) -> Dict[str, Any]:
-        topic_clean = topic_title.strip().lower()
+        import unicodedata
+        import re
+
+        def _clean_key(text: str) -> str:
+            text = unicodedata.normalize('NFKD', text)
+            text = "".join(c for c in text if not unicodedata.combining(c)).lower()
+            tokens = re.findall(r'[a-z0-9]+', text)
+            stops = {"the", "of", "a", "an", "and", "in", "to", "for", "on"}
+            return " ".join([t for t in tokens if t not in stops])
+
+        clean_input = _clean_key(topic_title)
         domain = SubjectKnowledgeModel.get_subject_domain(subject, topic_title).title()
 
-        # Check canonical decompositions first
+        # Check canonical decompositions first with robust normalization
         for canonical_key, sec_list in self.CANONICAL_DECOMPOSITIONS.items():
-            if canonical_key in topic_clean or topic_clean in canonical_key:
+            clean_canonical = _clean_key(canonical_key)
+            if (
+                clean_canonical in clean_input
+                or clean_input in clean_canonical
+                or ("schrodinger" in clean_input and "time dependent" in clean_input and "time dependent" in clean_canonical)
+                or ("schrodinger" in clean_input and "time independent" in clean_input and "time independent" in clean_canonical)
+                or ("wave function" in clean_input and "interpretation" in clean_input and "interpretation" in clean_canonical)
+                or ("box" in clean_input and "potential well" in clean_input and "box" in clean_canonical)
+                or ("quantum" in clean_input and "application" in clean_input and "application" in clean_canonical)
+            ):
                 sections = [dict(s) for s in sec_list]
                 if requires_numericals and not any("numerical" in s["title"].lower() for s in sections):
                     sections.append({

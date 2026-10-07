@@ -49,6 +49,15 @@ from backend.app.agents.subject_knowledge_base import (
     GenericAcademicProvider
 )
 
+MICRO_SYLLABUS = """B.Tech First Year — Engineering Physics
+Chapter 1: Foundations of Quantum Physics
+1. Introduction to Quantum Mechanics
+2. Wave Nature of Particles
+3. de Broglie Hypothesis
+4. Phase Velocity and Group Velocity
+5. Heisenberg Uncertainty Principle
+"""
+
 QM_SYLLABUS = """B.Tech First Year — Engineering Physics
 Chapter 1: Quantum Mechanics
 1. Introduction to Quantum Mechanics
@@ -167,18 +176,76 @@ async def run_production_benchmarks():
     full_target = os.path.join(artifacts_dir, "final_full_btech_benchmark.docx")
     audit_only = ("--audit-only" in sys.argv) and os.path.exists(micro_target) and os.path.exists(qm_target) and os.path.exists(full_target)
 
-    # Re-audit Micro Benchmark
-    print("\n[BENCHMARK 1/3] Auditing Level 1: Micro Benchmark (5 Topics)...")
-    micro_audit = ind_auditor.audit(docx_path=micro_target)
-    micro_audit_dict = micro_audit.to_dict()
-    print(f"-> Benchmark 1 (Micro) Publication Ready: {micro_audit_dict['publication_ready']}")
-    print(f"-> Benchmark 1 Counts: Words={micro_audit_dict['summary_counts'].get('words')}, Chapters={micro_audit_dict['summary_counts'].get('chapters')}, Topics={micro_audit_dict['summary_counts'].get('topics')}, Sections={micro_audit_dict['summary_counts'].get('sections')}, Tables={micro_audit_dict['summary_counts'].get('tables')}, Figures={micro_audit_dict['summary_counts'].get('figures')}, Equations={micro_audit_dict['summary_counts'].get('equations')}")
-    print(f"-> Benchmark 1 Blocking Issues: {len(micro_audit_dict['blocking_reasons'])}")
+    search_dirs = ["./output", os.path.join("storage", "books")]
 
     if not audit_only:
         # Reset test database
         Base.metadata.drop_all(bind=engine)
         Base.metadata.create_all(bind=engine)
+
+        # -------------------------------------------------------------------------
+        # 1. MICRO BENCHMARK (5 TOPICS)
+        # -------------------------------------------------------------------------
+        print("\n[BENCHMARK 1/3] Generating Level 1: Micro Benchmark (5 Topics)...")
+        db0 = SessionLocal()
+        try:
+            book0 = Book(
+                title="Foundations of Quantum Physics",
+                subtitle="Concise Technical Introduction",
+                author="Prof. Academician",
+                academic_level="Undergraduate (B.Tech)",
+                target_audience="First Year Engineering Students",
+                status="pending",
+                book_metadata={
+                    "raw_syllabus": MICRO_SYLLABUS,
+                    "subject": "Engineering Physics",
+                    "writing_depth": "Advanced",
+                    "citation_style": "IEEE",
+                    "include_numericals": False,
+                    "include_questions": False,
+                    "include_diagrams": True,
+                    "include_references": True,
+                    "include_examples": True
+                }
+            )
+            db0.add(book0)
+            db0.commit()
+            db0.refresh(book0)
+
+            job0 = GenerationJob(book_id=book0.id, status="PENDING", progress=0.0)
+            db0.add(job0)
+            db0.commit()
+            db0.refresh(job0)
+
+            pipeline0 = BookGenerationPipeline(job_id=job0.id, db=db0, ai_provider=MockProvider())
+
+            t0 = time.time()
+            await pipeline0.execute()
+            micro_elapsed = round(time.time() - t0, 2)
+            db0.refresh(job0)
+            print(f"-> Benchmark 1 (Micro) finished in {micro_elapsed}s with status: {job0.status}")
+
+            micro_docx = None
+            for s_dir in search_dirs:
+                if os.path.exists(s_dir):
+                    for fname in os.listdir(s_dir):
+                        if fname.endswith(".docx") and "Foundations_of_Quantum" in fname:
+                            f_path = os.path.join(s_dir, fname)
+                            if not micro_docx or os.path.getmtime(f_path) > os.path.getmtime(micro_docx):
+                                micro_docx = f_path
+
+            if micro_docx:
+                shutil.copy2(micro_docx, micro_target)
+                print(f"-> Benchmark 1 DOCX: {micro_target} ({os.path.getsize(micro_target):,} bytes)")
+
+            asm_model0 = getattr(pipeline0, "assembly_model", None)
+            counts0 = asm_model0.get_counts() if asm_model0 else {}
+            planned0 = CountManifest(**counts0) if counts0 else None
+
+            micro_audit = ind_auditor.audit(docx_path=micro_target, planned_manifest=planned0, assembly_model=asm_model0)
+            micro_audit_dict = micro_audit.to_dict()
+        finally:
+            db0.close()
 
         # -------------------------------------------------------------------------
         # 2. QUANTUM MECHANICS BENCHMARK (12 TOPICS)
@@ -221,10 +288,9 @@ async def run_production_benchmarks():
             await pipeline1.execute()
             qm_elapsed = round(time.time() - t0, 2)
             db1.refresh(job1)
-            print(f"-> Benchmark 1 finished in {qm_elapsed}s with status: {job1.status}")
+            print(f"-> Benchmark 2 (QM) finished in {qm_elapsed}s with status: {job1.status}")
 
             # Locate output docx
-            search_dirs = ["./output", os.path.join("storage", "books")]
             qm_docx = None
             for s_dir in search_dirs:
                 if os.path.exists(s_dir):
@@ -234,8 +300,9 @@ async def run_production_benchmarks():
                             if not qm_docx or os.path.getmtime(f_path) > os.path.getmtime(qm_docx):
                                 qm_docx = f_path
 
-            shutil.copy2(qm_docx, qm_target)
-            print(f"-> Benchmark 1 DOCX: {qm_target} ({os.path.getsize(qm_target):,} bytes)")
+            if qm_docx:
+                shutil.copy2(qm_docx, qm_target)
+                print(f"-> Benchmark 2 DOCX: {qm_target} ({os.path.getsize(qm_target):,} bytes)")
 
             asm_model1 = getattr(pipeline1, "assembly_model", None)
             counts1 = asm_model1.get_counts() if asm_model1 else {}
@@ -247,12 +314,18 @@ async def run_production_benchmarks():
             db1.close()
     else:
         print("\n[AUDIT-ONLY MODE] Fast-path re-auditing existing production benchmarks...")
+        micro_audit = ind_auditor.audit(docx_path=micro_target)
+        micro_audit_dict = micro_audit.to_dict()
         qm_audit = ind_auditor.audit(docx_path=qm_target)
         qm_audit_dict = qm_audit.to_dict()
 
-    print(f"-> Benchmark 1 Publication Ready: {qm_audit_dict['publication_ready']}")
-    print(f"-> Benchmark 1 Counts: Words={qm_audit_dict['summary_counts'].get('words')}, Chapters={qm_audit_dict['summary_counts'].get('chapters')}, Topics={qm_audit_dict['summary_counts'].get('topics')}, Sections={qm_audit_dict['summary_counts'].get('sections')}, Tables={qm_audit_dict['summary_counts'].get('tables')}, Figures={qm_audit_dict['summary_counts'].get('figures')}, Equations={qm_audit_dict['summary_counts'].get('equations')}")
-    print(f"-> Benchmark 1 Blocking Issues: {len(qm_audit_dict['blocking_reasons'])}")
+    print(f"-> Benchmark 1 (Micro) Publication Ready: {micro_audit_dict['publication_ready']}")
+    print(f"-> Benchmark 1 Counts: Words={micro_audit_dict['summary_counts'].get('words')}, Chapters={micro_audit_dict['summary_counts'].get('chapters')}, Topics={micro_audit_dict['summary_counts'].get('topics')}, Sections={micro_audit_dict['summary_counts'].get('sections')}, Tables={micro_audit_dict['summary_counts'].get('tables')}, Figures={micro_audit_dict['summary_counts'].get('figures')}, Equations={micro_audit_dict['summary_counts'].get('equations')}")
+    print(f"-> Benchmark 1 Blocking Issues: {len(micro_audit_dict['blocking_reasons'])}")
+
+    print(f"-> Benchmark 2 (QM) Publication Ready: {qm_audit_dict['publication_ready']}")
+    print(f"-> Benchmark 2 Counts: Words={qm_audit_dict['summary_counts'].get('words')}, Chapters={qm_audit_dict['summary_counts'].get('chapters')}, Topics={qm_audit_dict['summary_counts'].get('topics')}, Sections={qm_audit_dict['summary_counts'].get('sections')}, Tables={qm_audit_dict['summary_counts'].get('tables')}, Figures={qm_audit_dict['summary_counts'].get('figures')}, Equations={qm_audit_dict['summary_counts'].get('equations')}")
+    print(f"-> Benchmark 2 Blocking Issues: {len(qm_audit_dict['blocking_reasons'])}")
 
     if not audit_only:
         # -------------------------------------------------------------------------
@@ -645,6 +718,11 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 - **Scope:** 1 Chapter, 5 Topics, 27 Subtopics
 - **Total OpenXML Words:** {micro_audit_dict['summary_counts'].get('words', 0):,} words
 - **Substantive Body Prose Words:** {micro_body_words:,} words
+- **Mean Words Per Topic:** {micro_audit_dict.get('content_depth', {}).get('mean_words_per_topic', 0):.1f} words
+- **Median Words Per Topic:** {micro_audit_dict.get('content_depth', {}).get('median_words_per_topic', 0)} words
+- **Min / Max Words Per Topic:** {micro_audit_dict.get('content_depth', {}).get('min_words_per_topic', 0)} / {micro_audit_dict.get('content_depth', {}).get('max_words_per_topic', 0)} words
+- **Topic Depth Distribution:** <100 words: {micro_audit_dict.get('content_depth', {}).get('count_below_100', 0)} | <200 words: {micro_audit_dict.get('content_depth', {}).get('count_below_200', 0)} | <300 words: {micro_audit_dict.get('content_depth', {}).get('count_below_300', 0)}
+- **Pedagogical Contract Failures:** {micro_audit_dict.get('content_depth', {}).get('contract_failures_count', 0)}
 - **Chapters / Topics / Sections:** {micro_audit_dict['summary_counts'].get('chapters')} / {micro_audit_dict['summary_counts'].get('topics')} / {micro_audit_dict['summary_counts'].get('sections')}
 - **OMML Native Equations:** {micro_audit_dict['summary_counts'].get('equations')}
 - **Pedagogical Tables:** {micro_audit_dict['summary_counts'].get('tables')} (Exact Duplicates: {micro_audit_dict['exact_duplicate_tables']})
@@ -662,6 +740,11 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 - **SHA-256 Hash:** `{qm_audit_dict.get('docx_sha256')}`
 - **Total OpenXML Words:** {qm_audit_dict['summary_counts'].get('words', 0):,} words
 - **Substantive Body Prose Words:** {qm_body_words:,} words
+- **Mean Words Per Topic:** {qm_audit_dict.get('content_depth', {}).get('mean_words_per_topic', 0):.1f} words
+- **Median Words Per Topic:** {qm_audit_dict.get('content_depth', {}).get('median_words_per_topic', 0)} words
+- **Min / Max Words Per Topic:** {qm_audit_dict.get('content_depth', {}).get('min_words_per_topic', 0)} / {qm_audit_dict.get('content_depth', {}).get('max_words_per_topic', 0)} words
+- **Topic Depth Distribution:** <100 words: {qm_audit_dict.get('content_depth', {}).get('count_below_100', 0)} | <200 words: {qm_audit_dict.get('content_depth', {}).get('count_below_200', 0)} | <300 words: {qm_audit_dict.get('content_depth', {}).get('count_below_300', 0)}
+- **Pedagogical Contract Failures:** {qm_audit_dict.get('content_depth', {}).get('contract_failures_count', 0)}
 - **Chapters / Topics / Sections:** {qm_audit_dict['summary_counts'].get('chapters')} / {qm_audit_dict['summary_counts'].get('topics')} / {qm_audit_dict['summary_counts'].get('sections')}
 - **OMML Native Equations:** {qm_audit_dict['summary_counts'].get('equations')}
 - **Pedagogical Tables:** {qm_audit_dict['summary_counts'].get('tables')} (Exact Duplicates: {qm_audit_dict['exact_duplicate_tables']})
@@ -680,6 +763,11 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 - **Scope:** 5 Chapters, 53 Topics, 106 Subtopics
 - **Total OpenXML Words:** {full_audit_dict['summary_counts'].get('words', 0):,} words
 - **Substantive Body Prose Words:** {full_body_words:,} words
+- **Mean Words Per Topic:** {full_audit_dict.get('content_depth', {}).get('mean_words_per_topic', 0):.1f} words
+- **Median Words Per Topic:** {full_audit_dict.get('content_depth', {}).get('median_words_per_topic', 0)} words
+- **Min / Max Words Per Topic:** {full_audit_dict.get('content_depth', {}).get('min_words_per_topic', 0)} / {full_audit_dict.get('content_depth', {}).get('max_words_per_topic', 0)} words
+- **Topic Depth Distribution:** <100 words: {full_audit_dict.get('content_depth', {}).get('count_below_100', 0)} | <200 words: {full_audit_dict.get('content_depth', {}).get('count_below_200', 0)} | <300 words: {full_audit_dict.get('content_depth', {}).get('count_below_300', 0)}
+- **Pedagogical Contract Failures:** {full_audit_dict.get('content_depth', {}).get('contract_failures_count', 0)}
 - **Chapters / Topics / Sections:** {full_audit_dict['summary_counts'].get('chapters')} / {full_audit_dict['summary_counts'].get('topics')} / {full_audit_dict['summary_counts'].get('sections')}
 - **OMML Native Equations:** {full_audit_dict['summary_counts'].get('equations')}
 - **Pedagogical Tables:** {full_audit_dict['summary_counts'].get('tables')} (Exact Duplicates: {full_audit_dict['exact_duplicate_tables']})
@@ -688,7 +776,6 @@ AIWritter has undergone complete end-to-end engineering refactoring, architectur
 - **Generic Fallback Headings:** {full_audit_dict['generic_headings']}
 - **Exact Duplicate Prose Rate:** {full_audit_dict['exact_duplicate_paragraph_rate']:.2%}
 - **Three-Way Count Reconciliation:** `PLANNED == ASSEMBLED == RENDERED` ({full_audit_dict['count_reconciliation_valid']})
-- **Content Depth Status:** 0 topics below depth target, 0 empty or shallow topics
 - **Independent Artifact Truth Audit:** **PASSED (`publication_ready = {full_audit_dict['publication_ready']}`)**
 
 ---

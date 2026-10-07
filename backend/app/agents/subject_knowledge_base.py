@@ -345,14 +345,14 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
 
         t_low = topic.lower()
 
-        if any(k in t_low for k in ["interference", "diffraction", "polarization", "optic", "fringe", "newton", "young", "coherent", "thin film", "grating", "resolving", "brewster"]):
-            paragraphs = generate_wave_optics_prose(topic, subtopic, requires_derivation)
-        elif any(k in t_low for k in ["laser", "emission", "absorption", "population inversion", "metastable", "einstein coefficient", "ruby", "he-ne"]):
-            paragraphs = generate_laser_prose(topic, subtopic, requires_derivation)
-        elif any(k in t_low for k in ["fiber", "optical fiber", "numerical aperture", "acceptance", "step-index", "graded-index", "v-number", "attenuation", "dispersion", "splicing", "photonic crystal"]):
+        if any(k in t_low for k in ["fiber", "numerical aperture", "acceptance angle", "step-index", "graded-index", "v-number", "attenuation", "intermodal dispersion", "splicing", "photonic crystal"]):
             paragraphs = generate_fiber_optics_prose(topic, subtopic, requires_derivation)
-        elif any(k in t_low for k in ["maxwell", "gauss", "faraday", "ampere", "displacement current", "poynting", "relativity", "galilean", "lorentz", "dilation", "contraction", "electromagnetism"]):
+        elif any(k in t_low for k in ["laser", "emission", "absorption", "population inversion", "metastable", "einstein", "ruby", "he-ne", "industrial and medical applications"]):
+            paragraphs = generate_laser_prose(topic, subtopic, requires_derivation)
+        elif any(k in t_low for k in ["maxwell", "gauss", "faraday", "ampere", "displacement", "poynting", "relativity", "galilean", "lorentz", "dilation", "contraction", "electromagnetic", "electromagnetism"]):
             paragraphs = generate_em_relativity_prose(topic, subtopic, requires_derivation)
+        elif any(k in t_low for k in ["interference", "diffraction", "polarization", "optic", "fringe", "newton", "young", "coherent", "thin film", "grating", "resolving", "brewster"]):
+            paragraphs = generate_wave_optics_prose(topic, subtopic, requires_derivation)
         else:
             paragraphs = generate_quantum_prose(topic, subtopic, requires_derivation)
 

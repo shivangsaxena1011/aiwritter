@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-07T18:16:33.828269+00:00",
+  "timestamp": "2026-10-07T19:40:00.129988+00:00",
   "categories_processed": {
     "category_a_user_data": {
       "description": "Real user accounts, project entities, customer syllabi",
@@ -23,17 +23,17 @@
       "db_tables_purged": {
         "users": 0,
         "projects": 0,
-        "books": 2,
-        "book_units": 6,
-        "generation_jobs": 2,
-        "book_topics": 65,
-        "generation_events": 428,
-        "generated_assets": 16,
-        "document_exports": 2,
-        "book_subtopics": 167,
-        "research_sources": 325,
-        "generated_sections": 167,
-        "review_results": 167
+        "books": 0,
+        "book_units": 0,
+        "generation_jobs": 0,
+        "book_topics": 0,
+        "generation_events": 0,
+        "generated_assets": 0,
+        "document_exports": 0,
+        "book_subtopics": 0,
+        "research_sources": 0,
+        "generated_sections": 0,
+        "review_results": 0
       },
       "files_removed": [
         "app.db"
@@ -52,14 +52,22 @@
       "description": "Stale generated DOCX files, telemetry JSONs, and test asset dirs",
       "status": "PURGED",
       "files_removed": [
-        "Comprehensive_Engineering_Physics_61f636.docx",
-        "Comprehensive_Engineering_Physics_61f636_quality_report.json",
-        "Comprehensive_Engineering_Physics_61f636_syllabus_coverage.json",
-        "Comprehensive_Engineering_Physics_61f636_telemetry.json",
-        "Engineering_Physics__Modern_Textbook_683383.docx",
-        "Engineering_Physics__Modern_Textbook_683383_quality_report.json",
-        "Engineering_Physics__Modern_Textbook_683383_syllabus_coverage.json",
-        "Engineering_Physics__Modern_Textbook_683383_telemetry.json"
+        "Engineering_Physics_Quantum_Foundations_aee7f6.docx",
+        "Engineering_Physics_Quantum_Foundations_aee7f6_quality_report.json",
+        "Engineering_Physics_Quantum_Foundations_aee7f6_syllabus_coverage.json",
+        "Engineering_Physics_Quantum_Foundations_aee7f6_telemetry.json",
+        "Engineering_Physics_Quantum_Foundations_bc2e6c.docx",
+        "Engineering_Physics_Quantum_Foundations_bc2e6c_quality_report.json",
+        "Engineering_Physics_Quantum_Foundations_bc2e6c_syllabus_coverage.json",
+        "Engineering_Physics_Quantum_Foundations_bc2e6c_telemetry.json",
+        "Test_Architecture_Book_86a8c0.docx",
+        "Test_Architecture_Book_86a8c0_quality_report.json",
+        "Test_Architecture_Book_86a8c0_syllabus_coverage.json",
+        "Test_Architecture_Book_86a8c0_telemetry.json",
+        "Test_Architecture_Book_a8ff89.docx",
+        "Test_Architecture_Book_a8ff89_quality_report.json",
+        "Test_Architecture_Book_a8ff89_syllabus_coverage.json",
+        "Test_Architecture_Book_a8ff89_telemetry.json"
       ],
       "asset_dirs_removed": [
         "assets"
@@ -78,8 +86,8 @@
     }
   },
   "summary": {
-    "total_test_files_removed": 10,
-    "total_db_records_purged": 1347,
+    "total_test_files_removed": 18,
+    "total_db_records_purged": 0,
     "user_records_deleted": 0,
     "production_readiness_verdict": "CLEAN_PRISTINE"
   }

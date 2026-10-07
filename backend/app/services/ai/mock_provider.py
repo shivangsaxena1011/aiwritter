@@ -31,7 +31,7 @@ class MockProvider(AIProvider):
 
         include_num = "INCLUDE WORKED NUMERICAL EXAMPLES" in prompt
         include_qa = "INCLUDE REVIEW QUESTIONS" in prompt
-        requires_derivation = any(k in f"{subtopic} {topic}".lower() for k in ["derivation", "equation", "box", "well", "hypothesis", "uncertainty", "velocity", "constant"])
+        requires_derivation = any(k in subtopic.lower() for k in ["derivation", "equation", "proof", "formulation", "quantization", "impedance", "box", "well"])
 
         return SubjectKnowledgeModel.generate_academic_section(
             topic=topic,
