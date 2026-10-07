@@ -130,9 +130,13 @@ class IndependentArtifactAuditor:
         self,
         docx_path: str,
         planned_manifest: Optional[CountManifest] = None,
-        assembled_manifest: Optional[CountManifest] = None
+        assembled_manifest: Optional[CountManifest] = None,
+        assembly_model: Optional[Any] = None
     ) -> IndependentAuditResult:
         blocking_reasons: List[str] = []
+
+        if assembled_manifest is None and assembly_model is not None:
+            assembled_manifest = CountManifest(**assembly_model.get_counts())
 
         if not os.path.exists(docx_path):
             return IndependentAuditResult(
@@ -460,13 +464,17 @@ class IndependentArtifactAuditor:
             cap_top = cap["topic"].lower()
             cap_sub = cap["subtopic"].lower()
 
-            # Check if caption title refers to a different topic
-            top_words = [w for w in cap_top.split() if len(w) > 4]
-            if cap_text and top_words:
-                # If caption has explicit topic title that doesn't match current topic
+            # Check if caption title refers to a different topic or subtopic
+            top_words = [w for w in cap_top.split() if len(w) > 3]
+            sub_words = [w for w in cap_sub.split() if len(w) > 3]
+            topic_or_sub_words = set(top_words + sub_words)
+            if cap_text and topic_or_sub_words:
+                # If caption has explicit topic title that doesn't match current topic or subtopic
                 if "schematic of" in cap_text.lower():
                     caption_topic_ref = cap_text.lower().split("schematic of")[-1].strip()
-                    if cap_top not in caption_topic_ref and not any(w in caption_topic_ref for w in top_words):
+                    if (cap_top not in caption_topic_ref and
+                        cap_sub not in caption_topic_ref and
+                        not any(w in caption_topic_ref for w in topic_or_sub_words)):
                         figure_caption_mismatches += 1
 
         if figure_caption_mismatches > 0:

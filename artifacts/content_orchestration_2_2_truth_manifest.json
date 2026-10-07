@@ -1,21 +1,21 @@
 {
   "version": "2.2",
-  "timestamp": "2026-09-25T02:54:50.725051+00:00",
+  "timestamp": "2026-10-07T15:06:31.139786+00:00",
   "subject": "Engineering Physics",
   "chapter_title": "Quantum Mechanics",
   "truth_source": "Reopened Rendered DOCX File",
-  "docx_path": "C:\\Users\\Project\\ai-book-writer\\artifacts\\content_orchestration_2_2_chapter.docx",
+  "docx_path": "C:\\Users\\shiva\\.gemini\\antigravity\\worktrees\\ai-book-writer\\production_ready_aiwritter_refactor\\artifacts\\content_orchestration_2_2_chapter.docx",
   "auditor_class": "IndependentArtifactAuditor",
   "publication_ready": true,
   "summary_counts": {
     "chapters": 1,
     "topics": 12,
     "sections": 61,
-    "paragraphs": 345,
-    "equations": 97,
-    "tables": 3,
+    "paragraphs": 278,
+    "equations": 39,
+    "tables": 4,
     "figures": 7,
-    "words": 5610
+    "words": 3135
   },
   "reconciliation": {
     "is_valid": true,
@@ -25,42 +25,42 @@
       "topics": 12,
       "sections": 61,
       "paragraphs": 0,
-      "equations": 0,
-      "tables": 3,
+      "equations": 39,
+      "tables": 4,
       "figures": 7,
-      "words": 5481
+      "words": 2653
     },
     "assembled": {
       "chapters": 1,
       "topics": 12,
       "sections": 61,
       "paragraphs": 0,
-      "equations": 0,
-      "tables": 3,
+      "equations": 39,
+      "tables": 4,
       "figures": 7,
-      "words": 5481
+      "words": 2653
     },
     "rendered": {
       "chapters": 1,
       "topics": 12,
       "sections": 61,
-      "paragraphs": 345,
-      "equations": 97,
-      "tables": 3,
+      "paragraphs": 278,
+      "equations": 39,
+      "tables": 4,
       "figures": 7,
-      "words": 5610
+      "words": 3135
     }
   },
   "prose_audit": {
-    "total_paragraphs": 345,
-    "evaluated_prose": 131,
+    "total_paragraphs": 278,
+    "evaluated_prose": 124,
     "exact_duplicates": 0,
     "near_duplicates": 6,
     "exact_rate": 0.0,
-    "near_rate": 0.0458
+    "near_rate": 0.0484
   },
   "table_audit": {
-    "total_tables": 3,
+    "total_tables": 4,
     "exact_duplicates": 0,
     "near_duplicates": 0,
     "semantic_duplicates": 0,

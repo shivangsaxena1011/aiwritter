@@ -99,26 +99,95 @@ class ArtifactIntegrityManifest:
         # Tables reconciliation: Assembled vs Rendered Word Tables
         # Rendered tables include scorecard table (+1) if back matter scorecard was added
         table_diff = abs(self.rendered_docx.tables - self.assembled.tables)
-        if table_diff > 1 and self.assembled.tables > 0:
+        tbl_match = False
+        if self.planned.tables == 0 and self.assembled.tables == 0 and self.rendered_docx.tables == 0:
+            tbl_match = True
+        elif self.planned.tables == 0 and self.rendered_docx.tables > 1:
+            tbl_match = False
+            discrepancies.append(
+                f"Table count discrepancy: planned=0, assembled={self.assembled.tables}, but rendered={self.rendered_docx.tables}"
+            )
+        elif table_diff <= 1:
+            tbl_match = (self.planned.tables == self.assembled.tables) or (self.planned.tables == 0 and self.assembled.tables <= 1)
+            if not tbl_match:
+                discrepancies.append(
+                    f"Table count mismatch: planned={self.planned.tables}, assembled={self.assembled.tables}, rendered={self.rendered_docx.tables}"
+                )
+        else:
+            tbl_match = False
             discrepancies.append(
                 f"Table count mismatch: assembled={self.assembled.tables}, rendered={self.rendered_docx.tables}"
             )
 
         # Figures reconciliation: Assembled vs Rendered Word Shapes / Figures
-        if self.assembled.figures != self.rendered_docx.figures and self.assembled.figures > 0:
+        fig_match = False
+        if self.planned.figures == 0 and self.assembled.figures == 0 and self.rendered_docx.figures == 0:
+            fig_match = True
+        elif self.planned.figures == 0 and self.rendered_docx.figures > 0 and self.assembled.figures == 0:
+            fig_match = False
+            discrepancies.append(
+                f"Figure count discrepancy: planned=0, assembled=0, but rendered={self.rendered_docx.figures}"
+            )
+        elif self.assembled.figures != self.rendered_docx.figures:
+            fig_match = False
             discrepancies.append(
                 f"Figure count mismatch: assembled={self.assembled.figures}, rendered={self.rendered_docx.figures}"
             )
+        else:
+            fig_match = (self.planned.figures == self.assembled.figures == self.rendered_docx.figures) or (self.planned.figures == 0 and self.assembled.figures == self.rendered_docx.figures)
 
-        # Equation reconciliation: Rendered equations must be > 0 if assembled > 0
-        if self.assembled.equations > 0 and self.rendered_docx.equations == 0:
+        # Equation reconciliation: Strict rejection if planned=0 while rendered>0
+        eq_match = False
+        if self.planned.equations == 0 and self.assembled.equations == 0 and self.rendered_docx.equations == 0:
+            eq_match = True
+        elif self.planned.equations == 0 and self.rendered_docx.equations > 0 and self.assembled.equations == 0:
+            eq_match = False
+            discrepancies.append(
+                f"Equation count discrepancy: planned=0, assembled=0, but rendered={self.rendered_docx.equations}"
+            )
+        elif self.assembled.equations == 0 and self.rendered_docx.equations > 0:
+            eq_match = False
+            discrepancies.append(
+                f"Equation count discrepancy: assembled has 0 equations, but rendered={self.rendered_docx.equations} in DOCX"
+            )
+        elif self.assembled.equations > 0 and self.rendered_docx.equations == 0:
+            eq_match = False
             discrepancies.append(
                 f"Equation failure: assembled {self.assembled.equations} equations, but 0 rendered in DOCX"
             )
+        else:
+            # Both assembled > 0 and rendered > 0
+            if self.planned.equations > 0:
+                eq_match = (
+                    self.planned.equations == self.assembled.equations == self.rendered_docx.equations
+                    or abs(self.assembled.equations - self.rendered_docx.equations) <= max(2, int(0.15 * self.assembled.equations))
+                )
+                if not eq_match:
+                    discrepancies.append(
+                        f"Equation count mismatch: planned={self.planned.equations}, assembled={self.assembled.equations}, rendered={self.rendered_docx.equations}"
+                    )
+            else:
+                eq_match = (self.assembled.equations == self.rendered_docx.equations)
+                if not eq_match:
+                    discrepancies.append(
+                        f"Equation count mismatch: assembled={self.assembled.equations}, rendered={self.rendered_docx.equations}"
+                    )
 
         # Paragraph & Word sanity checks
         if self.rendered_docx.words < 50:
             discrepancies.append(f"Suspiciously low word count in DOCX: {self.rendered_docx.words}")
+
+        words_match = False
+        if self.planned.words == 0 and self.assembled.words == 0 and self.rendered_docx.words == 0:
+            words_match = True
+        elif self.planned.words == 0:
+            words_match = (self.rendered_docx.words >= max(50, int(0.7 * self.assembled.words))) if self.assembled.words > 0 else (self.rendered_docx.words >= 50)
+        else:
+            words_match = (self.rendered_docx.words >= max(50, int(0.7 * self.planned.words)))
+            if not words_match:
+                discrepancies.append(
+                    f"Word count mismatch: planned={self.planned.words}, rendered={self.rendered_docx.words}"
+                )
 
         table = {
             "chapters": {
@@ -143,25 +212,25 @@ class ArtifactIntegrityManifest:
                 "planned": self.planned.tables,
                 "assembled": self.assembled.tables,
                 "rendered_docx": self.rendered_docx.tables,
-                "match": (table_diff <= 1)
+                "match": tbl_match
             },
             "figures": {
                 "planned": self.planned.figures,
                 "assembled": self.assembled.figures,
                 "rendered_docx": self.rendered_docx.figures,
-                "match": (self.assembled.figures == self.rendered_docx.figures)
+                "match": fig_match
             },
             "equations": {
                 "planned": self.planned.equations,
                 "assembled": self.assembled.equations,
                 "rendered_docx": self.rendered_docx.equations,
-                "match": (self.rendered_docx.equations >= self.assembled.equations or self.rendered_docx.equations > 0)
+                "match": eq_match
             },
             "words": {
                 "planned": self.planned.words,
                 "assembled": self.assembled.words,
                 "rendered_docx": self.rendered_docx.words,
-                "match": self.rendered_docx.words >= 500
+                "match": words_match
             }
         }
 

@@ -233,9 +233,24 @@ class BookAssemblyModel:
             for top in ch.topics:
                 total_sections += len(top.sections)
                 for sec in top.sections:
-                    total_words += sec.word_count
+                    w_count = sec.word_count if sec.word_count else len(sec.content.split())
+                    total_words += w_count
                     total_paragraphs += len(sec.paragraphs) if sec.paragraphs else len([p for p in sec.content.split("\n\n") if p.strip()])
-                    total_equations += len(sec.equations)
+
+                    # Equations: count explicitly attached or parsed from content
+                    if sec.equations:
+                        total_equations += len(sec.equations)
+                    elif sec.content:
+                        # Extract equations from content
+                        display_eqs = len(re.findall(r"\$\$[\s\S]*?\$\$", sec.content))
+                        content_no_display = re.sub(r"\$\$[\s\S]*?\$\$", "", sec.content)
+                        inline_eqs = 0
+                        for p in content_no_display.split("\n\n"):
+                            p_str = p.strip()
+                            if p_str and re.search(r"(?<!\\)\$[^\$\n]{1,}\$", p_str):
+                                inline_eqs += 1
+                        total_equations += (display_eqs + inline_eqs)
+
                     # Tables attached or inside content
                     if sec.tables:
                         total_tables += len(sec.tables)

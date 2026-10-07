@@ -341,7 +341,8 @@ function handleSyllabusInput() {
 
 async function aiParseSyllabus() {
     const text = document.getElementById('raw-syllabus-input').value.trim();
-    const apiKey = document.getElementById('api-key').value.trim();
+    const apiKeyEl = document.getElementById('api-key');
+    const apiKey = apiKeyEl ? apiKeyEl.value.trim() : null;
     const btn = document.getElementById('btn-ai-parse');
 
     if (!text) {
@@ -474,7 +475,8 @@ async function startGeneration() {
     const academicLevel = document.getElementById('academic-level').value;
     const writingDepth = document.getElementById('writing-depth').value;
     const citationStyle = document.getElementById('citation-style').value;
-    const apiKey = document.getElementById('api-key').value.trim();
+    const apiKeyEl = document.getElementById('api-key');
+    const apiKey = apiKeyEl ? apiKeyEl.value.trim() : null;
     const generateImages = document.getElementById('toggle-images').checked;
     const subjectEl = document.getElementById('book-subject');
     const subject = subjectEl ? subjectEl.value.trim() : title;
@@ -740,7 +742,8 @@ async function cancelCurrentJob() {
 
 async function retryCurrentJob() {
     if (!state.jobId) return;
-    const apiKey = document.getElementById('api-key').value.trim();
+    const apiKeyEl = document.getElementById('api-key');
+    const apiKey = apiKeyEl ? apiKeyEl.value.trim() : null;
     try {
         appendLog('🔄 Resuming pipeline with partial checkpoint recovery...', 'system');
         state.generating = true;

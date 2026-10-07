@@ -24,8 +24,30 @@ logger = logging.getLogger("ai_book_writer")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} ({settings.APP_ENV} mode)...")
+
+    # Production environment security assertions
+    if settings.APP_ENV == "production":
+        if settings.SECRET_KEY == "dev-secret-key-change-in-production-123456789":
+            logger.warning("CRITICAL SECURITY ADVISORY: Default SECRET_KEY in production. Set a random SECRET_KEY in .env.")
+        if settings.ALLOW_MOCK_PROVIDERS:
+            raise RuntimeError("FATAL: ALLOW_MOCK_PROVIDERS is True in production mode.")
+        if settings.AI_MODE == "mock":
+            raise RuntimeError("FATAL: AI_MODE='mock' is prohibited in production mode.")
+
     init_db()
     os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)
+
+    # Verify write permissions to storage directory
+    test_probe = os.path.join(settings.STORAGE_LOCAL_DIR, ".write_probe")
+    try:
+        with open(test_probe, "w") as f:
+            f.write("ok")
+        os.remove(test_probe)
+    except Exception as e:
+        logger.error(f"Failed to verify storage directory write permissions: {e}")
+        if settings.APP_ENV == "production":
+            raise RuntimeError(f"Storage directory not writable: {e}")
+
     yield
     logger.info("Shutting down AI Book Writer...")
 
@@ -45,8 +67,42 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root Health, Liveness, and Readiness probes
+@app.get("/health", tags=["System"])
+def root_health():
+    return {
+        "status": "healthy",
+        "app_name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "env": settings.APP_ENV,
+        "ai_mode": settings.AI_MODE,
+        "text_model": settings.effective_text_model,
+        "image_model": settings.effective_image_model,
+        "storage": settings.STORAGE_PROVIDER
+    }
+
+@app.get("/live", tags=["System"])
+def root_live():
+    return {"status": "alive", "version": settings.APP_VERSION}
+
+@app.get("/ready", tags=["System"])
+def root_ready(db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    db_ok = False
+    try:
+        db.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {
+        "status": "ready" if db_ok else "unready",
+        "database": "connected" if db_ok else "disconnected",
+        "storage": settings.STORAGE_PROVIDER
+    }
+
 # Mount API v1
 app.include_router(api_v1_router, prefix="/api")
+
 
 # =========================================================================
 # Backward Compatibility Endpoints for v2 / v1 Clients

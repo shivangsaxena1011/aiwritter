@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, model_validator
 
 class Settings(BaseSettings):
     APP_NAME: str = "AI Book Writer"
@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # AI Configuration
     AI_MODE: str = Field(default="gemini", description="gemini | mock")
     AI_PROVIDER: str = Field(default="gemini", description="gemini | mock")
+    ALLOW_MOCK_PROVIDERS: bool = Field(
+        default=False,
+        description="Whether mock AI or research providers are permitted. Strictly forbidden in production."
+    )
     GEMINI_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_TEXT_MODEL: Optional[str] = None
@@ -58,6 +62,15 @@ class Settings(BaseSettings):
     # Security
     CORS_ORIGINS: List[str] = ["*"]
     SECRET_KEY: str = "dev-secret-key-change-in-production-123456789"
+
+    @model_validator(mode="after")
+    def validate_production_guards(self) -> "Settings":
+        if self.APP_ENV == "production":
+            if self.ALLOW_MOCK_PROVIDERS:
+                raise ValueError("ALLOW_MOCK_PROVIDERS cannot be True in production environment.")
+            if self.AI_MODE == "mock":
+                raise ValueError("AI_MODE='mock' is strictly prohibited in production environment.")
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -1,0 +1,41 @@
+{
+  "timestamp_utc": "2026-10-07T15:53:00.858791+00:00",
+  "regression_suite": {
+    "total_defects_tested": 20,
+    "defects_prevented": 20,
+    "pass_rate": "100.0%"
+  },
+  "negative_test_verifications": [
+    {
+      "defect_id": "DEF-001",
+      "description": "Preamble metadata promoted to chapters/topics",
+      "detected_and_blocked": true
+    },
+    {
+      "defect_id": "DEF-002",
+      "description": "Consecutive duplicate headings in rendered DOCX",
+      "detected_and_blocked": true
+    },
+    {
+      "defect_id": "DEF-003",
+      "description": "Generic fallback headings ('Section 1', 'Untitled Section')",
+      "detected_and_blocked": true
+    },
+    {
+      "defect_id": "DEF-004",
+      "description": "Three-way count reconciliation 0 == 0 == 345 fake match",
+      "detected_and_blocked": true
+    },
+    {
+      "defect_id": "DEF-007",
+      "description": "Duplicate tables generated across sections",
+      "detected_and_blocked": true
+    },
+    {
+      "defect_id": "DEF-009",
+      "description": "Unrendered raw LaTeX math artifacts in table cells",
+      "detected_and_blocked": true
+    }
+  ],
+  "active_production_blocking_reasons": []
+}

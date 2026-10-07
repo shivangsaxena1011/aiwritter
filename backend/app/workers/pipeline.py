@@ -490,6 +490,7 @@ class BookGenerationOrchestrator:
                                 self.table_planner_evaluated = 0
                                 self.table_planner_accepted = 0
                                 self.table_planner_rejected = 0
+                                self.seen_table_hashes = set()
 
                             sec_table_md = None
                             self.table_planner_evaluated += 1
@@ -498,13 +499,23 @@ class BookGenerationOrchestrator:
                                 subtopic_title=subtopic.title,
                                 topic_title=topic.title,
                                 purpose=purpose,
-                                section_content=content
+                                section_content=content,
+                                seen_tables=getattr(self, "seen_table_hashes", None)
                             )
-                            if table_necessity.is_necessary:
-                                self.table_planner_accepted += 1
-                                sec_table_md = table_necessity.markdown_content
-                                if sec_table_md and sec_table_md not in content:
-                                    content = content + "\n\n" + sec_table_md
+                            if table_necessity.is_necessary and table_necessity.markdown_content:
+                                norm_key = " ".join(re.sub(r"[^\w\s]", "", table_necessity.markdown_content.lower()).split()[:20])
+                                if not hasattr(self, "seen_table_hashes"):
+                                    self.seen_table_hashes = set()
+                                if norm_key in self.seen_table_hashes:
+                                    self.table_planner_rejected += 1
+                                    if "|" in content:
+                                        content = re.sub(r'(\|[^\n]+\|(?:\r?\n|$))+', '', content)
+                                else:
+                                    self.seen_table_hashes.add(norm_key)
+                                    self.table_planner_accepted += 1
+                                    sec_table_md = table_necessity.markdown_content
+                                    if sec_table_md not in content:
+                                        content = content + "\n\n" + sec_table_md
                             else:
                                 self.table_planner_rejected += 1
                                 if "|" in content:
@@ -826,20 +837,44 @@ class BookGenerationOrchestrator:
             terminology_summary = self.terminology_registry.get_summary()
             repetition_summary = self.repetition_detector.get_summary()
 
-            # Final DOCX Authoritative Audit (Content Orchestration 2.1)
+            # Final DOCX Authoritative Audit (Independent Artifact Truth Engine)
+            from backend.app.services.document.independent_artifact_auditor import IndependentArtifactAuditor
             docx_auditor = FinalDocxAuditor(subject=subject)
+            planned_chapters = len(units)
+            planned_topics = sum(len(u.topics) for u in units)
+            planned_sections = total_subtopics
+            asm_counts = assembly_model.get_counts()
+            planned_chapters = len(units)
+            planned_topics = sum(len(u.topics) for u in units)
+            planned_sections = total_subtopics
+            planned_tables = asm_counts["tables"]
+            planned_figures = asm_counts["figures"]
+            planned_equations = asm_counts["equations"]
+            planned_paragraphs = asm_counts["paragraphs"]
+            planned_words = asm_counts["words"]
+
             planned_manifest = CountManifest(
-                chapters=len(units),
-                topics=sum(len(u.topics) for u in units),
-                sections=total_subtopics,
-                tables=getattr(self, "table_planner_accepted", 0),
-                figures=len(compiled_assets)
+                chapters=planned_chapters,
+                topics=planned_topics,
+                sections=planned_sections,
+                paragraphs=planned_paragraphs,
+                equations=planned_equations,
+                tables=planned_tables,
+                figures=planned_figures,
+                words=planned_words
             )
             final_docx_report = docx_auditor.audit(
                 docx_path=out_filepath,
                 planned_manifest=planned_manifest,
                 assembly_model=assembly_model
             )
+            independent_auditor = IndependentArtifactAuditor()
+            independent_report = independent_auditor.audit(
+                docx_path=out_filepath,
+                planned_manifest=planned_manifest,
+                assembly_model=assembly_model
+            )
+            self.independent_audit_report = independent_report.to_dict()
 
             # In-memory adversarial review for legacy reference
             adv_result = self.adversarial_reviewer.review_chapter(

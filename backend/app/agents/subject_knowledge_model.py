@@ -319,59 +319,6 @@ class SubjectKnowledgeModel:
         }
 
     @classmethod
-    def _ensure_unique_and_clean_prose(cls, content: str, topic: str, subtopic: str) -> str:
-        """
-        Ensures the generated academic section has a 100% unique opening sentence
-        incorporating the exact subtopic and topic, preventing adversarial reviewer
-        repetition errors and eliminating boilerplate templates.
-        Strips leading redundant subtopic headings.
-        """
-        if not content:
-            return content
-
-        lines = content.strip().split("\n")
-        body_lines = []
-        for line in lines:
-            line_str = line.strip()
-            if line_str.startswith("###"):
-                h_text = line_str.lstrip("#").strip()
-                norm_h = re.sub(r"[^\w\s]", "", h_text.lower())
-                norm_s = re.sub(r"[^\w\s]", "", subtopic.lower())
-                if norm_s and (norm_h == norm_s or norm_s in norm_h or norm_h in norm_s):
-                    continue
-            body_lines.append(line)
-
-        body_text = "\n".join(body_lines).strip()
-        if not body_text:
-            return content
-
-        # Extract first non-empty sentence in body_text
-        sentences = [s.strip() for s in re.split(r"[.!?]", body_text) if s.strip()]
-        if not sentences:
-            return body_text
-
-        first_sentence = sentences[0]
-        first_norm = " ".join(re.sub(r"[^\w\s]", "", first_sentence.lower()).split())
-
-        sub_norm = " ".join(re.sub(r"[^\w\s]", "", subtopic.lower()).split())
-        top_norm = " ".join(re.sub(r"[^\w\s]", "", topic.lower()).split())
-
-        # If the first sentence doesn't already contain subtopic and topic context, prepend dynamic intro
-        if sub_norm not in first_norm or top_norm not in first_norm:
-            idx = (hash(f"{topic}_{subtopic}") % 5)
-            prefixes = [
-                f"The physical investigation of {subtopic} in the context of {topic} establishes core principles.",
-                f"Examining {subtopic} within {topic} clarifies underlying theoretical mechanisms.",
-                f"The study of {subtopic} under {topic} develops key mathematical formulations.",
-                f"Analyzing {subtopic} in relation to {topic} reveals fundamental physical insights.",
-                f"Exploring {subtopic} for {topic} provides formal quantitative frameworks."
-            ]
-            prefix = prefixes[idx]
-            body_text = f"{prefix} {body_text}"
-
-        return body_text
-
-    @classmethod
     def generate_academic_section(
         cls,
         topic: str,
@@ -383,53 +330,18 @@ class SubjectKnowledgeModel:
     ) -> str:
         """
         Generates authentic, domain-grounded university textbook prose.
-        Eliminates all generic templates, fake configurations, and unrelated diffusion equations.
-        Produces rigorous, subject-specific mathematical derivations and physical insights.
+        Eliminates all generic templates, fake configurations, and formulaic robotic prefixes.
+        Uses extensible SubjectKnowledgeProvider for Physics, Mathematics, Computer Science, etc.
         """
-        combined = f"{subtopic} {topic} {subject}".lower()
-
-        res = ""
-        # 1. de Broglie Hypothesis / Matter Waves / Dual Nature
-        if any(k in combined for k in ["de broglie", "matter wave", "wave nature of particle", "wavelength"]):
-            res = cls._generate_de_broglie_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 2. Particle in a 1D Box / Infinite Potential Well
-        elif any(k in combined for k in ["box", "well", "infinite potential", "potential well", "quantum well"]):
-            res = cls._generate_particle_in_box_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 3. Heisenberg Uncertainty Principle
-        elif any(k in combined for k in ["heisenberg", "uncertainty"]):
-            res = cls._generate_heisenberg_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 4. Phase Velocity and Group Velocity
-        elif any(k in combined for k in ["phase velocity", "group velocity", "dispersion"]):
-            res = cls._generate_velocity_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 5. Operators, Commutators, Eigenvalues, and Eigenfunctions
-        elif any(k in combined for k in ["operator", "eigenvalue", "eigenfunction", "eigenstate", "hamiltonian", "commutat"]):
-            res = cls._generate_operators_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 6. Schrödinger Wave Equations (Time-Dependent and Time-Independent)
-        elif any(k in combined for k in ["schrodinger", "time-dependent", "time-independent", "wave equation"]):
-            res = cls._generate_schrodinger_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 7. Physical Interpretation of Wave Function / Born Postulate
-        elif any(k in combined for k in ["born", "interpretation", "probability density", "normalization", "wave function"]):
-            res = cls._generate_wave_function_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 8. Quantum Applications / Nanotechnology
-        elif any(k in combined for k in ["application", "tem", "sem", "stm", "tunneling", "quantum dot", "nanotechnology"]):
-            res = cls._generate_quantum_apps_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        # 9. Introduction to Quantum Mechanics, Photoelectric Effect, Blackbody & Early Quanta
-        elif any(k in combined for k in ["introduction", "photoelectric", "photon", "blackbody", "compton", "postulate", "planck", "einstein"]):
-            res = cls._generate_quantum_intro_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        else:
-            # Default fallback: General Introduction to Quantum Mechanics
-            res = cls._generate_quantum_intro_section(topic, subtopic, subject, include_numericals, include_questions, requires_derivation)
-
-        return cls._ensure_unique_and_clean_prose(res, topic, subtopic)
+        from backend.app.agents.subject_knowledge_base import get_subject_knowledge_provider
+        provider = get_subject_knowledge_provider(subject)
+        return provider.generate_section_prose(
+            topic=topic,
+            subtopic=subtopic,
+            include_numericals=include_numericals,
+            include_questions=include_questions,
+            requires_derivation=requires_derivation
+        )
 
     @classmethod
     def _generate_de_broglie_section(cls, topic: str, subtopic: str, subject: str, include_num: bool, include_qa: bool, derivation: bool) -> str:

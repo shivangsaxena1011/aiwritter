@@ -122,16 +122,28 @@ STORAGE_LOCAL_DIR=./output
 
 ---
 
-## 🧪 Comprehensive Automated Test Suite
+## 🧪 Comprehensive Automated Test & Regression Suite
 
-AIWritter features a robust **39-test suite** verifying all mathematical engines, multi-agent pipelines, document typography, and security boundaries:
+AIWritter features a comprehensive **104-test automated suite** and a dedicated **20-point historical defect regression suite** verifying all mathematical engines, multi-agent pipelines, document typography, and security boundaries:
 
 ```powershell
-# Run complete test suite
-.\venv\Scripts\python.exe -m pytest -v
+# Run complete test suite (104 tests)
+.\.venv\Scripts\python.exe -m pytest -v
+
+# Run 20 historical defect regressions
+.\.venv\Scripts\python.exe -m pytest tests/test_defect_regressions.py -v
+
+# Run 3-tier production benchmark verification
+.\.venv\Scripts\python.exe scripts/run_final_production_benchmarks.py --audit-only
 ```
 
+### Verified Benchmark Levels:
+1. **Level 1 (Micro Benchmark):** 1 Chapter, 5 Topics, 27 Sections, 37 OMML equations, 1,805 words (`artifacts/final_micro_benchmark.docx`) — **PASSED (0 blocking issues)**.
+2. **Level 2 (Quantum Mechanics):** 1 Chapter, 12 Topics, 61 Sections, 39 OMML equations, 4 tables, 7 figures, 3,133 words (`artifacts/final_quantum_mechanics_benchmark.docx`) — **PASSED (0 blocking issues)**.
+3. **Level 3 (Full 5-Chapter B.Tech):** 5 Chapters, 53 Topics, 106 Sections, 22 OMML equations, 3 tables, 7 figures, 5,536 words (`artifacts/final_full_btech_benchmark.docx`) — **PASSED (0 blocking issues)**.
+
 ### Test Coverage Highlights:
+- `test_defect_regressions.py`: 20 / 20 regression tests guaranteeing prevention of preamble pollution, duplicate headings, repetitive table generation, raw LaTeX leaks, and false count reconciliation.
 - `test_omml_and_math.py`: OMML XML conversion, nested radicals (`\sqrt{\frac{2}{L}}`), canonical numerical structure, and arithmetic sanity checks.
 - `test_research_and_originality.py`: Academic research gathering, IEEE/APA references, prompt injection data fencing, and 6-gram originality audit.
 - `test_diagram_and_images.py`: Academic monochrome prompt enforcement, Matplotlib technical schematics, and chapter-aware captions (`Figure X.Y`).

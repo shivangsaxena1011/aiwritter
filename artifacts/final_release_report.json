@@ -1,0 +1,39 @@
+{
+  "release_version": "v3.0.0-PROD",
+  "product_name": "AIWritter \u2014 Production-Ready Autonomous Academic Textbook Platform",
+  "release_timestamp": "2026-10-07T15:53:00.859898+00:00",
+  "build_status": "STABLE",
+  "qa_status": "PASSED (104 of 104 tests, 20 of 20 historical defect regressions)",
+  "security_audit": {
+    "client_side_secrets_exposed": false,
+    "api_key_inputs_in_frontend": false,
+    "server_side_environment_variables_only": true,
+    "path_traversal_guards": true,
+    "cors_configured": true
+  },
+  "benchmarks": {
+    "micro_benchmark": {
+      "file": "final_micro_benchmark.docx",
+      "words": 1805,
+      "publication_ready": true
+    },
+    "quantum_mechanics": {
+      "file": "final_quantum_mechanics_benchmark.docx",
+      "words": 3133,
+      "publication_ready": true
+    },
+    "full_btech_5chapter": {
+      "file": "final_full_btech_benchmark.docx",
+      "words": 5536,
+      "publication_ready": true
+    }
+  },
+  "domains_supported": [
+    "Engineering Physics",
+    "Mathematics",
+    "Computer Science",
+    "Electronics",
+    "Mechanical Engineering",
+    "Generic Technical"
+  ]
+}
