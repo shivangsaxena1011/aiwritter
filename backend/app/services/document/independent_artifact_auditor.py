@@ -39,10 +39,15 @@ class IndependentAuditResult:
     summary_counts: Dict[str, int]
     reconciliation_details: Dict[str, Any]
 
+    content_depth: Dict[str, Any] = field(default_factory=dict)
+    docx_sha256: str = ""
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "publication_ready": self.publication_ready,
             "docx_path": self.docx_path,
+            "docx_sha256": self.docx_sha256,
+            "content_depth": self.content_depth,
             "total_docx_paragraphs": self.total_docx_paragraphs,
             "evaluated_prose_paragraphs": self.evaluated_prose_paragraphs,
             "exact_duplicate_paragraphs": self.exact_duplicate_paragraphs,
@@ -256,6 +261,7 @@ class IndependentArtifactAuditor:
                 if text:
                     loc = f"{current_chapter} > {current_topic} > {current_subtopic}".strip(" >")
 
+                    is_display_eq = (has_eq and words < 20)
                     if text.startswith("Figure ") or text.startswith("Fig."):
                         figure_captions.append({
                             "text": text,
@@ -263,7 +269,7 @@ class IndependentArtifactAuditor:
                             "subtopic": current_subtopic,
                             "location": loc
                         })
-                    elif not is_bullet and not has_eq and words >= self.min_prose_words:
+                    elif not is_bullet and not is_display_eq and words >= self.min_prose_words:
                         prose_paragraphs.append({
                             "index": p_idx,
                             "text": text,
@@ -541,7 +547,53 @@ class IndependentArtifactAuditor:
             blocking_reasons.extend(discrepancies)
 
         # -------------------------------------------------------------
-        # 8. FINAL PUBLICATION READINESS DECISION
+        # 8. CONTENT DEPTH AUDIT
+        # -------------------------------------------------------------
+        prose_by_topic: Dict[str, List[str]] = {}
+        for p_info in prose_paragraphs:
+            loc = p_info["location"]
+            # Location is formatted as "Chapter > Topic > Subtopic"
+            loc_parts = loc.split(" > ")
+            top_name = loc_parts[1] if len(loc_parts) > 1 else loc_parts[0]
+            prose_by_topic.setdefault(top_name, []).append(p_info["text"])
+
+        EXCLUDED_SECTIONS = {
+            "", "front matter", "preface", "table of contents",
+            "chapter overview & objectives", "chapter overview and objectives",
+            "academic bibliography", "references"
+        }
+        substantive_topics = {
+            t: sum(len(x.split()) for x in ps)
+            for t, ps in prose_by_topic.items()
+            if t.lower().strip() not in EXCLUDED_SECTIONS
+        }
+
+        vals = sorted(substantive_topics.values()) if substantive_topics else [0]
+        median_words = vals[len(vals) // 2] if vals else 0
+        min_words = vals[0] if vals else 0
+        topics_below_target = sum(1 for v in vals if v < 200)
+        empty_or_shallow_topics = [t for t, v in substantive_topics.items() if v < 50]
+
+        content_depth_metrics = {
+            "substantive_topics_evaluated": len(substantive_topics),
+            "substantive_words_per_topic": substantive_topics,
+            "median_words_per_topic": median_words,
+            "min_words_per_topic": min_words,
+            "topics_below_depth_target": topics_below_target,
+            "empty_or_shallow_topics_count": len(empty_or_shallow_topics),
+            "empty_or_shallow_topics": empty_or_shallow_topics
+        }
+
+        # SHA-256 of the DOCX file
+        docx_sha256 = ""
+        try:
+            with open(docx_path, "rb") as f:
+                docx_sha256 = hashlib.sha256(f.read()).hexdigest()
+        except Exception as e:
+            logger.warning(f"Could not compute sha256 for {docx_path}: {e}")
+
+        # -------------------------------------------------------------
+        # 9. FINAL PUBLICATION READINESS DECISION
         # -------------------------------------------------------------
         publication_ready = (len(blocking_reasons) == 0)
 
@@ -562,6 +614,8 @@ class IndependentArtifactAuditor:
         return IndependentAuditResult(
             publication_ready=publication_ready,
             docx_path=docx_path,
+            docx_sha256=docx_sha256,
+            content_depth=content_depth_metrics,
             total_docx_paragraphs=total_docx_paragraphs,
             evaluated_prose_paragraphs=evaluated_prose_count,
             exact_duplicate_paragraphs=exact_duplicate_paragraphs,

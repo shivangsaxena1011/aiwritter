@@ -95,6 +95,14 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
 
     def prerequisite_knowledge(self, topic: str) -> List[str]:
         t_low = topic.lower()
+        if any(k in t_low for k in ["interference", "diffraction", "polarization", "optic", "newton", "young", "grating"]):
+            return ["Electromagnetic wave theory", "Huygens wavelets", "Harmonic oscillation superposition", "Complex amplitudes"]
+        if any(k in t_low for k in ["laser", "emission", "absorption", "population", "ruby", "he-ne"]):
+            return ["Atomic energy levels", "Boltzmann distribution", "Thermodynamic equilibrium", "Resonant cavity modes"]
+        if any(k in t_low for k in ["fiber", "optical fiber", "numerical aperture", "v-number", "attenuation", "dispersion"]):
+            return ["Snell's law of refraction", "Dielectric boundary conditions", "Total internal reflection", "Waveguide modes"]
+        if any(k in t_low for k in ["maxwell", "gauss", "faraday", "ampere", "poynting", "relativity", "lorentz", "dilation"]):
+            return ["Vector calculus (gradient, divergence, curl)", "Electrostatics and magnetostatics", "Galilean transformations", "Inertial frames"]
         if "schrodinger" in t_low or "box" in t_low:
             return ["Classical wave equation", "Operator formalism", "Energy conservation", "Complex variables"]
         if "de broglie" in t_low or "uncertainty" in t_low:
@@ -103,6 +111,18 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
 
     def canonical_concepts(self, topic: str) -> List[str]:
         t_low = topic.lower()
+        if any(k in t_low for k in ["interference", "optic", "young", "thin film", "newton", "coherent"]):
+            return ["Superposition of harmonic fields", "Division of wavefront vs amplitude", "Stokes phase change upon reflection", "Newton's rings variable air wedge", "Fringe visibility"]
+        if any(k in t_low for k in ["diffraction", "grating", "resolving", "polarization", "brewster"]):
+            return ["Fraunhofer far-field diffraction", "Single-slit sinc intensity envelope", "Grating principal maxima", "Rayleigh criterion for resolution", "Brewster polarizing angle"]
+        if any(k in t_low for k in ["laser", "emission", "population", "ruby", "he-ne", "metastable"]):
+            return ["Stimulated vs spontaneous emission", "Einstein A and B transition probabilities", "Population inversion condition", "Metastable level accumulation", "Fabry-Perot resonator feedback"]
+        if any(k in t_low for k in ["fiber", "numerical aperture", "acceptance", "step-index", "graded-index", "v-number"]):
+            return ["Core-cladding dielectric interface", "Critical angle for total internal reflection", "Numerical aperture and acceptance cone", "Normalized frequency V-number", "Intermodal and chromatic dispersion"]
+        if any(k in t_low for k in ["maxwell", "gauss", "faraday", "ampere", "displacement", "poynting"]):
+            return ["Differential Maxwell equations", "Ampere-Maxwell displacement current density", "Electromagnetic 3D wave equation", "Intrinsic vacuum wave impedance", "Poynting power flux vector"]
+        if any(k in t_low for k in ["relativity", "lorentz", "dilation", "contraction", "michelson", "mass-energy"]):
+            return ["Michelson-Morley null ether result", "Einstein relativity postulates", "Spacetime Lorentz transformations", "Relativistic time dilation", "Mass-energy equivalence E=mc^2"]
         if "box" in t_low or "well" in t_low:
             return ["Infinite potential barrier", "Dirichlet boundary conditions", "Wavenumber quantization", "Stationary state eigenfunctions", "Zero-point ground state energy"]
         if "de broglie" in t_low or "wave nature" in t_low:
@@ -115,6 +135,78 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
 
     def canonical_equations(self, topic: str) -> List[Dict[str, Any]]:
         t_low = topic.lower()
+        if any(k in t_low for k in ["interference", "young", "fringe"]):
+            return [{
+                "name": "Young's Double Slit Fringe Width",
+                "latex": "\\beta = \\frac{\\lambda D}{d}",
+                "symbols": {"\\beta": "Fringe width (m)", "\\lambda": "Wavelength (m)", "D": "Slit-to-screen distance (m)", "d": "Slit separation (m)"}
+            }]
+        if any(k in t_low for k in ["newton", "ring"]):
+            return [{
+                "name": "Newton's Rings Dark Ring Diameter",
+                "latex": "D_n^2 = 4n\\lambda R",
+                "symbols": {"D_n": "Diameter of n-th dark ring (m)", "n": "Ring order index", "\\lambda": "Wavelength (m)", "R": "Radius of lens curvature (m)"}
+            }]
+        if any(k in t_low for k in ["diffraction", "grating"]):
+            return [{
+                "name": "Plane Diffraction Grating Equation",
+                "latex": "(a + b) \\sin\\theta = n \\lambda",
+                "symbols": {"(a+b)": "Grating element (m)", "\\theta": "Diffraction angle", "n": "Spectral order", "\\lambda": "Wavelength (m)"}
+            }]
+        if any(k in t_low for k in ["polarization", "brewster"]):
+            return [{
+                "name": "Brewster's Law",
+                "latex": "\\tan\\theta_p = \\mu",
+                "symbols": {"\\theta_p": "Brewster polarizing angle", "\\mu": "Refractive index of medium"}
+            }]
+        if any(k in t_low for k in ["laser", "einstein", "emission"]):
+            return [{
+                "name": "Einstein Transition Coefficients Ratio",
+                "latex": "\\frac{A_{21}}{B_{21}} = \\frac{8\\pi h \\nu^3}{c^3}",
+                "symbols": {"A_{21}": "Spontaneous emission coefficient (s^-1)", "B_{21}": "Stimulated emission coefficient", "h": "Planck constant", "\\nu": "Transition frequency (Hz)", "c": "Speed of light (m/s)"}
+            }]
+        if any(k in t_low for k in ["fiber", "numerical aperture", "acceptance"]):
+            return [{
+                "name": "Fiber Numerical Aperture & Acceptance Angle",
+                "latex": "\\text{NA} = \\sqrt{n_1^2 - n_2^2} = n_1 \\sqrt{2\\Delta}, \\quad \\theta_a = \\arcsin(\\text{NA})",
+                "symbols": {"\\text{NA}": "Numerical aperture", "n_1": "Core refractive index", "n_2": "Cladding refractive index", "\\Delta": "Fractional index difference", "\\theta_a": "Acceptance angle"}
+            }]
+        if any(k in t_low for k in ["v-number", "cutoff", "single mode"]):
+            return [{
+                "name": "Fiber Normalized Frequency (V-Number)",
+                "latex": "V = \\frac{2\\pi a}{\\lambda} \\text{NA} = \\frac{2\\pi a}{\\lambda} \\sqrt{n_1^2 - n_2^2}",
+                "symbols": {"V": "Normalized frequency parameter", "a": "Core radius (m)", "\\lambda": "Wavelength (m)", "\\text{NA}": "Numerical aperture"}
+            }]
+        if any(k in t_low for k in ["ampere", "displacement", "maxwell"]):
+            return [{
+                "name": "Ampere-Maxwell Equation with Displacement Current",
+                "latex": "\\nabla \\times \\mathbf{B} = \\mu_0 \\mathbf{J} + \\mu_0 \\epsilon_0 \\frac{\\partial \\mathbf{E}}{\\partial t}",
+                "symbols": {"\\mathbf{B}": "Magnetic flux density (T)", "\\mu_0": "Permeability of vacuum", "\\mathbf{J}": "Conduction current density", "\\epsilon_0": "Permittivity of vacuum", "\\mathbf{E}": "Electric field (V/m)"}
+            }]
+        if any(k in t_low for k in ["wave equation", "propagation", "impedance"]):
+            return [{
+                "name": "Electromagnetic Wave Equation in Vacuum",
+                "latex": "\\nabla^2 \\mathbf{E} - \\mu_0\\epsilon_0 \\frac{\\partial^2 \\mathbf{E}}{\\partial t^2} = 0, \\quad c = \\frac{1}{\\sqrt{\\mu_0\\epsilon_0}}",
+                "symbols": {"\\mathbf{E}": "Electric field vector", "c": "Speed of light (2.998e8 m/s)", "\\mu_0": "Vacuum permeability", "\\epsilon_0": "Vacuum permittivity"}
+            }]
+        if any(k in t_low for k in ["poynting"]):
+            return [{
+                "name": "Poynting Vector & Power Density",
+                "latex": "\\mathbf{S} = \\frac{1}{\\mu_0} (\\mathbf{E} \\times \\mathbf{B}), \\quad \\nabla \\cdot \\mathbf{S} + \\frac{\\partial u}{\\partial t} = -\\mathbf{J}\\cdot\\mathbf{E}",
+                "symbols": {"\\mathbf{S}": "Poynting power flux vector (W/m^2)", "u": "EM energy density (J/m^3)", "\\mathbf{E}": "Electric field", "\\mathbf{B}": "Magnetic field"}
+            }]
+        if any(k in t_low for k in ["lorentz", "relativity", "transformation"]):
+            return [{
+                "name": "Lorentz Space-Time Transformations",
+                "latex": "x' = \\gamma(x - vt), \\quad t' = \\gamma\\left(t - \\frac{vx}{c^2}\\right), \\quad \\gamma = \\frac{1}{\\sqrt{1 - v^2/c^2}}",
+                "symbols": {"\\gamma": "Lorentz factor", "v": "Relative velocity (m/s)", "c": "Speed of light (m/s)", "x, t": "Laboratory coordinates", "x', t'": "Moving frame coordinates"}
+            }]
+        if any(k in t_low for k in ["dilation", "contraction", "mass-energy", "e = mc"]):
+            return [{
+                "name": "Relativistic Energy-Momentum Relation",
+                "latex": "E = \\gamma m_0 c^2, \\quad E^2 = p^2 c^2 + m_0^2 c^4",
+                "symbols": {"E": "Total relativistic energy (J)", "m_0": "Rest mass (kg)", "p": "Relativistic momentum (kg·m/s)", "c": "Speed of light (m/s)"}
+            }]
         if "box" in t_low or "well" in t_low:
             return [{
                 "name": "Particle in 1D Box Quantized Energy",
@@ -146,6 +238,42 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
         }]
 
     def common_experiments(self, topic: str) -> List[Dict[str, Any]]:
+        t_low = topic.lower()
+        if any(k in t_low for k in ["interference", "young", "fringe", "newton"]):
+            return [{
+                "name": "Newton's Rings Fringe Interferometry (Newton, 1704)",
+                "setup": "Plano-convex lens of radius R placed on optical flat plate illuminated by monochromatic sodium light.",
+                "observation": "Concentric alternating circular dark and bright fringes with dark central contact spot.",
+                "conclusion": "Accurately measures optical wavelength from diameter squared difference (D_{n+p}^2 - D_n^2 = 4p lambda R)."
+            }]
+        if any(k in t_low for k in ["diffraction", "grating", "resolving"]):
+            return [{
+                "name": "Diffraction Grating Spectrometry",
+                "setup": "Collimated spectrometer directed at transmission diffraction grating with 15,000 lines/inch.",
+                "observation": "Discrete sharp spectral orders diffracted according to (a+b)sin theta = n lambda.",
+                "conclusion": "Resolves close sodium D-line doublet (589.0 nm and 589.6 nm) with high chromatic resolving power."
+            }]
+        if any(k in t_low for k in ["laser", "ruby", "he-ne"]):
+            return [{
+                "name": "Maiman Synthetic Ruby Laser Oscillation (1960)",
+                "setup": "Synthetic Al2O3:Cr3+ cylindrical rod pumped by helical xenon flashtube inside Fabry-Perot cavity.",
+                "observation": "Intense coherent deep-crimson pulse emitted at 694.3 nm with milliradian divergence.",
+                "conclusion": "First empirical demonstration of optical amplification by stimulated emission of radiation."
+            }]
+        if any(k in t_low for k in ["fiber", "attenuation", "numerical aperture"]):
+            return [{
+                "name": "Fiber Optic Numerical Aperture Profile Measurement",
+                "setup": "He-Ne laser launched into optical fiber end-face with far-field angular scanning detector.",
+                "observation": "Output cone divergence angle measured in far-field matching NA = sin(theta_a) = sqrt(n1^2 - n2^2).",
+                "conclusion": "Confirms light guidance boundary governed by critical total internal reflection."
+            }]
+        if any(k in t_low for k in ["michelson", "relativity", "ether", "lorentz"]):
+            return [{
+                "name": "Michelson-Morley Ether Drift Interferometry (1887)",
+                "setup": "Orthogonal equal-arm optical interferometer floating on mercury pool rotating through 360 degrees.",
+                "observation": "Zero fringe shift observed (fringe shift < 0.005 fringes against 0.4 theoretical prediction).",
+                "conclusion": "Disproved luminiferous ether hypothesis and established universal constancy of speed of light."
+            }]
         return [{
             "name": "Davisson-Germer Electron Diffraction (1927)",
             "setup": "Collimated low-energy electron beam impinging on nickel target single crystal.",
@@ -154,6 +282,31 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
         }]
 
     def application_patterns(self, topic: str) -> List[Dict[str, Any]]:
+        t_low = topic.lower()
+        if any(k in t_low for k in ["interference", "thin film", "optics"]):
+            return [{
+                "device": "Anti-Reflective Optical Dielectric Coating",
+                "mechanism": "Quarter-wave MgF2 thin film destructive interference suppresses surface reflection below 0.1%.",
+                "impact": "Crucial for high-efficiency camera optics, solar photovoltaic cells, and laser optics."
+            }]
+        if any(k in t_low for k in ["laser", "he-ne", "ruby", "semiconductor"]):
+            return [{
+                "device": "Semiconductor Distributed Feedback (DFB) Telecom Laser",
+                "mechanism": "Stimulated electron-hole recombination in InGaAsP quantum wells with Bragg grating cavity feedback.",
+                "impact": "Powers high-speed transoceanic optical telecommunication networks operating at 1550 nm."
+            }]
+        if any(k in t_low for k in ["fiber", "optical fiber", "sensor"]):
+            return [{
+                "device": "Fiber Bragg Grating (FBG) Structural Sensor",
+                "mechanism": "Periodic core index modulation reflects narrow Bragg wavelength shifting with strain and temperature.",
+                "impact": "Enables distributed real-time structural health monitoring in bridges, aircraft, and oil pipelines."
+            }]
+        if any(k in t_low for k in ["relativity", "lorentz", "dilation"]):
+            return [{
+                "device": "Global Positioning System (GPS) Satellite Constellation",
+                "mechanism": "Atomic clocks account for relativistic time dilation (-7 us/day) and gravitational blueshift (+45 us/day).",
+                "impact": "Enables worldwide sub-meter precision geospatial navigation."
+            }]
         return [{
             "device": "Transmission Electron Microscope (TEM)",
             "mechanism": "High-voltage accelerating potential (100-300 kV) produces picometer de Broglie matter waves, overcoming optical diffraction limits.",
@@ -166,7 +319,10 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
             "\\hbar": "Reduced Planck constant (h / 2pi = 1.055 x 10^-34 J·s)",
             "m_e": "Electron rest mass (9.109 x 10^-31 kg)",
             "e": "Elementary charge (1.602 x 10^-19 C)",
-            "k_B": "Boltzmann constant (1.381 x 10^-23 J/K)"
+            "k_B": "Boltzmann constant (1.381 x 10^-23 J/K)",
+            "c": "Speed of light in vacuum (2.998 x 10^8 m/s)",
+            "\\epsilon_0": "Permittivity of free space (8.854 x 10^-12 F/m)",
+            "\\mu_0": "Permeability of free space (4pi x 10^-7 H/m)"
         }
 
     def generate_section_prose(
@@ -177,198 +333,33 @@ class PhysicsKnowledgeProvider(SubjectKnowledgeProvider):
         include_questions: bool = False,
         requires_derivation: bool = False
     ) -> str:
-        s_low = subtopic.lower()
+        from backend.app.agents.physics_knowledge_prose import (
+            generate_quantum_prose,
+            generate_wave_optics_prose,
+            generate_laser_prose,
+            generate_fiber_optics_prose,
+            generate_em_relativity_prose,
+            generate_physics_numerical,
+            generate_physics_questions
+        )
+
         t_low = topic.lower()
 
-        # Build substantive domain prose
-        paragraphs = []
-
-        if "box" in t_low or "well" in t_low or "box" in s_low or "well" in s_low:
-            if any(k in s_low for k in ["derivation", "eigenvalue", "normalization", "spectrum"]):
-                paragraphs.append(
-                    "The spatial configuration of a non-relativistic quantum particle of rest mass $m$ confined within a one-dimensional "
-                    "infinite potential well of width $L$ is described by the time-independent Schrödinger equation. "
-                    "Because the external potential barriers at $x \\le 0$ and $x \\ge L$ are impenetrable ($V = \\infty$), the quantum wave function "
-                    "vanishes identically in the outer domain. Within the open interval $0 < x < L$, where $V(x) = 0$, the wave equation reduces to "
-                    "the spatial harmonic equation $\\frac{d^2\\psi}{dx^2} + k^2\\psi = 0$, where the wavenumber parameter is defined by $k = \\frac{\\sqrt{2mE}}{\\hbar}$."
-                )
-                paragraphs.append(
-                    "The general solution takes the standard oscillatory form $\\psi(x) = A\\sin(kx) + B\\cos(kx)$. "
-                    "Enforcing Dirichlet boundary conditions preserves state continuity across the rigid barriers: "
-                    "at $x = 0$, the condition $\\psi(0) = B = 0$ requires that the cosine component vanish identically. "
-                    "At the right boundary $x = L$, demanding $\\psi(L) = A\\sin(kL) = 0$ for non-trivial states ($A \\ne 0$) dictates the discrete quantization condition "
-                    "$kL = n\\pi$, where $n = 1, 2, 3, \\dots$ represents the principal quantum number. "
-                    "The spatial wave numbers are therefore quantized as $k_n = \\frac{n\\pi}{L}$."
-                )
-                paragraphs.append(
-                    "Equating this quantized wave number to the kinetic energy relation yields the discrete energy eigenvalue spectrum:\n\n"
-                    "$$E_n = \\frac{\\hbar^2 k_n^2}{2m} = \\frac{n^2 \\pi^2 \\hbar^2}{2mL^2} = \\frac{n^2 h^2}{8mL^2}$$\n\n"
-                    "Imposing unit normalization across the well domain, $\\int_0^L |\\psi_n(x)|^2 dx = A^2 \\int_0^L \\sin^2\\left(\\frac{n\\pi x}{L}\\right) dx = A^2 \\frac{L}{2} = 1$, "
-                    "determines the normalization constant $A = \\sqrt{2/L}$. "
-                    "The complete orthonormal set of stationary wave functions is therefore expressed as:\n\n"
-                    "$$\\psi_n(x) = \\sqrt{\\frac{2}{L}} \\sin\\left(\\frac{n\\pi x}{L}\\right)$$\n\n"
-                    "Crucially, the lowest allowable energy level corresponds to $n = 1$, yielding a non-zero zero-point energy $E_1 = \\frac{h^2}{8mL^2}$, "
-                    "demonstrating that quantum spatial localization precludes the particle from possessing zero kinetic energy."
-                )
-            elif any(k in s_low for k in ["application", "quantum dot", "heterostructure", "laser"]):
-                paragraphs.append(
-                    "The one-dimensional infinite potential well serves as the foundational mathematical archetype for engineered nanoscale semiconductor heterostructures. "
-                    "In modern molecular beam epitaxy (MBE), materials scientists fabricate ultra-thin layers of gallium arsenide (GaAs) bounded by wider-bandgap "
-                    "aluminum gallium arsenide (AlGaAs). The spatial conduction-band discontinuity confines conduction electrons in one dimension, "
-                    "forming quantum well heterostructures that modulate electronic carrier density."
-                )
-                paragraphs.append(
-                    "Because transition energies between discrete quantized subbands scale inversely with well width squared ($\\Delta E \\propto 1/L^2$), "
-                    "nanoscale engineering of the well thickness directly dictates the emitted photon wavelength. "
-                    "This principle powers quantum well laser diodes employed in long-haul optical fiber telecommunications, as well as colloidal semiconductor "
-                    "quantum dots utilized in biological fluorescence tagging and high-gamut display panels."
-                )
-            else:
-                paragraphs.append(
-                    "The infinite potential well illustrates the fundamental mechanism by which spatial boundary constraints induce quantum energy discretization. "
-                    "Classically, a particle bouncing elastically between rigid walls may assume any continuous energy value, and its probability density "
-                    "remains strictly uniform throughout the enclosure. In contrast, quantum wave mechanics establishes standing matter waves with spatial nodes "
-                    "where the probability density $P_n(x) = |\\psi_n(x)|^2$ vanishes entirely."
-                )
-                paragraphs.append(
-                    "For even quantum numbers ($n = 2, 4, \\dots$), a central nodal plane exists at the geometric midpoint $x = L/2$. "
-                    "The particle possesses zero probability of being detected at the well center, yet transitions dynamically across the enclosure, "
-                    "providing an unmistakable demonstration of the non-classical nature of quantum wave interference."
-                )
-
-        elif "de broglie" in t_low or "matter wave" in t_low or "dual nature" in s_low or "de broglie" in s_low:
-            if requires_derivation or any(k in s_low for k in ["derivation", "wavelength", "mathematical"]):
-                paragraphs.append(
-                    "In 1924, Louis de Broglie extended the wave-particle duality established for electromagnetic radiation to material particles. "
-                    "Beginning from Einstein's relativistic relation for photons, where energy is related to momentum by $E = pc$, and equating this to the Planck-Einstein quantum relation "
-                    "$E = h\\nu = \\frac{hc}{\\lambda}$, de Broglie deduced the photon momentum relation $p = \\frac{h}{\\lambda}$."
-                )
-                paragraphs.append(
-                    "Generalizing this hypothesis to all material bodies possessing mechanical momentum $p = mv$, de Broglie postulated the fundamental matter wavelength formula:\n\n"
-                    "$$\\lambda = \\frac{h}{p} = \\frac{h}{mv} = \\frac{h}{\\sqrt{2m E_k}}$$\n\n"
-                    "where $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$ is Planck's constant, $m$ is the particle mass, $v$ is its velocity, and $E_k$ denotes kinetic energy. "
-                    "When an electric charge $q$ is accelerated from rest across an electrostatic potential difference $V$, the acquired kinetic energy equals $E_k = qV$."
-                )
-                paragraphs.append(
-                    "Substituting the rest mass $m_e = 9.109 \\times 10^{-31}\\text{ kg}$ and elementary charge $e = 1.602 \\times 10^{-19}\\text{ C}$ for an electron yields the canonical expression:\n\n"
-                    "$$\\lambda_e = \\frac{h}{\\sqrt{2m_e e V}} = \\frac{1.227}{\\sqrt{V}}\\text{ nm}$$\n\n"
-                    "For accelerating voltages on the order of 50 V to 100 V, the resulting matter wavelength falls between 0.1 nm and 0.17 nm, "
-                    "which directly matches the interatomic lattice spacing of crystalline solids. Experimental verification by Davisson and Germer "
-                    "via electron diffraction off nickel crystal targets demonstrated Bragg diffraction peaks, firmly establishing the wave character of matter."
-                )
-            elif any(k in s_low for k in ["experiment", "davisson", "germer", "verification"]):
-                paragraphs.append(
-                    "The definitive experimental verification of matter waves was achieved in 1927 by Clinton Davisson and Lester Germer at Bell Laboratories. "
-                    "They directed a collimated beam of electrons onto the polished surface of a target nickel single crystal within a vacuum chamber, "
-                    "measuring the angular intensity of scattered electrons with a movable Faraday collector."
-                )
-                paragraphs.append(
-                    "At an accelerating potential of $V = 54\\text{ V}$, a pronounced scattering peak emerged at a scattering angle of $\\theta = 50^\\circ$. "
-                    "Treating the crystalline atomic planes as a natural diffraction grating with Bragg spacing $d = 0.091\\text{ nm}$, Bragg's law "
-                    "$2d\\sin\\phi = n\\lambda$ yielded an experimental wavelength of $0.165\\text{ nm}$. "
-                    "This observation confirmed de Broglie's theoretical prediction ($\\lambda = 1.227/\\sqrt{54} = 0.167\\text{ nm}$) with remarkable precision, "
-                    "establishing matter waves as an empirical reality."
-                )
-            else:
-                paragraphs.append(
-                    "The classical worldview divided the physical universe into localized, corpuscular matter governed by Newtonian mechanics "
-                    "and continuous electromagnetic fields described by Maxwell's equations. "
-                    "However, early twentieth-century experiments including blackbody radiation and the photoelectric effect demonstrated that electromagnetic radiation "
-                    "manifests discrete momentum and particle-like energy quanta upon interaction with atomic systems."
-                )
-                paragraphs.append(
-                    "Recognizing the fundamental aesthetic and physical symmetry of nature, Louis de Broglie hypothesized in 1924 that material particles "
-                    "must equally exhibit dual wave-particle properties during dynamical propagation. He assigned to any particle possessing mechanical momentum $p = mv$ "
-                    "an associated matter wavelength governed by the fundamental de Broglie relationship:\n\n"
-                    "$$\\lambda = \\frac{h}{p} = \\frac{h}{mv}$$\n\n"
-                    "where $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$ represents Planck's constant, $m$ is the inertial mass, and $v$ is the velocity. "
-                    "For macroscopic objects, the vanishingly small value of Planck's constant produces wavelengths far below measurable thresholds. "
-                    "In microscopic systems such as electrons, however, de Broglie wavelengths match atomic crystal lattices."
-                )
-                paragraphs.append(
-                    "The experimental reality of matter waves was definitively established by Clinton Davisson and Lester Germer in 1927 through electron diffraction "
-                    "off nickel crystalline planes obeying Bragg's law. In modern quantum mechanics, matter waves are understood not as mechanical disturbances, "
-                    "but as complex probability amplitudes whose spatial variations dictate the likelihood of physical interactions upon measurement."
-                )
-
-        elif "uncertainty" in t_low or "heisenberg" in t_low:
-            paragraphs.append(
-                "Werner Heisenberg formulated the uncertainty principle in 1927 as an intrinsic mathematical property of wave mechanics rather than "
-                "an instrumental measurement imperfection. A localized spatial particle is represented by a wavepacket synthesized from a continuous "
-                "Fourier superposition of plane waves $\\psi(x) = \\frac{1}{\\sqrt{2\\pi}}\\int A(k)e^{ikx}dk$."
-            )
-            paragraphs.append(
-                "The Fourier transform bandwidth theorem dictates that the spatial width $\\Delta x$ and wavenumber spread $\\Delta k$ satisfy $\\Delta x \\cdot \\Delta k \\ge \\frac{1}{2}$. "
-                "Multiplying by the reduced Planck constant $\\hbar$ and identifying particle momentum as $p_x = \\hbar k$, we obtain the fundamental inequality:\n\n"
-                "$$\\Delta x \\cdot \\Delta p_x \\ge \\frac{\\hbar}{2}$$\n\n"
-                "where $\\hbar = \\frac{h}{2\\pi} \\approx 1.055 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$. "
-                "Similarly, the conjugate relationship between energy and time is bounded by $\\Delta E \\cdot \\Delta t \\ge \\frac{\\hbar}{2}$."
-            )
-
-        elif "velocity" in t_low or "phase" in t_low or "group" in t_low:
-            paragraphs.append(
-                "When harmonic matter waves propagate through a dispersive medium, two distinct velocities describe their dynamical evolution. "
-                "Phase velocity $v_p = \\frac{\\omega}{k}$ characterizes the rate at which individual wavefronts of constant phase advance in space. "
-                "Conversely, group velocity $v_g = \\frac{d\\omega}{dk}$ governs the velocity of the overall wavepacket envelope carrying localized physical energy."
-            )
-            paragraphs.append(
-                "Differentiating $v_p = \\omega/k$ yields Rayleigh's dispersion relation: $v_g = v_p + k \\frac{dv_p}{dk} = v_p - \\lambda \\frac{dv_p}{d\\lambda}$. "
-                "For non-relativistic de Broglie waves in free space, dispersion relation $\\omega = \\frac{\\hbar k^2}{2m}$ yields $v_p = \\frac{v}{2}$ and $v_g = v$, "
-                "proving that the group velocity of the quantum wavepacket envelope identically tracks the physical velocity of the moving particle."
-            )
-
-        elif "operator" in t_low or "eigen" in t_low:
-            paragraphs.append(
-                "In quantum mechanics, physical observables are mapped exclusively to linear Hermitian operators acting within a complex Hilbert space. "
-                "The eigenvalue equation $\\hat{A}\\psi_n = a_n\\psi_n$ represents the core measurement postulate: measuring observable $\\hat{A}$ "
-                "yields one of its discrete eigenvalues $a_n$ with probability $P(a_n) = |\\langle \\psi_n | \\Psi \\rangle|^2$."
-            )
-            paragraphs.append(
-                "Because physical measurement outcomes must be real, operator Hermiticity $\\int \\psi^* (\\hat{A}\\psi) dx = \\int (\\hat{A}\\psi)^* \\psi dx$ "
-                "guarantees that all eigenvalues $a_n$ are strictly real and that eigenfunctions belonging to distinct eigenvalues are mutually orthogonal, "
-                "forming a complete basis for state expansions."
-            )
-
+        if any(k in t_low for k in ["interference", "diffraction", "polarization", "optic", "fringe", "newton", "young", "coherent", "thin film", "grating", "resolving", "brewster"]):
+            paragraphs = generate_wave_optics_prose(topic, subtopic, requires_derivation)
+        elif any(k in t_low for k in ["laser", "emission", "absorption", "population inversion", "metastable", "einstein coefficient", "ruby", "he-ne"]):
+            paragraphs = generate_laser_prose(topic, subtopic, requires_derivation)
+        elif any(k in t_low for k in ["fiber", "optical fiber", "numerical aperture", "acceptance", "step-index", "graded-index", "v-number", "attenuation", "dispersion", "splicing", "photonic crystal"]):
+            paragraphs = generate_fiber_optics_prose(topic, subtopic, requires_derivation)
+        elif any(k in t_low for k in ["maxwell", "gauss", "faraday", "ampere", "displacement current", "poynting", "relativity", "galilean", "lorentz", "dilation", "contraction", "electromagnetism"]):
+            paragraphs = generate_em_relativity_prose(topic, subtopic, requires_derivation)
         else:
-            paragraphs.append(
-                f"The pedagogical study of {subtopic} within the domain of {topic} establishes the foundational principles of modern technical physics. "
-                "By analyzing the governing theoretical mechanisms through the lens of modern experimental verification and analytical rigor, "
-                "students develop an intuitive and quantitative mastery of how microscopic quantum properties govern macroscopic physical phenomena."
-            )
-            paragraphs.append(
-                f"Through systematic formulation of the governing equations and careful evaluation of domain boundary constraints, "
-                "the analytical framework provides a rigorous foundation for downstream engineering design, materials characterization, and scientific modeling."
-            )
+            paragraphs = generate_quantum_prose(topic, subtopic, requires_derivation)
 
-        # Append Worked Solved Numerical Problem if requested
         if include_numericals:
-            paragraphs.append(
-                "### Solved Numerical Example\n\n"
-                "**Problem Statement:** Calculate the de Broglie wavelength associated with an electron accelerated from rest across an electrostatic potential difference of $V = 100\\text{ V}$.\n\n"
-                "**Given Data:**\n"
-                "- Accelerating potential difference: $V = 100\\text{ V}$\n"
-                "- Electron rest mass: $m_e = 9.109 \\times 10^{-31}\\text{ kg}$\n"
-                "- Elementary charge: $e = 1.602 \\times 10^{-19}\\text{ C}$\n"
-                "- Planck constant: $h = 6.626 \\times 10^{-34}\\text{ J}\\cdot\\text{s}$\n\n"
-                "**Governing Formula:**\n"
-                "$$\\lambda = \\frac{h}{\\sqrt{2m_e e V}}$$\n\n"
-                "**Substitution and Calculation:**\n"
-                "$$\\lambda = \\frac{6.626 \\times 10^{-34}}{\\sqrt{2 \\times (9.109 \\times 10^{-31}) \\times (1.602 \\times 10^{-19}) \\times 100}}$$\n"
-                "$$\\lambda = \\frac{6.626 \\times 10^{-34}}{\\sqrt{2.9185 \\times 10^{-47}}} = \\frac{6.626 \\times 10^{-34}}{5.402 \\times 10^{-24}} = 1.2265 \\times 10^{-10}\\text{ m}$$\n\n"
-                "**Final Answer with Units:**\n"
-                "$$\\lambda = 0.123\\text{ nm} = 1.23\\text{ \\AA}$$\n\n"
-                "**Physical Interpretation:** The calculated wavelength is comparable to atomic crystalline spacing, explaining why electron beams readily undergo Bragg diffraction in solid-state lattices."
-            )
-
-        # Append Review Questions if requested
+            paragraphs.append(generate_physics_numerical(topic, subtopic))
         if include_questions:
-            paragraphs.append(
-                "### Academic Review & Conceptual Questions\n\n"
-                f"1. **Conceptual Understanding:** Explain the physical significance of wave-particle duality in relation to {subtopic}. Under what macroscopic conditions do wave manifestations become unobservable?\n\n"
-                f"2. **Analytical Derivation:** Formulate the step-by-step mathematical derivation connecting momentum to wavelength, identifying all boundary assumptions and conservation principles.\n\n"
-                f"3. **Physical Interpretation:** Contrast the classical trajectory of a particle with the quantum probability density distribution governed by wavepacket dynamics.\n\n"
-                f"4. **Engineering Application:** How do the principles of {subtopic} inform the design and spatial resolving power of modern electron optical instruments?"
-            )
+            paragraphs.append(generate_physics_questions(topic, subtopic))
 
         return "\n\n".join(paragraphs)
 

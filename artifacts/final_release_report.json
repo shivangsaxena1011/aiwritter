@@ -1,8 +1,10 @@
 {
-  "release_version": "v3.0.0-PROD",
+  "release_version": "v3.0.0-RC1",
   "product_name": "AIWritter \u2014 Production-Ready Autonomous Academic Textbook Platform",
-  "release_timestamp": "2026-10-07T15:53:00.859898+00:00",
-  "build_status": "STABLE",
+  "release_timestamp": "2026-10-07T18:16:25.514491+00:00",
+  "build_status": "RELEASE_CANDIDATE",
+  "live_provider_verdict": "PRODUCTION CODE HARDENED BUT LIVE PROVIDER EXECUTION UNVERIFIED",
+  "live_provider_rationale": "Free-tier Gemini API quota exhaustion (HTTP 429 RESOURCE_EXHAUSTED). Production client and fallbacks fully hardened and passing all test suites.",
   "qa_status": "PASSED (104 of 104 tests, 20 of 20 historical defect regressions)",
   "security_audit": {
     "client_side_secrets_exposed": false,
@@ -14,17 +16,23 @@
   "benchmarks": {
     "micro_benchmark": {
       "file": "final_micro_benchmark.docx",
-      "words": 1805,
+      "sha256": "4c3be1684503d698e402473f214bee0901f78a31f8edcdafbac7ccfee992ad44",
+      "total_openxml_words": 1805,
+      "substantive_body_prose_words": 806,
       "publication_ready": true
     },
     "quantum_mechanics": {
       "file": "final_quantum_mechanics_benchmark.docx",
-      "words": 3133,
+      "sha256": "c4101c2f937cd0374b173957c35ac9c39072847d528a769d10e7e7f8eee3e683",
+      "total_openxml_words": 4970,
+      "substantive_body_prose_words": 2609,
       "publication_ready": true
     },
     "full_btech_5chapter": {
       "file": "final_full_btech_benchmark.docx",
-      "words": 5536,
+      "sha256": "64e0cf186b49a1fce5d5738d83d5a57ed61021c10590671a6a0bf8e18f9426f9",
+      "total_openxml_words": 15660,
+      "substantive_body_prose_words": 9960,
       "publication_ready": true
     }
   },
