@@ -28,7 +28,16 @@ class ApiClient {
                     const text = await response.text();
                     try {
                         const parsed = JSON.parse(text);
-                        errorDetail = parsed.detail || parsed.error || errorDetail;
+                        const rawDetail = parsed.detail !== undefined ? parsed.detail : parsed.error;
+                        if (Array.isArray(rawDetail)) {
+                            errorDetail = rawDetail
+                                .map(e => `${e.loc ? e.loc.filter(x => x !== 'body').join('.') + ': ' : ''}${e.msg || JSON.stringify(e)}`)
+                                .join(' | ');
+                        } else if (typeof rawDetail === 'object' && rawDetail !== null) {
+                            errorDetail = rawDetail.message || rawDetail.msg || JSON.stringify(rawDetail);
+                        } else if (rawDetail) {
+                            errorDetail = String(rawDetail);
+                        }
                     } catch {
                         errorDetail = text.length > 200 ? text.substring(0, 200) + '...' : text;
                     }

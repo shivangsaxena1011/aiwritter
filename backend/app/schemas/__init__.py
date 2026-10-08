@@ -9,6 +9,24 @@ class TopicSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     subtopics: List[str] = Field(default_factory=list)
 
+    @field_validator("subtopics", mode="before")
+    @classmethod
+    def normalize_subtopics(cls, v):
+        if not isinstance(v, list):
+            return ["Foundational Analysis"]
+        normalized = []
+        for item in v:
+            if isinstance(item, dict):
+                name = item.get("name") or item.get("title") or str(item)
+                normalized.append(str(name).strip())
+            elif isinstance(item, str):
+                s = item.strip()
+                if s:
+                    normalized.append(s)
+            elif item is not None:
+                normalized.append(str(item).strip())
+        return normalized or ["Foundational Analysis"]
+
 class UnitSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     topics: List[TopicSchema] = Field(default_factory=list)
@@ -25,7 +43,7 @@ class ParseSyllabusResponse(BaseModel):
     units: List[UnitSchema]
 
 class CreateBookRequest(BaseModel):
-    title: str = Field(..., min_length=2, max_length=255)
+    title: str = Field(..., min_length=1, max_length=255)
     subtitle: Optional[str] = Field(None, max_length=255)
     author: Optional[str] = Field("AI Academic Press", max_length=100)
     academic_level: Optional[str] = Field("University / Reference", max_length=50)
