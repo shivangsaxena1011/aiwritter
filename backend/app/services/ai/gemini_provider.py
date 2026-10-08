@@ -86,7 +86,7 @@ class GeminiProvider(AIProvider):
                         backoff = min(backoff * 1.5, 10.0)
             raise last_err or RuntimeError("Gemini text generation failed after retries")
 
-        return await asyncio.to_thread(_call)
+        return await asyncio.wait_for(asyncio.to_thread(_call), timeout=settings.AI_TIMEOUT_SECONDS)
 
     async def generate_structured(
         self,
@@ -139,7 +139,7 @@ class GeminiProvider(AIProvider):
                         backoff = min(backoff * 1.5, 10.0)
             raise last_err or RuntimeError("Gemini structured call failed after retries")
 
-        return await asyncio.to_thread(_call)
+        return await asyncio.wait_for(asyncio.to_thread(_call), timeout=settings.AI_TIMEOUT_SECONDS)
 
     async def generate_image(
         self,
@@ -179,4 +179,4 @@ class GeminiProvider(AIProvider):
                     if attempt == retries - 1:
                         return {"success": False, "path": None, "prompt": prompt, "error": str(e)}
 
-        return await asyncio.to_thread(_call)
+        return await asyncio.wait_for(asyncio.to_thread(_call), timeout=settings.AI_TIMEOUT_SECONDS)

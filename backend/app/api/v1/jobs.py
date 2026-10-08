@@ -2,13 +2,15 @@ import json
 import uuid
 import asyncio
 from datetime import datetime, timezone
-from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from typing import Optional, List, Set, Tuple, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Header
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
-from backend.app.core.database import get_db
+from backend.app.core.database import get_db, SessionLocal
+from backend.app.core.security import verify_api_auth
+from backend.app.core.rate_limit import rate_limit_dependency
 from backend.app.models import Book, GenerationJob, GenerationEvent, GeneratedAsset
 from backend.app.schemas import JobResponse, EventResponse
 from backend.app.workers.queue_manager import queue_manager
@@ -16,12 +18,32 @@ from backend.app.workers.queue_manager import queue_manager
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
 class CreateJobRequest(BaseModel):
-    book_id: str
+    book_id: str = Field(..., min_length=1)
     api_key: Optional[str] = None
 
-@router.post("", response_model=JobResponse, status_code=201)
-def create_generation_job(req: CreateJobRequest, db: Session = Depends(get_db)):
+    @field_validator("book_id")
+    @classmethod
+    def validate_book_id(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("book_id cannot be blank or whitespace-only")
+        return s
+
+@router.post(
+    "",
+    response_model=JobResponse,
+    status_code=201,
+    dependencies=[Depends(rate_limit_dependency(max_requests=20, window_seconds=60.0))]
+)
+def create_generation_job(
+    req: CreateJobRequest,
+    authorization: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
     """Creates a durable generation job and dispatches it to the background queue."""
+    verify_api_auth(authorization=authorization, x_api_key=x_api_key)
+
     book = db.query(Book).filter(Book.id == req.book_id).first()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
@@ -52,16 +74,29 @@ def get_job(job_id: str, db: Session = Depends(get_db)):
     return _format_job_response(job, db)
 
 @router.post("/{job_id}/cancel")
-def cancel_job(job_id: str, db: Session = Depends(get_db)):
+def cancel_job(
+    job_id: str,
+    authorization: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
     """Cancels an active generation job."""
+    verify_api_auth(authorization=authorization, x_api_key=x_api_key)
     success = queue_manager.cancel_job(job_id, db)
     if not success:
         raise HTTPException(status_code=400, detail="Cannot cancel job in current state")
     return {"status": "CANCELLED", "job_id": job_id}
 
 @router.post("/{job_id}/retry")
-def retry_job(job_id: str, req: Optional[CreateJobRequest] = None, db: Session = Depends(get_db)):
-    """Retries a failed or cancelled job using partial recovery."""
+def retry_job(
+    job_id: str,
+    req: Optional[CreateJobRequest] = None,
+    authorization: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Retries a failed, cancelled, or partial job using partial recovery."""
+    verify_api_auth(authorization=authorization, x_api_key=x_api_key)
     api_key = req.api_key if req else None
     success = queue_manager.retry_job(job_id, db, api_key=api_key)
     if not success:
@@ -85,63 +120,94 @@ def get_job_events(job_id: str, after: Optional[str] = Query(None), db: Session 
     events = query.order_by(GenerationEvent.created_at.asc()).all()
     return events
 
+def _fetch_poll_update(job_id: str, last_time: Optional[datetime], seen_ids: Set[str]) -> Tuple[List[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Runs synchronous DB polling inside a thread-safe short-lived session."""
+    with SessionLocal() as db:
+        ev_query = db.query(GenerationEvent).filter(GenerationEvent.job_id == job_id)
+        if last_time:
+            ev_query = ev_query.filter(GenerationEvent.created_at >= last_time)
+
+        raw_events = ev_query.order_by(GenerationEvent.created_at.asc()).all()
+        new_events = []
+        for ev in raw_events:
+            if ev.id in seen_ids:
+                continue
+            seen_ids.add(ev.id)
+            new_events.append({
+                "event_id": ev.id,
+                "job_id": ev.job_id,
+                "type": ev.event_type,
+                "message": ev.message,
+                "progress": ev.progress,
+                "timestamp": ev.created_at.isoformat(),
+                "created_at": ev.created_at.isoformat(),
+                "metadata": ev.event_metadata or {}
+            })
+
+        # Check job terminal status
+        current_job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
+        terminal_data = None
+        if current_job and current_job.status in ["COMPLETED", "PARTIAL", "FAILED", "CANCELLED"]:
+            asset = db.query(GeneratedAsset).filter(
+                GeneratedAsset.job_id == job_id,
+                GeneratedAsset.type == "docx"
+            ).first()
+            terminal_data = {
+                "event_id": str(uuid.uuid4()),
+                "job_id": job_id,
+                "type": "complete" if current_job.status in ["COMPLETED", "PARTIAL"] else "error",
+                "status": current_job.status,
+                "message": current_job.error or f"Pipeline finished ({current_job.status})",
+                "progress": current_job.progress,
+                "download_url": asset.url if asset else None
+            }
+
+        return new_events, terminal_data
+
 @router.get("/{job_id}/stream")
-async def stream_job_events(job_id: str, request: Request, db: Session = Depends(get_db)):
-    """Server-Sent Events (SSE) streaming endpoint backed by database with keepalives."""
-    job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-    if not job:
+async def stream_job_events(job_id: str, request: Request):
+    """
+    Server-Sent Events (SSE) streaming endpoint backed by database with keepalives.
+    Uses short-lived thread-pool DB sessions to prevent connection pool exhaustion,
+    and deduplicated event tracking to prevent event loss or duplicate emissions.
+    """
+    # Initial existence check using short-lived session
+    with SessionLocal() as db:
+        job_exists = db.query(GenerationJob.id).filter(GenerationJob.id == job_id).first()
+    if not job_exists:
         raise HTTPException(status_code=404, detail="Job not found")
 
     async def event_generator():
-        last_event_time = None
+        last_event_time: Optional[datetime] = None
+        seen_event_ids: Set[str] = set()
+
         while True:
             if await request.is_disconnected():
                 break
 
-            # Refresh session to see latest commits from worker
+            # Poll via thread-safe short-lived session without holding connection pool
             try:
-                db.commit()
-            except Exception:
-                pass
+                new_events, terminal_data = await asyncio.to_thread(
+                    _fetch_poll_update, job_id, last_event_time, seen_event_ids
+                )
+            except Exception as poll_err:
+                yield f": poll_error {str(poll_err)}\n\n"
+                await asyncio.sleep(2)
+                continue
 
-            # Poll events since last timestamp
-            ev_query = db.query(GenerationEvent).filter(GenerationEvent.job_id == job_id)
-            if last_event_time:
-                ev_query = ev_query.filter(GenerationEvent.created_at > last_event_time)
-            new_events = ev_query.order_by(GenerationEvent.created_at.asc()).all()
-
-            for ev in new_events:
-                last_event_time = ev.created_at
-                payload = {
-                    "event_id": ev.id,
-                    "job_id": ev.job_id,
-                    "type": ev.event_type,
-                    "message": ev.message,
-                    "progress": ev.progress,
-                    "timestamp": ev.created_at.isoformat(),
-                    "created_at": ev.created_at.isoformat(),
-                    "metadata": ev.event_metadata
-                }
+            for payload in new_events:
+                try:
+                    last_event_time = datetime.fromisoformat(payload["timestamp"])
+                except Exception:
+                    pass
                 yield f"data: {json.dumps(payload)}\n\n"
 
-            # Check job status
-            db.expire(job)
-            current_job = db.query(GenerationJob).filter(GenerationJob.id == job_id).first()
-            if current_job and current_job.status in ["COMPLETED", "PARTIAL", "FAILED", "CANCELLED"]:
-                asset = db.query(GeneratedAsset).filter(
-                    GeneratedAsset.job_id == job_id,
-                    GeneratedAsset.type == "docx"
-                ).first()
-                final_payload = {
-                    "event_id": str(uuid.uuid4()),
-                    "job_id": job_id,
-                    "type": "complete" if current_job.status in ["COMPLETED", "PARTIAL"] else "error",
-                    "status": current_job.status,
-                    "message": current_job.error or f"Pipeline finished ({current_job.status})",
-                    "progress": current_job.progress,
-                    "download_url": asset.url if asset else None
-                }
-                yield f"data: {json.dumps(final_payload)}\n\n"
+            # Prune seen_event_ids to prevent memory growth if stream runs for very long
+            if len(seen_event_ids) > 10000:
+                seen_event_ids.clear()
+
+            if terminal_data:
+                yield f"data: {json.dumps(terminal_data)}\n\n"
                 break
 
             # Keepalive ping every 2 seconds

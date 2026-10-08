@@ -680,17 +680,26 @@ class DOCXExporter(DocumentExporter):
                             r.font.color.rgb = RGBColor(51, 65, 85)
 
     def _parse_inline_formatting(self, paragraph, text: str):
-        """Converts Markdown bold, italics, code, and inline math into Word runs."""
-        # Tokenize by bold (**), italic (*), inline code (`), and inline math ($...$)
-        pattern = r"(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\$[^\$]+\$)"
+        """Converts Markdown bold, italics, code, and inline/display math into Word runs."""
+        # Tokenize by display math ($$...$$), bold (**), italic (*), inline code (`), and inline math ($...$)
+        pattern = r"(\$\$[^\$]+\$\$|\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\$[^\$]+\$)"
         parts = re.split(pattern, text)
 
         for part in parts:
             if not part:
                 continue
 
+            # Display Math ($$...$$ embedded in paragraph)
+            if part.startswith("$$") and part.endswith("$$") and len(part) >= 4:
+                raw_math = part[2:-2].strip()
+                success = OMMLEngine.insert_equation_into_paragraph(paragraph, raw_math, is_display=False)
+                if not success:
+                    run = paragraph.add_run(OMMLEngine.sanitize_math_text(raw_math))
+                    run.font.name = "Cambria Math"
+                    run.font.italic = True
+                    run.font.size = Pt(12)
             # Inline Math ($...$)
-            if part.startswith("$") and part.endswith("$") and len(part) > 2:
+            elif part.startswith("$") and part.endswith("$") and len(part) > 2:
                 raw_math = part[1:-1].strip()
                 success = OMMLEngine.insert_equation_into_paragraph(paragraph, raw_math, is_display=False)
                 if not success:

@@ -34,6 +34,8 @@ COPY backend/ ./backend/
 COPY prompts/ ./prompts/
 COPY templates/ ./templates/
 COPY frontend/ ./frontend/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
 
 # Create data and output storage directories with correct ownership
 RUN mkdir -p /app/data /app/output && \

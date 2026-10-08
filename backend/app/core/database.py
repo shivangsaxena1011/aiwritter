@@ -41,12 +41,21 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 def init_db():
-    """Initializes database tables."""
+    """Initializes database tables and synchronizes Alembic revision status."""
     try:
         # Import models so Base metadata is populated
         import backend.app.models  # noqa: F401
         Base.metadata.create_all(bind=engine)
-        logger.info("Database initialized successfully.")
+
+        from sqlalchemy import text, inspect
+        inspector = inspect(engine)
+        if "alembic_version" not in inspector.get_table_names():
+            with engine.begin() as conn:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS alembic_version (version_num VARCHAR(32) NOT NULL, CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num))"))
+                res = conn.execute(text("SELECT count(*) FROM alembic_version"))
+                if res.scalar() == 0:
+                    conn.execute(text("INSERT INTO alembic_version (version_num) VALUES ('12754522d378')"))
+        logger.info("Database initialized and synchronized with Alembic migration state.")
     except Exception as e:
         logger.error(f"Error initializing database: {e}")
         raise

@@ -46,7 +46,8 @@ class S3StorageProvider(StorageProvider):
         return self._s3_client
 
     def save_file(self, source_path: str, storage_key: str) -> str:
-        cache_dest = os.path.join(self.local_cache_dir, storage_key)
+        from backend.app.core.security import validate_safe_path
+        cache_dest = validate_safe_path(self.local_cache_dir, storage_key)
         os.makedirs(os.path.dirname(cache_dest), exist_ok=True)
         if os.path.abspath(source_path) != os.path.abspath(cache_dest):
             import shutil
@@ -54,29 +55,50 @@ class S3StorageProvider(StorageProvider):
 
         client = self.s3_client
         if client:
-            try:
-                client.upload_file(source_path, self.bucket, storage_key)
-                if self.endpoint_url:
-                    return f"{self.endpoint_url.rstrip('/')}/{self.bucket}/{storage_key}"
-                return f"https://{self.bucket}.s3.amazonaws.com/{storage_key}"
-            except Exception as e:
-                logger.error(f"Failed to upload {storage_key} to S3 bucket {self.bucket}: {e}")
+            import time
+            last_err = None
+            retries = 3
+            backoff = 1.0
+            for attempt in range(retries):
+                try:
+                    client.upload_file(source_path, self.bucket, storage_key)
+                    if self.endpoint_url:
+                        return f"{self.endpoint_url.rstrip('/')}/{self.bucket}/{storage_key}"
+                    return f"https://{self.bucket}.s3.amazonaws.com/{storage_key}"
+                except Exception as e:
+                    last_err = e
+                    logger.warning(f"S3 upload attempt {attempt+1}/{retries} failed for {storage_key}: {e}")
+                    if attempt < retries - 1:
+                        time.sleep(backoff)
+                        backoff *= 2.0
+
+            logger.error(f"All {retries} S3 upload attempts failed for {storage_key} to bucket {self.bucket}: {last_err}")
+            if settings.APP_ENV == "production" and settings.STORAGE_PROVIDER in ("s3", "r2"):
+                raise RuntimeError(f"Cloud storage upload failed for {storage_key}: {last_err}")
 
         return f"/api/v1/files/{storage_key}"
 
     def get_file_path(self, storage_key: str) -> str:
-        cache_path = os.path.join(self.local_cache_dir, storage_key)
+        from backend.app.core.security import validate_safe_path
+        cache_path = validate_safe_path(self.local_cache_dir, storage_key)
         if os.path.exists(cache_path):
             return cache_path
 
         client = self.s3_client
         if client:
-            try:
-                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-                client.download_file(self.bucket, storage_key, cache_path)
-                return cache_path
-            except Exception as e:
-                logger.error(f"Failed to download {storage_key} from S3 bucket {self.bucket}: {e}")
+            import time
+            retries = 3
+            backoff = 1.0
+            for attempt in range(retries):
+                try:
+                    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                    client.download_file(self.bucket, storage_key, cache_path)
+                    return cache_path
+                except Exception as e:
+                    logger.warning(f"S3 download attempt {attempt+1}/{retries} failed for {storage_key}: {e}")
+                    if attempt < retries - 1:
+                        time.sleep(backoff)
+                        backoff *= 2.0
 
         return cache_path
 

@@ -16,4 +16,5 @@ data/
 .pytest_cache/
 .DS_Store
 artifacts/
+scratch/
 temp_*.txt

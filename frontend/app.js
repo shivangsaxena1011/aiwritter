@@ -164,10 +164,13 @@ function renderTree() {
 }
 
 function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function addUnit() {
@@ -645,7 +648,7 @@ function startPollingFallback(jobId) {
             }
 
             const job = await api.getJob(jobId);
-            if (job.status === 'COMPLETED') {
+            if (job.status === 'COMPLETED' || job.status === 'PARTIAL') {
                 clearInterval(state.pollInterval);
                 state.pollInterval = null;
                 finishPipeline(job);
@@ -680,7 +683,7 @@ function handlePipelineEvent(data) {
         document.getElementById('current-item').textContent = itemText;
     }
 
-    if (type === 'complete' || data.status === 'COMPLETED') {
+    if (type === 'complete' || data.status === 'COMPLETED' || data.status === 'PARTIAL') {
         finishPipeline(data);
     } else if (type === 'error' || data.status === 'FAILED') {
         handleJobFailure(data);
@@ -701,9 +704,18 @@ function finishPipeline(data) {
     state.generationComplete = true;
     updateProgress(100);
 
-    appendLog('🎉 Academic textbook compilation complete and verified!', 'success');
-    document.getElementById('current-task').textContent = 'Publication Complete!';
-    document.getElementById('current-item').textContent = 'Document packaged and quality checked.';
+    const isPartial = (data.status === 'PARTIAL');
+    if (isPartial) {
+        appendLog('⚠️ Academic textbook compilation partially completed (some sections encountered fallback/partial drafting).', 'system');
+        document.getElementById('current-task').textContent = 'Publication Partially Complete';
+        document.getElementById('current-item').textContent = 'Document packaged with partial sections.';
+        const retryBtn = document.getElementById('btn-retry-job');
+        if (retryBtn) retryBtn.style.display = 'inline-flex';
+    } else {
+        appendLog('🎉 Academic textbook compilation complete and verified!', 'success');
+        document.getElementById('current-task').textContent = 'Publication Complete!';
+        document.getElementById('current-item').textContent = 'Document packaged and quality checked.';
+    }
 
     // Mark all agent nodes completed
     document.querySelectorAll('.agent-flow-v3 .agent-node').forEach(n => {

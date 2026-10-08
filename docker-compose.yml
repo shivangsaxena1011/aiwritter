@@ -19,9 +19,11 @@ services:
       - TEXT_MODEL=${TEXT_MODEL:-gemini-2.5-flash}
       - IMAGE_MODEL=${IMAGE_MODEL:-imagen-3.0-generate-002}
       - DATABASE_URL=${DATABASE_URL:-sqlite:////app/data/aiwriter.db}
-      - STORAGE_TYPE=local
-      - STORAGE_LOCAL_DIR=/app/output
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-local}
+      - STORAGE_LOCAL_DIR=${STORAGE_LOCAL_DIR:-/app/output}
       - MAX_CONCURRENT_JOBS=2
+      - REDIS_URL=${REDIS_URL:-}
+      - RATE_LIMIT_ENABLED=true
     volumes:
       - app_data:/app/data
       - app_output:/app/output

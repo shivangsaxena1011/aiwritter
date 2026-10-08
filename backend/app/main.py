@@ -37,6 +37,15 @@ async def lifespan(app: FastAPI):
     init_db()
     os.makedirs(settings.STORAGE_LOCAL_DIR, exist_ok=True)
 
+    # Recover any interrupted jobs left in non-terminal states from prior crashes
+    from backend.app.core.database import SessionLocal
+    from backend.app.workers.queue_manager import queue_manager
+    try:
+        with SessionLocal() as recovery_db:
+            queue_manager.recover_interrupted_jobs(recovery_db)
+    except Exception as rec_err:
+        logger.error(f"Failed to run startup job recovery: {rec_err}")
+
     # Verify write permissions to storage directory
     test_probe = os.path.join(settings.STORAGE_LOCAL_DIR, ".write_probe")
     try:
@@ -58,12 +67,19 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS
+# CORS Security: wildcard '*' cannot be combined with allow_credentials=True in standard CORS
+cors_origins = settings.CORS_ORIGINS
+allow_creds = True
+if "*" in cors_origins or cors_origins == ["*"]:
+    allow_creds = False
+    if settings.APP_ENV == "production":
+        logger.warning("CORS wildcard origin configured in production without credentials.")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=allow_creds,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 
@@ -163,7 +179,12 @@ async def serve_index():
 
 @app.get("/{file_name}")
 async def serve_frontend_assets(file_name: str):
-    file_path = os.path.join(frontend_dir, file_name)
+    from backend.app.core.security import validate_safe_path
+    try:
+        file_path = validate_safe_path(frontend_dir, file_name)
+    except Exception:
+        return RedirectResponse(url="/")
+
     if os.path.exists(file_path) and os.path.isfile(file_path):
         from fastapi.responses import FileResponse
         return FileResponse(file_path)

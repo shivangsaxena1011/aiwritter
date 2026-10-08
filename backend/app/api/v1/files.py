@@ -30,13 +30,14 @@ def download_file(filename: str, db: Session = Depends(get_db)):
             else:
                 local_path = storage.get_file_path(asset.storage_key)
 
-    # Fallback to project artifacts directory
-    if not os.path.exists(local_path):
-        artifact_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "artifacts", safe_filename))
-        if os.path.exists(artifact_path):
-            local_path = artifact_path
-
-    if not os.path.exists(local_path):
+    # Strictly verify that resolved local_path is within storage directory
+    from backend.app.core.security import validate_safe_path
+    try:
+        # Check against base storage directory
+        rel = os.path.relpath(local_path, storage.local_dir)
+        if rel.startswith("..") or not os.path.exists(local_path):
+            raise HTTPException(status_code=404, detail="File not found")
+    except Exception:
         raise HTTPException(status_code=404, detail="File not found")
 
     media_type = "application/octet-stream"

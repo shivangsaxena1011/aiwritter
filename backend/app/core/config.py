@@ -63,6 +63,7 @@ class Settings(BaseSettings):
 
     # Storage
     STORAGE_PROVIDER: str = Field(default="local", description="local | s3 | r2")
+    STORAGE_TYPE: Optional[str] = Field(default=None, description="Alias for STORAGE_PROVIDER")
     STORAGE_LOCAL_DIR: str = Field(default="./output")
     STORAGE_BUCKET: Optional[str] = None
     STORAGE_ACCESS_KEY: Optional[str] = None
@@ -76,9 +77,16 @@ class Settings(BaseSettings):
     MAX_CONTENT_REVIEW_RETRIES: int = 2
     AI_TIMEOUT_SECONDS: float = 120.0
 
-    # Security
+    # Security & Auth
     CORS_ORIGINS: List[str] = ["*"]
     SECRET_KEY: str = "dev-secret-key-change-in-production-123456789"
+    AUTH_REQUIRED: bool = Field(default=False, description="Whether private endpoints require authentication token")
+    API_AUTH_SECRET: Optional[str] = Field(default=None, description="Shared bearer token or API key for private endpoint authentication")
+
+    # Rate Limiting
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_REQUESTS_PER_MINUTE: int = 60
+    EXPENSIVE_ENDPOINT_LIMIT_PER_MINUTE: int = 20
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
@@ -95,11 +103,18 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_guards(self) -> "Settings":
+        if self.STORAGE_TYPE and not self.STORAGE_PROVIDER:
+            self.STORAGE_PROVIDER = self.STORAGE_TYPE
+        elif self.STORAGE_TYPE and self.STORAGE_PROVIDER == "local":
+            self.STORAGE_PROVIDER = self.STORAGE_TYPE
+
         if self.APP_ENV == "production":
             if self.ALLOW_MOCK_PROVIDERS:
                 raise ValueError("ALLOW_MOCK_PROVIDERS cannot be True in production environment.")
             if self.AI_MODE == "mock":
                 raise ValueError("AI_MODE='mock' is strictly prohibited in production environment.")
+            if not self.API_AUTH_SECRET and self.AUTH_REQUIRED:
+                raise ValueError("API_AUTH_SECRET must be configured when AUTH_REQUIRED=True in production.")
         return self
 
     model_config = SettingsConfigDict(

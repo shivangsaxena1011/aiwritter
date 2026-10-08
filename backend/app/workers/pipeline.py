@@ -11,6 +11,7 @@ import json
 import time
 import uuid
 import logging
+import asyncio
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
@@ -128,10 +129,16 @@ class BookGenerationOrchestrator:
             self.db.rollback()
 
     def _check_cancellation(self) -> bool:
-        """Checks if job was cancelled by user."""
-        self.db.expire_all()
-        job = self.db.query(GenerationJob).filter(GenerationJob.id == self.job_id).first()
-        return bool(job and job.status == "CANCELLED")
+        """Checks if job was cancelled by user via queue_manager memory token or database record."""
+        from backend.app.workers.queue_manager import queue_manager
+        if queue_manager.is_job_cancelled(self.job_id):
+            return True
+        try:
+            self.db.expire_all()
+            job = self.db.query(GenerationJob).filter(GenerationJob.id == self.job_id).first()
+            return bool(job and job.status == "CANCELLED")
+        except Exception:
+            return False
 
     async def execute(self):
         job = self.db.query(GenerationJob).filter(GenerationJob.id == self.job_id).first()
@@ -143,6 +150,11 @@ class BookGenerationOrchestrator:
             raise ValueError(f"Book {job.book_id} not found")
 
         try:
+            if settings.APP_ENV == "production":
+                from backend.app.services.ai.mock_provider import MockProvider
+                if isinstance(self.ai, MockProvider):
+                    raise RuntimeError("MockProvider is strictly prohibited in production mode.")
+
             # Stage 1: Initialization and Context Setup
             job.status = "PLANNING"
             job.current_stage = "Stage 1: Syllabus Analysis & Architecture"
@@ -264,8 +276,7 @@ class BookGenerationOrchestrator:
             # Iterate through Chapters -> Topics -> Subtopics
             for u_idx, unit in enumerate(units, start=1):
                 if self._check_cancellation():
-                    self._log_event("warning", "Generation job cancelled by user.")
-                    return
+                    raise asyncio.CancelledError("Generation job cancelled by user.")
 
                 topics = self.db.query(BookTopic).filter(BookTopic.unit_id == unit.id).order_by(BookTopic.position).all()
                 topic_names = [t.title for t in topics]
@@ -351,8 +362,7 @@ class BookGenerationOrchestrator:
 
                     for s_idx, subtopic in enumerate(subtopics, start=1):
                         if self._check_cancellation():
-                            self._log_event("warning", "Generation job cancelled by user.")
-                            return
+                            raise asyncio.CancelledError("Generation job cancelled by user.")
 
                         job.current_stage = f"Drafting: Chapter {u_idx} > {topic.title}"
                         job.current_item = subtopic.title
@@ -986,10 +996,10 @@ class BookGenerationOrchestrator:
             # Finalize Job
             final_status = "PARTIAL" if failed_subtopics > 0 else "COMPLETED"
             job.status = final_status
-            job.current_stage = "Completed"
+            job.current_stage = f"Completed ({final_status})" if final_status == "PARTIAL" else "Completed"
             job.progress = 100.0
             job.completed_at = datetime.now(timezone.utc)
-            book.status = "completed"
+            book.status = "partial" if final_status == "PARTIAL" else "completed"
             self.db.commit()
 
             self._log_event("complete", f"Academic book publishing pipeline finished ({final_status})!", 100.0, {
@@ -999,13 +1009,37 @@ class BookGenerationOrchestrator:
                 "syllabus_coverage": coverage_report
             })
 
+        except asyncio.CancelledError:
+            logger.info(f"Pipeline execution cancelled for job {self.job_id}")
+            try:
+                self.db.rollback()
+                self.db.expire_all()
+                job = self.db.query(GenerationJob).filter(GenerationJob.id == self.job_id).first()
+                if job:
+                    job.status = "CANCELLED"
+                    job.current_stage = "Cancelled"
+                    job.updated_at = datetime.now(timezone.utc)
+                    self.db.commit()
+                self._log_event("warning", "Generation job cancelled by user.", progress=job.progress if job else 0.0)
+            except Exception as cancel_db_err:
+                logger.error(f"Error recording cancelled job state in DB: {cancel_db_err}")
+            raise
+
         except Exception as e:
             logger.exception(f"Pipeline execution error: {e}")
-            job.status = "FAILED"
-            job.error = str(e)
-            job.updated_at = datetime.now(timezone.utc)
-            self.db.commit()
-            self._log_event("error", f"Pipeline failed: {str(e)}", job.progress)
+            try:
+                self.db.rollback()
+                self.db.expire_all()
+                job = self.db.query(GenerationJob).filter(GenerationJob.id == self.job_id).first()
+                if job:
+                    job.status = "FAILED"
+                    job.error = str(e)
+                    job.current_stage = "Failed"
+                    job.updated_at = datetime.now(timezone.utc)
+                    self.db.commit()
+                self._log_event("error", f"Pipeline failed: {str(e)}", progress=job.progress if job else 0.0)
+            except Exception as err_db:
+                logger.error(f"Error recording failed job state in DB: {err_db}")
             raise
 
 # Semantic Alias

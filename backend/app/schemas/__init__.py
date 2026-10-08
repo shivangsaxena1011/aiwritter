@@ -5,9 +5,25 @@ from pydantic import BaseModel, Field, field_validator
 class SubtopicSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Subtopic name cannot be blank or whitespace-only")
+        return s
+
 class TopicSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    subtopics: List[str] = Field(default_factory=list)
+    subtopics: List[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Topic name cannot be blank or whitespace-only")
+        return s
 
     @field_validator("subtopics", mode="before")
     @classmethod
@@ -18,25 +34,58 @@ class TopicSchema(BaseModel):
         for item in v:
             if isinstance(item, dict):
                 name = item.get("name") or item.get("title") or str(item)
-                normalized.append(str(name).strip())
+                s = str(name).strip()
+                if s:
+                    normalized.append(s)
             elif isinstance(item, str):
                 s = item.strip()
                 if s:
                     normalized.append(s)
             elif item is not None:
-                normalized.append(str(item).strip())
+                s = str(item).strip()
+                if s:
+                    normalized.append(s)
+        if len(normalized) > 20:
+            raise ValueError("A single topic cannot exceed 20 subtopics")
         return normalized or ["Foundational Analysis"]
 
 class UnitSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    topics: List[TopicSchema] = Field(default_factory=list)
+    topics: List[TopicSchema] = Field(default_factory=list, max_length=25)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Unit name cannot be blank or whitespace-only")
+        return s
 
 class TableOfContentsSchema(BaseModel):
-    units: List[UnitSchema] = Field(..., min_length=1)
+    units: List[UnitSchema] = Field(..., min_length=1, max_length=30)
+
+    @field_validator("units")
+    @classmethod
+    def validate_total_subtopics(cls, v: List[UnitSchema]) -> List[UnitSchema]:
+        total_subtopics = 0
+        for u in v:
+            for t in u.topics:
+                total_subtopics += len(t.subtopics)
+        if total_subtopics > 120:
+            raise ValueError(f"Total book subtopics ({total_subtopics}) exceeds maximum allowed limit of 120")
+        return v
 
 class ParseSyllabusRequest(BaseModel):
     text: str = Field(..., min_length=5, max_length=50000, description="Raw syllabus, outline, or markdown text")
     api_key: Optional[str] = None
+
+    @field_validator("text")
+    @classmethod
+    def validate_non_blank_text(cls, v: str) -> str:
+        s = v.strip()
+        if len(s) < 5:
+            raise ValueError("Syllabus text must contain at least 5 non-whitespace characters")
+        return s
 
 class ParseSyllabusResponse(BaseModel):
     title: str
@@ -45,6 +94,14 @@ class ParseSyllabusResponse(BaseModel):
 class CreateBookRequest(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     subtitle: Optional[str] = Field(None, max_length=255)
+
+    @field_validator("title")
+    @classmethod
+    def validate_non_blank_title(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Book title cannot be blank or whitespace-only")
+        return s
     author: Optional[str] = Field("AI Academic Press", max_length=100)
     academic_level: Optional[str] = Field("University / Reference", max_length=50)
     target_audience: Optional[str] = Field("Undergraduate & Graduate", max_length=100)

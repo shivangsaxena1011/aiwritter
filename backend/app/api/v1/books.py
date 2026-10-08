@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from backend.app.core.database import get_db
+from backend.app.core.security import verify_api_auth
+from backend.app.core.rate_limit import rate_limit_dependency
 from backend.app.models import Book, BookUnit, BookTopic, BookSubtopic
 from backend.app.schemas import (
     CreateBookRequest, ParseSyllabusRequest, ParseSyllabusResponse,
@@ -14,7 +16,11 @@ from backend.app.agents.chapter_depth_controller import ChapterDepthController
 
 router = APIRouter(prefix="/books", tags=["Books"])
 
-@router.post("/parse-syllabus", response_model=ParseSyllabusResponse)
+@router.post(
+    "/parse-syllabus",
+    response_model=ParseSyllabusResponse,
+    dependencies=[Depends(rate_limit_dependency(max_requests=15, window_seconds=60.0))]
+)
 async def parse_syllabus(req: ParseSyllabusRequest):
     """Parses raw text, outline, or markdown into structured Table of Contents."""
     ai_provider = get_ai_provider(api_key=req.api_key)
@@ -49,9 +55,19 @@ def estimate_book_metrics(req: CreateBookRequest):
         "estimated_minutes": estimated_minutes
     }
 
-@router.post("", status_code=201)
-def create_book(req: CreateBookRequest, db: Session = Depends(get_db)):
+@router.post(
+    "",
+    status_code=201,
+    dependencies=[Depends(rate_limit_dependency(max_requests=25, window_seconds=60.0))]
+)
+def create_book(
+    req: CreateBookRequest,
+    authorization: Optional[str] = Header(None),
+    x_api_key: Optional[str] = Header(None),
+    db: Session = Depends(get_db)
+):
     """Saves book definition and full Table of Contents hierarchy to database."""
+    verify_api_auth(authorization=authorization, x_api_key=x_api_key)
     book = Book(
         title=req.title.strip(),
         subtitle=req.subtitle.strip() if req.subtitle else None,

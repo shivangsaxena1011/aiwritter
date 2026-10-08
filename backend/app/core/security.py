@@ -17,19 +17,67 @@ mask_api_key = sanitize_api_key
 
 def resolve_gemini_api_key(client_provided_key: Optional[str] = None) -> str:
     """
-    Resolves Gemini API key with priority:
-    1. Client provided key (for self-hosted / personal mode)
-    2. Server environment setting (GEMINI_API_KEY)
+    Resolves Gemini API key with strict isolation:
+    - If client provides a key (BYOK), it uses ONLY that key and NEVER falls back to server keys.
+    - If no key was provided by client, server environment setting (GEMINI_API_KEY) is used.
     """
-    if client_provided_key and client_provided_key.strip():
-        return client_provided_key.strip()
+    if client_provided_key is not None:
+        key = client_provided_key.strip()
+        if key and key.lower() not in ("null", "none"):
+            return key
+        raise HTTPException(
+            status_code=400,
+            detail="BYOK key was empty or invalid. BYOK requests will never fall back to server keys."
+        )
+
     if settings.GEMINI_API_KEY and settings.GEMINI_API_KEY.strip():
         return settings.GEMINI_API_KEY.strip()
+
+    if settings.APP_ENV == "production" or not settings.ALLOW_MOCK_PROVIDERS:
+        raise HTTPException(
+            status_code=500,
+            detail="No Gemini API key configured on server. Please configure GEMINI_API_KEY or provide a valid BYOK key."
+        )
+
     if settings.AI_MODE == "mock":
         return "mock-key"
+
     raise HTTPException(
         status_code=400,
         detail="No Gemini API key provided. Please provide an API key in the request or set GEMINI_API_KEY on the server."
+    )
+
+def verify_api_auth(
+    authorization: Optional[str] = None,
+    x_api_key: Optional[str] = None
+) -> bool:
+    """
+    Verifies authentication for private endpoints.
+    If AUTH_REQUIRED is enabled or in production with an API_AUTH_SECRET configured,
+    requests must provide the matching bearer token or X-API-Key header.
+    """
+    is_auth_enforced = settings.AUTH_REQUIRED or (settings.APP_ENV == "production" and bool(settings.API_AUTH_SECRET))
+    if not is_auth_enforced:
+        return True
+
+    expected = settings.API_AUTH_SECRET or settings.SECRET_KEY
+    if not expected:
+        return True
+
+    # Check X-API-Key header
+    if x_api_key and x_api_key.strip() == expected:
+        return True
+
+    # Check Authorization: Bearer <token>
+    if authorization:
+        parts = authorization.strip().split()
+        if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1] == expected:
+            return True
+
+    raise HTTPException(
+        status_code=401,
+        detail="Unauthorized: Access to private API requires valid API key or Bearer token.",
+        headers={"WWW-Authenticate": "Bearer"}
     )
 
 def sanitize_filename(filename: str) -> str:
