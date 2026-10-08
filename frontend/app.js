@@ -492,8 +492,12 @@ async function startGeneration() {
     const includeReferences = referencesEl ? referencesEl.checked : true;
 
     // Validation
-    if (!title) {
+    if (!title || title.trim().length === 0) {
         showError('Please enter a textbook title.');
+        return;
+    }
+    if (title.length > 255) {
+        showError('Textbook title cannot exceed 255 characters.');
         return;
     }
     if (state.treeData.units.length === 0) {
@@ -502,20 +506,25 @@ async function startGeneration() {
     }
 
     for (const unit of state.treeData.units) {
-        if (!unit.name.trim()) {
+        if (!unit.name || !unit.name.trim()) {
             showError('All units must have a title.');
             return;
         }
-        for (const topic of unit.topics) {
-            if (!topic.name.trim()) {
+        for (const topic of unit.topics || []) {
+            if (!topic.name || !topic.name.trim()) {
                 showError('All topics must have a title.');
                 return;
             }
-            for (const sub of topic.subtopics) {
-                if (!sub.trim()) {
-                    showError('All subtopics must have a title.');
-                    return;
-                }
+            if (Array.isArray(topic.subtopics)) {
+                topic.subtopics = topic.subtopics.map(sub => {
+                    if (typeof sub === 'object' && sub !== null) {
+                        return sub.name || sub.title || JSON.stringify(sub);
+                    }
+                    return String(sub || '').trim();
+                }).filter(sub => sub.length > 0);
+            }
+            if (!topic.subtopics || topic.subtopics.length === 0) {
+                topic.subtopics = ['Detailed Analysis'];
             }
         }
     }
@@ -573,7 +582,8 @@ async function startGeneration() {
         // Step 3: Connect SSE / polling stream
         connectJobStream(state.jobId);
     } catch (err) {
-        appendLog(`❌ Initialization failed: ${err.message}`, 'error');
+        const errorMsg = (err && (err.message || (typeof err === 'string' ? err : JSON.stringify(err)))) || 'Unknown initialization error';
+        appendLog(`❌ Initialization failed: ${errorMsg}`, 'error');
         state.generating = false;
         document.getElementById('current-task').textContent = 'Generation failed to start';
         document.getElementById('btn-retry-job').style.display = 'inline-flex';

@@ -1,7 +1,8 @@
 import os
 from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, field_validator
+import json
 
 class Settings(BaseSettings):
     APP_NAME: str = "AI Book Writer"
@@ -29,11 +30,12 @@ class Settings(BaseSettings):
         description="Whether mock AI or research providers are permitted. Strictly forbidden in production."
     )
     GEMINI_API_KEY: Optional[str] = None
+    GEMINI_BACKUP_KEYS: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_TEXT_MODEL: Optional[str] = None
     GEMINI_IMAGE_MODEL: Optional[str] = None
-    TEXT_MODEL: str = "gemini-2.5-flash"
-    STRUCTURED_MODEL: str = "gemini-2.5-flash"
+    TEXT_MODEL: str = "gemini-3.8-flash"
+    STRUCTURED_MODEL: str = "gemini-3.8-flash"
     IMAGE_MODEL: str = "imagen-3.0-generate-002"
 
     @property
@@ -43,6 +45,21 @@ class Settings(BaseSettings):
     @property
     def effective_image_model(self) -> str:
         return self.GEMINI_IMAGE_MODEL or self.IMAGE_MODEL
+
+    @property
+    def all_gemini_keys(self) -> List[str]:
+        keys = []
+        if self.GEMINI_API_KEY:
+            for k in self.GEMINI_API_KEY.replace("\n", ",").split(","):
+                k = k.strip()
+                if k and k not in keys:
+                    keys.append(k)
+        if self.GEMINI_BACKUP_KEYS:
+            for k in self.GEMINI_BACKUP_KEYS.replace("\n", ",").split(","):
+                k = k.strip()
+                if k and k not in keys:
+                    keys.append(k)
+        return keys
 
     # Storage
     STORAGE_PROVIDER: str = Field(default="local", description="local | s3 | r2")
@@ -62,6 +79,19 @@ class Settings(BaseSettings):
     # Security
     CORS_ORIGINS: List[str] = ["*"]
     SECRET_KEY: str = "dev-secret-key-change-in-production-123456789"
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("[") and v.endswith("]"):
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [i.strip() for i in v.split(",") if i.strip()]
+        return v
 
     @model_validator(mode="after")
     def validate_production_guards(self) -> "Settings":
